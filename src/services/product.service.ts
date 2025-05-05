@@ -1,6 +1,8 @@
 import { SQLiteDatabase } from "react-native-sqlite-storage";
 import { ProductItem } from "../../models";
 import { getNow } from "../../utils";
+import { syncData } from "./sync.service";
+// import { pullServerUpdates } from "./pull.service";
 
 export const createProductTable = async (db: SQLiteDatabase) => {
     // create table if not exists
@@ -15,7 +17,28 @@ export const createProductTable = async (db: SQLiteDatabase) => {
     await db.executeSql(query);
 };
 
-export const getProducts = async (db: SQLiteDatabase): Promise<ProductItem[]> => {
+export const getProducts = async (db: SQLiteDatabase, offset: any): Promise<any[]> => {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx: any) => {
+
+            tx.executeSql(
+                `SELECT * FROM products ORDER BY updatedAt DESC LIMIT 10 OFFSET ${offset}`,
+                [],
+                (_: any, { rows }: any) => {
+                    const allProducts = rows.raw(); // Already a usable array
+                    // console.log("📦 Unsynced products:", allProducts);
+                    resolve(allProducts);            // ✅ send to frontend or caller
+                },
+                (_: any, error: any) => {
+                    console.error("❌ SELECT failed:", error);
+                    reject(error);
+                    return true;
+                }
+            );
+        });
+    });
+};
+export const getSychedProducts = async (db: SQLiteDatabase): Promise<ProductItem[]> => {
     try {
         const productsItems: ProductItem[] = [];
         const results = await db.executeSql(`SELECT * FROM products WHERE synced = 1`);
@@ -33,14 +56,9 @@ export const getProducts = async (db: SQLiteDatabase): Promise<ProductItem[]> =>
 export const getUnsyncedProducts = async (db: SQLiteDatabase): Promise<any[]> => {
     return new Promise((resolve, reject) => {
         db.transaction((tx: any) => {
-            // tx.executeSql(
-            //     'SELECT * FROM products WHERE synced = 0',
-            //     [],
-            //     (_: any, { rows }: any) => resolve(rows._array),
-            //     (_: any, error: any) => reject(error)
-            // );
+
             tx.executeSql(
-                `SELECT * FROM products WHERE synced = 0`,
+                `SELECT * FROM products WHERE synced = 0 ORDER BY updatedAt DESC`,
                 [],
                 (_: any, { rows }: any) => {
                     const allProducts = rows.raw(); // Already a usable array
@@ -116,11 +134,11 @@ export const saveProductItems = async (db: SQLiteDatabase, product: ProductItem)
         if (
             !product.product_name?.trim() ||
             isNaN(parseFloat(product.price))
-          ) {
+        ) {
             console.warn("⚠️ Skipping invalid product:", product);
             return;
-          }
-          
+        }
+
         db.transaction((tx) => {
             tx.executeSql(
                 `INSERT OR REPLACE INTO products 
@@ -142,7 +160,7 @@ export const saveProductItems = async (db: SQLiteDatabase, product: ProductItem)
                 }
             );
             tx.executeSql(
-                `SELECT * FROM products WHERE synced = 0`,
+                `SELECT * FROM products ORDER BY updatedAt DESC;`,
                 [],
                 (_, { rows }: any) => {
                     const allProducts = rows.raw(); // raw() returns a plain JS array
@@ -153,6 +171,70 @@ export const saveProductItems = async (db: SQLiteDatabase, product: ProductItem)
                     console.error("❌ SELECT failed:", error);
                     return true;
                 }
+            );
+        });
+    });
+};
+
+export const markProductAsSynced = (id: number, db: SQLiteDatabase) => {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx: any) => {
+            tx.executeSql(
+                'UPDATE products SET synced = 1 WHERE id = ?',
+                [id],
+                (_: any, result: any) => resolve(result),
+                (_: any, error: any) => reject(error)
+            );
+        });
+    });
+};
+
+
+export const fullSync = async () => {
+    try {
+        console.log('🔄 Starting full sync...');
+        await syncData();           // Push unsynced local changes
+        // await pullServerUpdates();  // Pull latest server changes
+        console.log('✅ Full sync complete.');
+    } catch (err) {
+        console.error('❌ Full sync failed:', err);
+    }
+};
+
+export const insertInventory = (product: string, quantity: number, db: SQLiteDatabase,) => {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx: any) => {
+            tx.executeSql(
+                'INSERT INTO inventory (product, quantity, synced, updatedAt) VALUES (?, ?, 0, ?)',
+                [product, quantity, getNow()],
+                (_: any, result: any) => resolve(result),
+                (_: any, error: any) => reject(error)
+            );
+        });
+    });
+};
+
+export const getUnsyncedInventory = (db: SQLiteDatabase,): Promise<any[]> => {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx: any) => {
+            tx.executeSql(
+                'SELECT * FROM inventory WHERE synced = 0',
+                [],
+                (_: any, { rows }: any) => resolve(rows._array),
+                (_: any, error: any) => reject(error)
+            );
+        });
+    });
+};
+
+export const markInventoryAsSynced = (id: number, db: SQLiteDatabase,) => {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx: any) => {
+            tx.executeSql(
+                'UPDATE inventory SET synced = 1 WHERE id = ?',
+                [id],
+                (_: any, result: any) => resolve(result),
+                (_: any, error: any) => reject(error)
             );
         });
     });
