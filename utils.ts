@@ -1,0 +1,1 @@
+export const getNow = (): string => new Date().toISOString();

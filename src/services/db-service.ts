@@ -1,12 +1,12 @@
 import { enablePromise, openDatabase, SQLiteDatabase } from 'react-native-sqlite-storage';
-import { ToDoItem } from '../../models/index';
+import { ProductItem, ToDoItem } from '../../models/index';
 
 const tableName = 'todoData';
 
 enablePromise(true);
 
 export const getDBConnection = async () => {
-    return openDatabase({ name: 'todo-data.db', location: 'default' });
+    return openDatabase({ name: 'todo-data.db',  location: 'Documents'});
 };
 
 export const createTable = async (db: SQLiteDatabase) => {
@@ -17,6 +17,18 @@ export const createTable = async (db: SQLiteDatabase) => {
 
     await db.executeSql(query);
 };
+
+
+
+
+
+
+
+
+
+
+
+
 
 export const getTodoItems = async (db: SQLiteDatabase): Promise<ToDoItem[]> => {
     try {

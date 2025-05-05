@@ -5,7 +5,7 @@
  * @format
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import type { PropsWithChildren } from 'react';
 import {
   ScrollView,
@@ -24,6 +24,8 @@ import {
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
 import TodoScreen from './src/screens/todo.screen';
+import Productscreen from './src/screens/product.screen';
+import { getDBConnection } from './src/services/db-service';
 
 type SectionProps = PropsWithChildren<{
   title: string;
@@ -55,40 +57,19 @@ function App(): React.JSX.Element {
       />
       <ScrollView
         style={backgroundStyle}>
-        <View style={{ paddingRight: safePadding }}>
-          <Header />
-        </View>
+
         <View
           style={{
             backgroundColor: isDarkMode ? Colors.black : Colors.white,
             paddingHorizontal: safePadding,
             paddingBottom: safePadding,
           }}>
-
-          <TodoScreen />
+          <Productscreen />
+          {/* <TodoScreen /> */}
         </View>
       </ScrollView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
 
 export default App;

@@ -14,25 +14,34 @@ import {
 } from 'react-native';
 
 import { getDBConnection, getTodoItems, saveTodoItems, createTable, deleteTodoItem } from '../services/db-service';
-import { ToDoItem } from '../../models';
+import { ProductItem, ToDoItem } from '../../models';
 import { ToDoItemComponent } from '../components/ToDoItem';
+import { createProductTable, getProducts, getUnsyncedProducts, saveProductItems } from '../services/product.service';
+import { ProductItemConainer } from '../components/ProductItem';
 
 
-const TodoScreen = () => {
+const ProductScreen = () => {
     const isDarkMode = useColorScheme() === 'dark';
-    const [todos, setTodos] = useState<ToDoItem[]>([]);
-    const [newTodo, setNewTodo] = useState('');
+    const [products, setProducts] = useState<ProductItem[]>([]);
+    const [newProduct, setNewProduct] = useState('');
+    const [item, setItem] = useState({
+        product_name: "",
+        price: "",
+        description: "",
+    })
     const loadDataCallback = useCallback(async () => {
         try {
-            const initTodos = [{ id: 0, value: 'go to shop' }, { id: 1, value: 'eat at least a one healthy foods' }, { id: 2, value: 'Do some exercises' }];
+            const initTodos: any = [];
             const db = await getDBConnection();
-            await createTable(db);
-            const storedTodoItems = await getTodoItems(db);
-            if (storedTodoItems.length) {
-                setTodos(storedTodoItems);
+            await createProductTable(db);
+            const storedItems = await getUnsyncedProducts(db);
+
+            if (storedItems.length > 0) {
+
+                setProducts(storedItems);
             } else {
-                await saveTodoItems(db, initTodos);
-                setTodos(initTodos);
+                // await saveProductItems(db, initTodos);
+                // setProducts(initTodos);
             }
         } catch (error) {
             console.error(error);
@@ -42,32 +51,31 @@ const TodoScreen = () => {
         loadDataCallback();
     }, [loadDataCallback]);
     const addTodo = async () => {
-        if (!newTodo.trim()) return;
+        // if (!newProduct.trim()) return;
         try {
-            const newTodos = [...todos, {
-                id: todos.length ? todos.reduce((acc, cur) => {
-                    if (cur.id > acc.id) return cur;
-                    return acc;
-                }).id + 1 : 0, value: newTodo
-            }];
-            setTodos(newTodos);
+
+            setProducts([...products, { product_name: newProduct, price: '', description: '' }]);
             const db = await getDBConnection();
-            await saveTodoItems(db, newTodos);
-            setNewTodo('');
+            let storedItems = await saveProductItems(db, item);
+            console.log(storedItems)
+            setProducts(storedItems);
+            setNewProduct('');
+            console.log("done")
         } catch (error) {
             console.error(error);
         }
     };
-    const deleteItem = async (id: number) => {
-        try {
-            const db = await getDBConnection();
-            await deleteTodoItem(db, id);
-            todos.splice(id, 1);
-            setTodos(todos.slice(0));
-        } catch (error) {
-            console.error(error);
-        }
-    };
+
+    // const deleteItem = async (id: number) => {
+    //     try {
+    //         const db = await getDBConnection();
+    //         await deleteTodoItem(db, id);
+    //         todos.splice(id, 1);
+    //         setTodos(todos.slice(0));
+    //     } catch (error) {
+    //         console.error(error);
+    //     }
+    // };
     return (
         <SafeAreaView>
             <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
@@ -77,14 +85,16 @@ const TodoScreen = () => {
                     <Text style={styles.appTitleText}> ToDo Application </Text>
                 </View>
                 <View>
-                    {todos.map((todo) => (
-                        <ToDoItemComponent key={todo.id} todo={todo} deleteItem={deleteItem} />
+                    {products.map((product) => (
+                        <ProductItemConainer key={product._id} item={product} />
                     ))}
                 </View>
                 <View style={styles.textInputContainer}>
-                    <TextInput style={styles.textInput} value={newTodo} onChangeText={text => setNewTodo(text)} />
+                    <TextInput style={styles.textInput} value={item.product_name} onChangeText={text => setItem(prev => ({ ...prev, product_name: text }))} />
+                    <TextInput style={styles.textInput} value={item.price} onChangeText={text => setItem(prev => ({ ...prev, price: text }))} />
+                    <TextInput style={styles.textInput} value={item.description} onChangeText={text => setItem(prev => ({ ...prev, description: text }))} />
                     <Button
-                        onPress={addTodo}
+                        onPress={() => addTodo()}
                         title="Add ToDo"
                         color="#841584"
                         accessibilityLabel="add todo item"
@@ -121,4 +131,4 @@ const styles = StyleSheet.create({
         backgroundColor: 'pink'
     },
 });
-export default TodoScreen;
+export default ProductScreen;
