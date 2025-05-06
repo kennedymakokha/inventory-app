@@ -17,6 +17,8 @@ export type authStackParamList = {
     login: undefined
     Home: any
     dashboard: any
+    products: undefined
+    inventory: undefined
 }
 
 export type User = {

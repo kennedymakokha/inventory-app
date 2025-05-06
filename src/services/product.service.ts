@@ -3,12 +3,9 @@ import { ProductItem } from "../../models";
 import { getNow } from "../../utils";
 import { syncData } from "./sync.service";
 import { pullServerUpdates } from "./pull.service";
-import DocumentPicker from 'react-native-document-picker';
 import Papa from 'papaparse';
 import RNFS from 'react-native-fs'; // Already included in many RN setups
-
-
-// import { pullServerUpdates } from "./pull.service";
+import { pick, types, keepLocalCopy } from '@react-native-documents/picker';
 
 export const createProductTable = async (db: SQLiteDatabase) => {
     // create table if not exists
@@ -182,25 +179,26 @@ export const fullSync = async () => {
 
 export const handleCSVUpload = async (db: SQLiteDatabase) => {
     try {
-        const res = await DocumentPicker.pickSingle({
-            type: [DocumentPicker.types.plainText],
+        const [res] = await pick({
+            type: [types.plainText, types.csv], // Accept plain text and CSV files
         });
 
         const filePath = res.uri;
-        const fileContent = await RNFS.readFile(filePath, 'utf8');
 
-        // Parse the CSV
+        // iOS may prefix with "file://", Android might use content://
+        const fileContent = await RNFS.readFile(decodeURIComponent(filePath.replace('file://', '')), 'utf8');
+
         const results = Papa.parse(fileContent, {
             header: true,
             skipEmptyLines: true,
         });
 
-        const rows = results.data as any[];
+        const rows = results.data as Array<Record<string, any>>;
 
         for (const row of rows) {
             const product = {
                 product_name: row.product_name,
-                price: row.price.toString(),
+                price: row.price?.toString() || '0',
                 description: row.description || '',
                 synced: false
             };
@@ -208,14 +206,16 @@ export const handleCSVUpload = async (db: SQLiteDatabase) => {
         }
 
         console.log("✅ CSV imported successfully.");
-    } catch (err) {
-        if (DocumentPicker.isCancel(err)) {
+    } catch (err: any) {
+        if (err.code === 'USER_CANCELLED') {
             console.log("⚠️ User cancelled the picker");
         } else {
+            console.log(err)
             console.error("❌ Failed to import CSV:", err);
         }
     }
 };
+
 
 export const insertInventory = (product: string, quantity: number, db: SQLiteDatabase,) => {
     return new Promise((resolve, reject) => {

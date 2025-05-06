@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
+    Alert,
     FlatList,
     RefreshControl,
     Text,
@@ -12,7 +13,7 @@ import {
 
 import { getDBConnection } from '../../services/db-service';
 import { ProductItem, ToDoItem } from '../../../models';
-import { createProductTable, fullSync, getProducts, getSychedProducts, getUnsyncedProducts, saveProductItems } from '../../services/product.service';
+import { createProductTable, fullSync, getProducts, getSychedProducts, getUnsyncedProducts, handleCSVUpload, saveProductItems } from '../../services/product.service';
 import { Fab } from '../../components/Button';
 import AddProductModal from '../components/addProductModal';
 import renderItem from '../components/productItem';
@@ -20,11 +21,14 @@ import { validateItem } from '../validations/product.validation';
 import { useRoute } from '@react-navigation/native';
 import { SkeletonList } from './skeleton';
 import UploadProductsModal from '../components/uploadProduct.modal';
+import SearchBar from '../../components/searchBar';
+import { useSearch } from '../../context/searchContext';
 
 
 const ProductScreen = () => {
     const isDarkMode = useColorScheme() === 'dark';
     const route = useRoute();
+    const { query, setQuery } = useSearch()
     const { filter }: any = route.params;
     const initialState = {
         product_name: "",
@@ -109,13 +113,23 @@ const ProductScreen = () => {
     //         console.error(error);
     //     }
     // };
+    const onUploadPress = async () => {
+        try {
+            const db = await getDBConnection();
+            await handleCSVUpload(db);
+            Alert.alert("Success", "CSV file uploaded and imported.");
+        } catch (error) {
+            Alert.alert("Error", "Failed to upload CSV.");
+        }
+    };
 
 
     return (
         <View className="flex-1 min-h-[300px] bg-secondary-900 px-5">
 
             <View className="flex-1 ">
-                <Text>{filter}</Text>
+                <SearchBar placeholder="search in products..." />
+                <Text>{query}</Text>
                 {loading ? (
                     <SkeletonList />
                 ) : (<FlatList
@@ -159,9 +173,10 @@ const ProductScreen = () => {
 
             {/* Floating Button */}
             <View className="absolute bottom-5 left-5 gap-y-5 right-5 z-50 items-center">
-                <View className="flex-row w-full justify-end ">
+                <View className="flex-row w-full justify-between ">
+                    <Fab icon="plus" loading={false} title="+" handleclick={onUploadPress} />
 
-                    <Fab loading={false} title="+" handleclick={() => setModalVisible(true)} />
+                    <Fab icon="plus" loading={false} title="+" handleclick={() => setModalVisible(true)} />
 
                     {/* {loading ? (
                         <ActivityIndicator size="large" color="#007AFF" />

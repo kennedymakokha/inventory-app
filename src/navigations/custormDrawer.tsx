@@ -43,9 +43,9 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => 
         }
     };
     return (
-        <View className="flex-1 bg-secondary-600 pt-16 px-5">
+        <View className="flex-1 bg-secondary-900 pt-16 px-5">
             {/* Header */}
-            <View className="items-center mb-10 border-b">
+            <View className="items-center mb-10 border-b border-primary-500">
                 <Image
                     source={require('../assets/logo.png')}
                     className="size-40 rounded-full mb-2"
@@ -58,27 +58,38 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => 
             {/* Links */}
             <TouchableOpacity
                 className="flex-row items-center my-4"
-                onPress={() => navigation.navigate('Home')}
+                onPress={() => navigation.navigate('Home', { screen: `dashboard` })}
             >
                 <Icon name="home-outline" size={20} color="#fff" />
-                <Text className="text-white text-base ml-3">Home</Text>
+                <Text className="tracking-widest uppercase text-center text-white text-base ml-3">Home</Text>
             </TouchableOpacity>
-
             <TouchableOpacity
                 className="flex-row items-center my-4"
-                onPress={() => navigation.navigate('transactions')}
+                onPress={() =>
+                    navigation.navigate('Home', { screen: `products` })
+                    // navigation.navigate('products')
+                }
             >
                 <Icon name="swap-horizontal-outline" size={20} color="#fff" />
-                <Text className="text-white text-base ml-3">Transactions</Text>
+                <Text className="tracking-widest uppercase text-center text-white text-base ml-3">Products</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+                className="flex-row items-center my-4"
+                onPress={() => navigation.navigate('Home', { screen: `inventory` })
+                    // navigation.navigate('inventory')
+                }
+            >
+                <Icon name="swap-horizontal-outline" size={20} color="#fff" />
+                <Text className="tracking-widest uppercase text-center text-white text-base ml-3">Inventory</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
+            {/* <TouchableOpacity
                 className="flex-row items-center my-4"
                 onPress={() => navigation.navigate('profile')}
             >
                 <Icon name="person-outline" size={20} color="#fff" />
-                <Text className="text-white text-base ml-3">Profile</Text>
-            </TouchableOpacity>
+                <Text className="tracking-widest uppercase text-center text-white text-base ml-3">Profile</Text>
+            </TouchableOpacity> */}
             {loading ? (
                 <ActivityIndicator size="large" color="#007AFF" />
             ) : <TouchableOpacity
