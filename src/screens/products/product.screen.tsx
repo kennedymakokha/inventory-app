@@ -34,7 +34,8 @@ const ProductScreen = () => {
         product_name: "",
         price: "",
         description: "",
-        quantity:0
+        quantity: 0,
+        Bprice: 0
     }
     const [loading, setLoading] = useState(false);
     const [products, setProducts] = useState<ProductItem[]>([]);
@@ -127,10 +128,9 @@ const ProductScreen = () => {
 
     return (
         <View className="flex-1 min-h-[300px] bg-secondary-900 px-5">
-
+``
             <View className="flex-1 ">
-                <SearchBar placeholder="search in products..." />
-                <Text>{query}</Text>
+               
                 {loading ? (
                     <SkeletonList />
                 ) : (<FlatList

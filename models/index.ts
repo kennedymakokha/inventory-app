@@ -9,6 +9,8 @@ export type ProductItem = {
     product_name: string;
     price: string;
     quantity: number
+    createdBy?: string | any,
+    Bprice?: number
     description: string,
     updatedAt?: string
     synced?: boolean
@@ -20,6 +22,7 @@ export type InventoryItem = {
     quantity: string
     updatedAt?: string
     synced?: boolean
+    createdBy?: string | any
 };
 
 export type authStackParamList = {

@@ -6,6 +6,7 @@ import { pullServerUpdates } from "./pull.service";
 import Papa from 'papaparse';
 import RNFS from 'react-native-fs'; // Already included in many RN setups
 import { pick, types, keepLocalCopy } from '@react-native-documents/picker';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const createProductTable = async (db: SQLiteDatabase) => {
     // create table if not exists
@@ -13,6 +14,8 @@ export const createProductTable = async (db: SQLiteDatabase) => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       product_name TEXT NOT NULL UNIQUE,
       price REAL NOT NULL,
+      Bprice REAL NOT NULL,
+      createdBy TEXT NOT NULL ,
       synced INTEGER NOT NULL,
       description TEXT,
       quantity REAL DEFAULT 0,
@@ -22,25 +25,6 @@ export const createProductTable = async (db: SQLiteDatabase) => {
 
     await db.executeSql(query);
 };
-// export const getProducts = async (db: SQLiteDatabase, offset: number): Promise<any[]> => {
-//     return new Promise((resolve, reject) => {
-//         db.transaction((tx) => {
-//             tx.executeSql(
-//                 `SELECT * FROM products ORDER BY updatedAt DESC LIMIT 10 OFFSET ?`,
-//                 [offset],
-//                 (_: any, { rows }: any) => {
-//                     const allProducts = rows.raw();
-//                     resolve(allProducts);
-//                 },
-//                 (_: any, error: any) => {
-//                     console.error("❌ SELECT failed:", error);
-//                     reject(error);
-//                     return true;
-//                 }
-//             );
-//         });
-//     });
-// };
 export const getProducts = async (db: SQLiteDatabase): Promise<any[]> => {
     return new Promise((resolve, reject) => {
         db.transaction((tx: any) => {
@@ -111,6 +95,7 @@ export const saveProductItems = async (
         const trimmedName = item.product_name.trim();
         item.synced = false;
         item.quantity = 0;
+        item.createdBy = await AsyncStorage.getItem('userId')
 
         // 1. Check if product already exists (case-insensitive)
         const checkQuery = `SELECT COUNT(*) as count FROM products WHERE LOWER(product_name) = LOWER(?)`;
@@ -124,13 +109,15 @@ export const saveProductItems = async (
         // 2. Insert product
         const insertQuery = `
         INSERT OR REPLACE INTO products 
-        (product_name, price, description, quantity, synced, created_at, updatedAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        (product_name, price,Bprice,createdBy, description, quantity, synced, created_at, updatedAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
         await db.executeSql(insertQuery, [
             trimmedName,
             parseFloat(item.price),
+            item.Bprice,
+            item.createdBy,
             item.description,
             item.quantity,
             item.synced ? 1 : 0,
@@ -245,6 +232,8 @@ export const handleCSVUpload = async (db: SQLiteDatabase) => {
                 product_name: row.product_name,
                 price: row.price?.toString() || '0',
                 quantity: row.quantity?.toString() || '0',
+                Bprice: row.Bprice?.toString() || '0',
+                createdBy: row.createdBy?.toString() || '0',
                 description: row.description || '',
                 synced: false
             };

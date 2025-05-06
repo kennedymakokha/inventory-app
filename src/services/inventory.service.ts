@@ -7,6 +7,7 @@ import Papa from 'papaparse';
 import RNFS from 'react-native-fs'; // Already included in many RN setups
 import { pick, types, keepLocalCopy } from '@react-native-documents/picker';
 import { getDBConnection } from "./db-service";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const createInventoryTable = async (db: SQLiteDatabase) => {
     // create table if not exists
@@ -14,6 +15,7 @@ export const createInventoryTable = async (db: SQLiteDatabase) => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         product_id INTEGER NOT NULL,
         quantity INTEGER NOT NULL,
+         createdBy TEXT NOT NULL ,
       synced INTEGER NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -126,24 +128,25 @@ export const saveInventoryItem = async (
         const now = new Date().toISOString();
 
         item.synced = false;
-
+        item.createdBy = await AsyncStorage.getItem('userId')
         await db.transaction(async tx => {
             // 1. Insert into inventory
             await tx.executeSql(
                 `INSERT OR REPLACE INTO inventory 
-           (product_id, quantity, synced, created_at, updatedAt)
-           VALUES (?, ?, ?, ?, ?)`,
+           (product_id, quantity, synced,createdBy, created_at, updatedAt)
+           VALUES (?, ?, ?, ?, ?, ?)`,
                 [
                     item.product_id,
                     parseFloat(item.quantity),
                     item.synced ? 1 : 0,
+                    item.createdBy,
                     now,
                     now
                 ]
             );
             const db = await getDBConnection();
             await updateItemQuantity(db, parseInt(item.product_id), parseFloat(item.quantity))
-          
+
         });
 
         // 3. Return updated inventory list

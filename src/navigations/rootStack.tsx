@@ -4,7 +4,7 @@ import LoginScreen from "../screens/Logincreen";
 import { useAuthContext } from "../context/authContext";
 import ProductScreen from "../screens/products/product.screen";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import CustomHeader from "../components/customHeader";
+import CustomHeader, { CustomHeaderWithSearch } from "../components/customHeader";
 import Ionicons from 'react-native-vector-icons/Ionicons'
 import DashboardScreen from "../screens/DashboardScreen";
 import InventoryScreen from "../screens/inventory/inventory.screen";
@@ -19,6 +19,7 @@ const Tab = createBottomTabNavigator();
 function ProductsTabs() {
   return (
     <Tab.Navigator screenOptions={({ route }) => ({
+      headerShown: false,
       tabBarIcon: ({ color, size }) => {
         let iconName;
 
@@ -89,12 +90,15 @@ export function RootStack() {
       <Stack.Screen name="dashboard" options={{
         header: () => <CustomHeader title="Dashboard" />
       }} component={DashboardScreen} />
-      <Stack.Screen name="products"  component={ProductsTabs} />
+      <Stack.Screen name="products"
+        options={{
+          title: "",
+          header: () => <CustomHeaderWithSearch title="My Inventory" />
+        }}
+        component={ProductsTabs} />
       <Stack.Screen name="inventory" options={{
-        title: "My Inventory",
-        headerRight: () => (
-          <SearchBar placeholder="search" />
-        ),
+        title: "",
+        header: () => <CustomHeaderWithSearch title="My Inventory" />
       }} component={InventoryScreen} />
 
     </Stack.Navigator>

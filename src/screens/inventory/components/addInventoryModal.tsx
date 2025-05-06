@@ -12,7 +12,7 @@ import { toDropdownOptions } from '../../../../utils/useDropDown';
 
 
 
-const InventoryModal = ({ modalVisible, product, msg, setMsg, setItem, PostLocally, initialState, item, setModalVisible }: any) => {
+const InventoryModal = ({ modalVisible, closeModal, product, msg, setMsg, setItem, PostLocally, item }: any) => {
     const handleChange = (key: keyof InventoryItem, value: string) => {
         setMsg({ msg: "", state: "" });
 
@@ -38,9 +38,7 @@ const InventoryModal = ({ modalVisible, product, msg, setMsg, setItem, PostLocal
             animationType="slide"
             transparent={false}
             visible={modalVisible}
-            onRequestClose={() => {
-                setModalVisible(!modalVisible);
-            }}>
+            onRequestClose={closeModal}>
             <View className='flex-1 px-10  bg-secondary-900 justify-center'>
                 <Text className="text-2xl font-bold text-center text-primary-500 mb-5">{product ? `${product.product_name} stocking` : "New Stock"}</Text>
 
@@ -63,7 +61,7 @@ const InventoryModal = ({ modalVisible, product, msg, setMsg, setItem, PostLocal
                 {msg.msg && <Toast msg={msg.msg} state={msg.state} />}
                 <View className="flex w-full flex-row  ">
                     <View className="flex w-1/2 flex-row justify-center px-2 items-center">
-                        <Button handleclick={() => { setModalVisible(!modalVisible); setMsg({ msg: "", state: "" }); setItem(initialState) }} outline loading={false} title="cancel" />
+                        <Button handleclick={closeModal} outline loading={false} title="cancel" />
                     </View>
                     <View className="flex w-1/2 flex-row px-2 justify-center items-center">
                         <Button handleclick={PostLocally} loading={false} title="submit" />

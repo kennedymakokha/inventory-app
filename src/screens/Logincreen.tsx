@@ -31,7 +31,8 @@ const LoginScreen = ({ navigation }: any) => {
                 body: JSON.stringify(item),
             });
             await login(res.token)
-            // const token = await AsyncStorage.setItem('accessToken', res.token);
+            console.log(res)
+           await AsyncStorage.setItem('userId', res.user._id);
             setLoading(false)
             navigation.navigate('Products');
         } catch (err) {

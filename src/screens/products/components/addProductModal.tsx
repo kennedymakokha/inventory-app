@@ -38,10 +38,17 @@ const AddProductModal = ({ modalVisible, msg, setMsg, setItem, PostLocally, fetc
                     keyboardType="text"
                 />
                 <InputContainer
-                    label="Price"
+                    label="Seling Price"
                     placeholder="price"
                     value={item.price}
                     onChangeText={(text: string) => handleChange("price", text)}
+                    keyboardType="numeric"
+                />
+                <InputContainer
+                    label="Buying Price"
+                    placeholder="Bprice"
+                    value={item.Bprice}
+                    onChangeText={(text: string) => handleChange("Bprice", text)}
                     keyboardType="numeric"
                 />
                 <TextArea
