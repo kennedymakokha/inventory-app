@@ -16,6 +16,7 @@ export type ProductItem = {
 export type authStackParamList = {
     login: undefined
     Home: any
+    dashboard: any
 }
 
 export type User = {

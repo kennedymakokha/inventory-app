@@ -5,21 +5,18 @@ import { authorizedFetch } from '../middleware/auth.middleware';
 import { getDBConnection } from './db-service';
 import { getUnsyncedProducts, markProductAsSynced } from './product.service';
 
-const API_URL = 'https://6d41-41-139-236-221.ngrok-free.app/api'; // Replace with your backend base URL
+const API_URL = 'https://5e27-41-139-236-221.ngrok-free.app/api'; // Replace with your backend base URL
 
 export const syncData = async () => {
     try {
-        // Sync Products
         const db = await getDBConnection();
-        const unsyncedProducts = await getUnsyncedProducts(db);
-
+        const unsyncedProducts = await getUnsyncedProducts(db, 1000);
         for (const product of unsyncedProducts) {
-            // const response = await axios.post(`${API_URL}/products/sync`, product);
             const response = await authorizedFetch(`${API_URL}/products/sync`, {
                 method: 'POST',
                 body: JSON.stringify(product),
             });
-            if (response.status === 200) {
+            if (response.success===true ) {
                 await markProductAsSynced(product.id, db);
             }
         }

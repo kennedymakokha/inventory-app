@@ -19,9 +19,9 @@ const renderItem = ({ item }: any) => (
                 Ksh {item.price}
             </Text>
             <View className='flex items-center flex-row justify-between w-full px-5'>
-                <View className="flex size-2 sm:size-10 rounded-full shadow-3xl items-center justify-center  bg-primary-300">
+                {/* <View className="flex size-2 sm:size-10 rounded-full shadow-3xl items-center justify-center  bg-primary-300">
                     <Icon name="edit" className='size-10 text-secondary-500' />
-                </View>
+                </View> */}
                 {/*<View className="flex size-10 rounded-full shadow-3xl items-center justify-center  bg-primary-300">
                     <Icon name="eye-off" className='size-10 text-secondary-500' />
                 </View>

@@ -6,6 +6,7 @@ import "./global.css"
 import { useAuthContext } from './src/context/authContext';
 import { useTokenExpiryWatcher } from './src/hooks/useTokenExpiryWatcher';
 import { AuthStack, RootStack } from './src/navigations/rootStack';
+import { RootDrawer } from './src/navigations/rootDrawer';
 
 function App(): React.JSX.Element {
   const [loading, setLoading] = useState(true)
@@ -13,7 +14,7 @@ function App(): React.JSX.Element {
     const { token, logout } = useAuthContext();
     useTokenExpiryWatcher(token, logout);
     useTokenExpiryWatcher(token, logout); // 👈 auto-logout watcher
-    return token ? <RootStack /> : <AuthStack />;
+    return token ? <RootDrawer /> : <AuthStack />;
 
   };
 

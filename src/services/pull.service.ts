@@ -3,28 +3,32 @@
 import { getNow } from './../../utils';
 import { authorizedFetch } from '../middleware/auth.middleware';
 import { SQLiteDatabase } from 'react-native-sqlite-storage';
+import { getDBConnection } from './db-service';
 
-const API_URL = 'https://6d41-41-139-236-221.ngrok-free.app/api'; // Replace with actual backend URL
+const API_URL = 'https://5e27-41-139-236-221.ngrok-free.app/api'; // Replace with actual backend URL
 
 // Helper to get last sync timestamp (could also use AsyncStorage)
 let lastSync = '2020-01-01T00:00:00.000Z'; // default fallback
 
-const updateLocalProduct = (product: any, db: SQLiteDatabase) => {
-
+export const updateLocalProduct = (product: any, db: SQLiteDatabase) => {
+    console.log("PRODUCT", product)
     db.transaction((tx: any) => {
         tx.executeSql(
-            'SELECT * FROM products WHERE name = ?',
-            [product.name],
+            'SELECT * FROM products WHERE product_name = ?',
+            [product.product_name],
             (_: any, { rows }: any) => {
                 if (rows.length > 0) {
                     tx.executeSql(
-                        'UPDATE products SET price = ?, updatedAt = ?, synced = 1 WHERE name = ?',
-                        [product.price, product.updatedAt, product.name]
+                        'UPDATE products SET price = ?, updatedAt = ?, synced = 1 WHERE product_name = ?',
+                        [product.price, product.updatedAt, product.product_name]
                     );
                 } else {
                     tx.executeSql(
-                        'INSERT INTO products (name, price, updatedAt, synced) VALUES (?, ?, ?, 1)',
-                        [product.name, product.price, product.updatedAt]
+                        `INSERT OR REPLACE INTO products 
+                        (product_name, price, description, synced, created_at, updatedAt)
+                        VALUES (?, ?, ?, ?, ?, ?)`,
+                        // 'INSERT INTO products (product_name, price, updatedAt, synced) VALUES (?, ?, ?, 1)',
+                        [product.product_name, product.price, product.description, 1, product.createdAt, product.updatedAt]
                     );
                 }
             }
@@ -53,7 +57,32 @@ const updateLocalInventory = (item: any, db: SQLiteDatabase) => {
         );
     });
 };
+export const pullServerUpdates = async () => {
+    try {
+        // Pull Products
+        const db = await getDBConnection();
+        const productRes = await authorizedFetch(`${API_URL}/products/updates?since=${lastSync}`);
 
+
+        for (let index = 0; index < productRes.length; index++) {
+
+            const p = productRes[index];
+            
+            updateLocalProduct(p, db);
+        }
+
+        // // Pull Inventory
+        // const inventoryRes = await authorizedFetch(`${API_URL}/inventory/updates?since=${lastSync}`);
+        // for (const i of inventoryRes.data) {
+        //     updateLocalInventory(i);
+        // }
+
+        lastSync = getNow(); // Update lastSync timestamp
+        console.log('✅ Pulled server updates');
+    } catch (err) {
+        console.error('❌ Pull failed:', err);
+    }
+};
 // export const pullServerUpdates = async () => {
 //     try {
 //         // Pull Products

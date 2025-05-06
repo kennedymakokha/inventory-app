@@ -2,173 +2,103 @@ import { SQLiteDatabase } from "react-native-sqlite-storage";
 import { ProductItem } from "../../models";
 import { getNow } from "../../utils";
 import { syncData } from "./sync.service";
+import { pullServerUpdates } from "./pull.service";
+import DocumentPicker from 'react-native-document-picker';
+import Papa from 'papaparse';
+import RNFS from 'react-native-fs'; // Already included in many RN setups
+
+
 // import { pullServerUpdates } from "./pull.service";
 
 export const createProductTable = async (db: SQLiteDatabase) => {
     // create table if not exists
     const query = `CREATE TABLE IF NOT EXISTS products (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-  product_name TEXT NOT NULL,
-  price REAL NOT NULL,
-  synced INTEGER NOT NULL,
-  updatedAt TEXT NOT NULL
+      product_name TEXT NOT NULL UNIQUE,
+      price REAL NOT NULL,
+      synced INTEGER NOT NULL,
+      description TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
     )`;
 
     await db.executeSql(query);
 };
-
-export const getProducts = async (db: SQLiteDatabase, offset: any): Promise<any[]> => {
+export const getProducts = async (db: SQLiteDatabase, offset: number): Promise<any[]> => {
     return new Promise((resolve, reject) => {
-        db.transaction((tx: any) => {
-
-            tx.executeSql(
-                `SELECT * FROM products ORDER BY updatedAt DESC LIMIT 10 OFFSET ${offset}`,
-                [],
-                (_: any, { rows }: any) => {
-                    const allProducts = rows.raw(); // Already a usable array
-                    // console.log("📦 Unsynced products:", allProducts);
-                    resolve(allProducts);            // ✅ send to frontend or caller
-                },
-                (_: any, error: any) => {
-                    console.error("❌ SELECT failed:", error);
-                    reject(error);
-                    return true;
-                }
-            );
-        });
-    });
-};
-export const getSychedProducts = async (db: SQLiteDatabase): Promise<ProductItem[]> => {
-    try {
-        const productsItems: ProductItem[] = [];
-        const results = await db.executeSql(`SELECT * FROM products WHERE synced = 1`);
-        results.forEach(result => {
-            for (let index = 0; index < result.rows.length; index++) {
-                productsItems.push(result.rows.item(index))
-            }
-        });
-        return productsItems;
-    } catch (error) {
-        console.error(error);
-        throw Error('Failed to get productItem !!!');
-    }
-};
-export const getUnsyncedProducts = async (db: SQLiteDatabase): Promise<any[]> => {
-    return new Promise((resolve, reject) => {
-        db.transaction((tx: any) => {
-
-            tx.executeSql(
-                `SELECT * FROM products WHERE synced = 0 ORDER BY updatedAt DESC`,
-                [],
-                (_: any, { rows }: any) => {
-                    const allProducts = rows.raw(); // Already a usable array
-                    // console.log("📦 Unsynced products:", allProducts);
-                    resolve(allProducts);            // ✅ send to frontend or caller
-                },
-                (_: any, error: any) => {
-                    console.error("❌ SELECT failed:", error);
-                    reject(error);
-                    return true;
-                }
-            );
-        });
-    });
-};
-// product_name, price, getNow()
-// export const saveProductItems = async (db: SQLiteDatabase, productItem: ProductItem) => {
-//     console.log(productItem)
-//     const insertQuery =
-//         `INSERT OR REPLACE INTO products(product_name, price, synced, updatedAt) values ('${productItem.product_name}', '${productItem.price}','0' ,'${productItem.description}${getNow()}') `
-//     // productItem.map(i => `(${i.product_name}, '${i.price},${getNow()}')`).join(',');
-
-//     return db.executeSql(insertQuery);
-// };
-
-// export const saveProductItemn = (db: SQLiteDatabase, product: ProductItem) => {
-//     //
-//     product.synced = false
-//     const { product_name, price, synced } = product;
-//     console.log(product)
-//     db.transaction((tx) => {
-//         tx.executeSql(
-//             `INSERT OR REPLACE INTO products 
-//          (product_name, price, synced, updatedAt) 
-//          VALUES (?, ?, ?, ?)`,
-//             [
-//                 product_name,                      // string
-//                 parseFloat(price),                // number
-//                 synced ? 1 : 0,                   // boolean → integer
-//                 new Date().toISOString()
-//             ],
-//             (_, result) => {
-//                 console.log()
-//                 console.log('✅ Insert success:', result);
-//             },
-//             (_, error) => {
-//                 console.error('❌ Insert failed:', error);
-//                 return true; // stops further execution in transaction
-//             }
-//         );
-//         tx.executeSql(
-//             `SELECT * FROM products WHERE synced = 0`,
-//             [],
-//             (_, { rows }) => {
-//                 const allProducts = rows.raw(); // raw() returns a plain JS array
-//                 resolve(allProducts);
-//                 console.log("📦 Current products table:", allProducts);
-//             },
-//             (_, error) => {
-//                 console.error("❌ SELECT failed:", error);
-//                 return true;
-//             }
-//         );
-//     });
-
-// };
-
-
-export const saveProductItems = async (db: SQLiteDatabase, product: ProductItem): Promise<any[]> => {
-    return new Promise((resolve, reject) => {
-        product.synced = false
-        const { product_name, price, synced } = product;
-        if (
-            !product.product_name?.trim() ||
-            isNaN(parseFloat(product.price))
-        ) {
-            console.warn("⚠️ Skipping invalid product:", product);
-            return;
-        }
-
         db.transaction((tx) => {
             tx.executeSql(
-                `INSERT OR REPLACE INTO products 
-             (product_name, price, synced, updatedAt) 
-             VALUES (?, ?, ?, ?)`,
-                [
-                    product_name,                      // string
-                    parseFloat(price),                // number
-                    synced ? 1 : 0,                   // boolean → integer
-                    new Date().toISOString()
-                ],
-                (_, result) => {
-                    console.log()
-                    console.log('✅ Insert success:', result);
+                `SELECT * FROM products ORDER BY updatedAt DESC LIMIT 10 OFFSET ?`,
+                [offset],
+                (_: any, { rows }: any) => {
+                    const allProducts = rows.raw();
+                    resolve(allProducts);
                 },
-                (_, error) => {
-                    console.error('❌ Insert failed:', error);
-                    return true; // stops further execution in transaction
+                (_: any, error: any) => {
+                    console.error("❌ SELECT failed:", error);
+                    reject(error);
+                    return true;
                 }
             );
+        });
+    });
+};
+// export const getProducts = async (db: SQLiteDatabase, offset: any): Promise<any[]> => {
+//     return new Promise((resolve, reject) => {
+//         db.transaction((tx: any) => {
+
+//             tx.executeSql(
+//                 `SELECT * FROM products`,
+//                 [],
+//                 (_: any, { rows }: any) => {
+//                     const allProducts = rows.raw();
+//                     resolve(allProducts);
+//                 },
+//                 (_: any, error: any) => {
+//                     console.error("❌ SELECT failed:", error);
+//                     reject(error);
+//                     return true;
+//                 }
+//             );
+//         });
+//     });
+// };
+export const getSychedProducts = async (db: SQLiteDatabase, offset: any): Promise<any[]> => {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx: any) => {
+
             tx.executeSql(
-                `SELECT * FROM products ORDER BY updatedAt DESC;`,
+                `SELECT * FROM products WHERE synced = 1 `,
                 [],
-                (_, { rows }: any) => {
-                    const allProducts = rows.raw(); // raw() returns a plain JS array
-                    resolve(allProducts);
-                    console.log("📦 Current products table:", allProducts);
+                (_: any, { rows }: any) => {
+                    const allProducts = rows.raw(); // Already a usable array
+                    // console.log("📦 Unsynced products:", allProducts);
+                    resolve(allProducts);            // ✅ send to frontend or caller
                 },
-                (_, error) => {
+                (_: any, error: any) => {
                     console.error("❌ SELECT failed:", error);
+                    reject(error);
+                    return true;
+                }
+            );
+        });
+    });
+};
+export const getUnsyncedProducts = async (db: SQLiteDatabase, offset: any): Promise<any[]> => {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx: any) => {
+
+            tx.executeSql(
+                `SELECT * FROM products WHERE synced = 0 `,
+                [],
+                (_: any, { rows }: any) => {
+                    const allProducts = rows.raw(); // Already a usable array
+                    // console.log("📦 Unsynced products:", allProducts);
+                    resolve(allProducts);            // ✅ send to frontend or caller
+                },
+                (_: any, error: any) => {
+                    console.error("❌ SELECT failed:", error);
+                    reject(error);
                     return true;
                 }
             );
@@ -176,7 +106,57 @@ export const saveProductItems = async (db: SQLiteDatabase, product: ProductItem)
     });
 };
 
+export const saveProductItems = async (
+    db: SQLiteDatabase,
+    item: ProductItem
+): Promise<ProductItem[]> => {
+    try {
+
+        const trimmedName = item.product_name.trim();
+        item.synced = false;
+
+        // 1. Check for existing product
+        const checkQuery = `SELECT COUNT(*) as count FROM products WHERE LOWER(product_name) = LOWER(?)`;
+        const checkResult = await db.executeSql(checkQuery, [trimmedName]);
+        const count = checkResult[0].rows.item(0).count;
+
+        if (count > 0) {
+            throw new Error(`❗ Product "${trimmedName}" already exists.`);
+        }
+
+        // 2. Insert product
+        const insertQuery = `
+        INSERT OR REPLACE INTO products 
+        (product_name, price, description, synced, created_at, updatedAt)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `;
+
+        await db.executeSql(insertQuery, [
+            trimmedName,
+            parseFloat(item.price),
+            item.description,
+            item.synced ? 1 : 0,
+            new Date().toISOString(),
+            new Date().toISOString()
+        ]);
+
+        // 3. Return updated list
+        return await getProducts(db, 0);
+    } catch (error) {
+        console.error('❌ Error saving product:', error);
+        throw error;
+    }
+};
+export const softDeleteProduct = async (db: SQLiteDatabase, id: number) => {
+    await db.executeSql(
+        `UPDATE products SET deleted_at = datetime('now'), updated_at = datetime('now') WHERE id = ?`,
+        [id]
+    );
+};
+
+
 export const markProductAsSynced = (id: number, db: SQLiteDatabase) => {
+    console.log(id)
     return new Promise((resolve, reject) => {
         db.transaction((tx: any) => {
             tx.executeSql(
@@ -188,16 +168,52 @@ export const markProductAsSynced = (id: number, db: SQLiteDatabase) => {
         });
     });
 };
-
-
 export const fullSync = async () => {
     try {
         console.log('🔄 Starting full sync...');
         await syncData();           // Push unsynced local changes
-        // await pullServerUpdates();  // Pull latest server changes
+        await pullServerUpdates();  // Pull latest server changes
         console.log('✅ Full sync complete.');
     } catch (err) {
         console.error('❌ Full sync failed:', err);
+    }
+};
+
+
+export const handleCSVUpload = async (db: SQLiteDatabase) => {
+    try {
+        const res = await DocumentPicker.pickSingle({
+            type: [DocumentPicker.types.plainText],
+        });
+
+        const filePath = res.uri;
+        const fileContent = await RNFS.readFile(filePath, 'utf8');
+
+        // Parse the CSV
+        const results = Papa.parse(fileContent, {
+            header: true,
+            skipEmptyLines: true,
+        });
+
+        const rows = results.data as any[];
+
+        for (const row of rows) {
+            const product = {
+                product_name: row.product_name,
+                price: row.price.toString(),
+                description: row.description || '',
+                synced: false
+            };
+            await saveProductItems(db, product);
+        }
+
+        console.log("✅ CSV imported successfully.");
+    } catch (err) {
+        if (DocumentPicker.isCancel(err)) {
+            console.log("⚠️ User cancelled the picker");
+        } else {
+            console.error("❌ Failed to import CSV:", err);
+        }
     }
 };
 
