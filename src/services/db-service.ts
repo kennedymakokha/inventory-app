@@ -9,6 +9,7 @@ export const getDBConnection = async () => {
     return openDatabase({ name: 'todo-data.db',  location: 'Documents'});
 };
 
+
 export const createTable = async (db: SQLiteDatabase) => {
     // create table if not exists
     const query = `CREATE TABLE IF NOT EXISTS ${tableName}(

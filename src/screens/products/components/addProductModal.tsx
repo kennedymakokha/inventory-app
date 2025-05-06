@@ -1,10 +1,10 @@
 import { View, Text, Modal, TextInput } from 'react-native'
 import React, { useState } from 'react'
-import { InputContainer, TextArea } from '../../components/Input';
-import { authorizedFetch } from '../../middleware/auth.middleware';
-import Toast from '../../components/Toast';
-import Button from '../../components/Button';
-import { ProductItem } from '../../../models';
+import { InputContainer, TextArea } from '../../../components/Input';
+import { authorizedFetch } from '../../../middleware/auth.middleware';
+import Toast from '../../../components/Toast';
+import Button from '../../../components/Button';
+import { ProductItem } from '../../../../models';
 
 
 const AddProductModal = ({ modalVisible, msg, setMsg, setItem, PostLocally, fetchProducts, item, setModalVisible }: any) => {

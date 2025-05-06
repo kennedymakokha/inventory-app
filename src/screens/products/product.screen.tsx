@@ -15,12 +15,12 @@ import { getDBConnection } from '../../services/db-service';
 import { ProductItem, ToDoItem } from '../../../models';
 import { createProductTable, fullSync, getProducts, getSychedProducts, getUnsyncedProducts, handleCSVUpload, saveProductItems } from '../../services/product.service';
 import { Fab } from '../../components/Button';
-import AddProductModal from '../components/addProductModal';
-import renderItem from '../components/productItem';
+import AddProductModal from './components/addProductModal';
+import renderItem from './components/productItem';
 import { validateItem } from '../validations/product.validation';
 import { useRoute } from '@react-navigation/native';
 import { SkeletonList } from './skeleton';
-import UploadProductsModal from '../components/uploadProduct.modal';
+import UploadProductsModal from './components/uploadProduct.modal';
 import SearchBar from '../../components/searchBar';
 import { useSearch } from '../../context/searchContext';
 
@@ -34,6 +34,7 @@ const ProductScreen = () => {
         product_name: "",
         price: "",
         description: "",
+        quantity:0
     }
     const [loading, setLoading] = useState(false);
     const [products, setProducts] = useState<ProductItem[]>([]);
@@ -53,7 +54,7 @@ const ProductScreen = () => {
             await createProductTable(db);
             let storedItems = [];
             if (filter === 'all') {
-                storedItems = await getProducts(db, offset);
+                storedItems = await getProducts(db);
             } else if (filter === 'synced') {
                 storedItems = await getSychedProducts(db, offset);
             } else if (filter === 'unsynced') {

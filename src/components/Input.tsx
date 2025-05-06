@@ -71,7 +71,7 @@ export const InputContainer: React.FC<InputProps> = ({
             : 'bg-primary-50';
 
     return (
-        <View className={`flex w-full h-14 mb-4 bg-primary-100 rounded-md rounded-lg justify-center ${containerBg}`} >
+        <View className={`flex w-full h-14 mb-4 bg-primary-100  rounded-lg justify-center ${containerBg}`} >
             <View>
                 {/* {value && <View className='px-4'>
                     <Text className={` ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>

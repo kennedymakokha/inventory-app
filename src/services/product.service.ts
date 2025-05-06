@@ -15,38 +15,19 @@ export const createProductTable = async (db: SQLiteDatabase) => {
       price REAL NOT NULL,
       synced INTEGER NOT NULL,
       description TEXT,
+      quantity REAL DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
     )`;
 
     await db.executeSql(query);
 };
-export const getProducts = async (db: SQLiteDatabase, offset: number): Promise<any[]> => {
-    return new Promise((resolve, reject) => {
-        db.transaction((tx) => {
-            tx.executeSql(
-                `SELECT * FROM products ORDER BY updatedAt DESC LIMIT 10 OFFSET ?`,
-                [offset],
-                (_: any, { rows }: any) => {
-                    const allProducts = rows.raw();
-                    resolve(allProducts);
-                },
-                (_: any, error: any) => {
-                    console.error("❌ SELECT failed:", error);
-                    reject(error);
-                    return true;
-                }
-            );
-        });
-    });
-};
-// export const getProducts = async (db: SQLiteDatabase, offset: any): Promise<any[]> => {
+// export const getProducts = async (db: SQLiteDatabase, offset: number): Promise<any[]> => {
 //     return new Promise((resolve, reject) => {
-//         db.transaction((tx: any) => {
-
+//         db.transaction((tx) => {
 //             tx.executeSql(
-//                 `SELECT * FROM products`,
-//                 [],
+//                 `SELECT * FROM products ORDER BY updatedAt DESC LIMIT 10 OFFSET ?`,
+//                 [offset],
 //                 (_: any, { rows }: any) => {
 //                     const allProducts = rows.raw();
 //                     resolve(allProducts);
@@ -60,6 +41,26 @@ export const getProducts = async (db: SQLiteDatabase, offset: number): Promise<a
 //         });
 //     });
 // };
+export const getProducts = async (db: SQLiteDatabase): Promise<any[]> => {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx: any) => {
+
+            tx.executeSql(
+                `SELECT * FROM products ORDER BY updatedAt DESC `,
+                [],
+                (_: any, { rows }: any) => {
+                    const allProducts = rows.raw();
+                    resolve(allProducts);
+                },
+                (_: any, error: any) => {
+                    console.error("❌ SELECT failed:", error);
+                    reject(error);
+                    return true;
+                }
+            );
+        });
+    });
+};
 export const getSychedProducts = async (db: SQLiteDatabase, offset: any): Promise<any[]> => {
     return new Promise((resolve, reject) => {
         db.transaction((tx: any) => {
@@ -102,17 +103,16 @@ export const getUnsyncedProducts = async (db: SQLiteDatabase, offset: any): Prom
         });
     });
 };
-
 export const saveProductItems = async (
     db: SQLiteDatabase,
     item: ProductItem
 ): Promise<ProductItem[]> => {
     try {
-
         const trimmedName = item.product_name.trim();
         item.synced = false;
+        item.quantity = 0;
 
-        // 1. Check for existing product
+        // 1. Check if product already exists (case-insensitive)
         const checkQuery = `SELECT COUNT(*) as count FROM products WHERE LOWER(product_name) = LOWER(?)`;
         const checkResult = await db.executeSql(checkQuery, [trimmedName]);
         const count = checkResult[0].rows.item(0).count;
@@ -124,26 +124,71 @@ export const saveProductItems = async (
         // 2. Insert product
         const insertQuery = `
         INSERT OR REPLACE INTO products 
-        (product_name, price, description, synced, created_at, updatedAt)
-        VALUES (?, ?, ?, ?, ?, ?)
+        (product_name, price, description, quantity, synced, created_at, updatedAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `;
 
         await db.executeSql(insertQuery, [
             trimmedName,
             parseFloat(item.price),
             item.description,
+            item.quantity,
             item.synced ? 1 : 0,
             new Date().toISOString(),
             new Date().toISOString()
         ]);
 
-        // 3. Return updated list
-        return await getProducts(db, 0);
+        // 3. Return updated product list
+        return await getProducts(db);
+
     } catch (error) {
         console.error('❌ Error saving product:', error);
         throw error;
     }
 };
+
+// export const saveProductItems = async (
+//     db: SQLiteDatabase,
+//     item: ProductItem
+// ): Promise<ProductItem[]> => {
+//     try {
+
+//         const trimmedName = item.product_name.trim();
+//         item.synced = false;
+//         item.quantity = 0
+//         // 1. Check for existing product
+//         const checkQuery = `SELECT COUNT(*) as count FROM products WHERE LOWER(product_name) = LOWER(?)`;
+//         const checkResult = await db.executeSql(checkQuery, [trimmedName]);
+//         const count = checkResult[0].rows.item(0).count;
+
+//         if (count > 0) {
+//             throw new Error(`❗ Product "${trimmedName}" already exists.`);
+//         }
+
+//         // 2. Insert product
+//         const insertQuery = `
+//         INSERT OR REPLACE INTO products 
+//         (product_name, price, description,quantity, synced, created_at, updatedAt)
+//         VALUES (?, ?, ?, ?, ?, ?, ?)
+//       `;
+
+//         await db.executeSql(insertQuery, [
+//             trimmedName,
+//             parseFloat(item.price),
+//             item.description,
+//             item.quantity,
+//             item.synced ? 1 : 0,
+//             new Date().toISOString(),
+//             new Date().toISOString()
+//         ]);
+
+//         // 3. Return updated list
+//         return await getProducts(db);
+//     } catch (error) {
+//         console.error('❌ Error saving product:', error);
+//         throw error;
+//     }
+// };
 export const softDeleteProduct = async (db: SQLiteDatabase, id: number) => {
     await db.executeSql(
         `UPDATE products SET deleted_at = datetime('now'), updated_at = datetime('now') WHERE id = ?`,
@@ -199,6 +244,7 @@ export const handleCSVUpload = async (db: SQLiteDatabase) => {
             const product = {
                 product_name: row.product_name,
                 price: row.price?.toString() || '0',
+                quantity: row.quantity?.toString() || '0',
                 description: row.description || '',
                 synced: false
             };

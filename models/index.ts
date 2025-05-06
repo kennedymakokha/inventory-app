@@ -8,7 +8,16 @@ export type ProductItem = {
     id?: string | any
     product_name: string;
     price: string;
+    quantity: number
     description: string,
+    updatedAt?: string
+    synced?: boolean
+};
+export type InventoryItem = {
+    _id?: string;
+    id?: string | any
+    product_id: string;
+    quantity: string
     updatedAt?: string
     synced?: boolean
 };

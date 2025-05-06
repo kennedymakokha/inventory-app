@@ -26,7 +26,7 @@ const LoginScreen = ({ navigation }: any) => {
     const handleLogin = async () => {
         try {
             setLoading(true)
-            const res = await authorizedFetch(`https://5e27-41-139-236-221.ngrok-free.app/api/auth/login`, {
+            const res = await authorizedFetch(`https://6fb5-41-139-236-221.ngrok-free.app/api/auth/login`, {
                 method: 'POST',
                 body: JSON.stringify(item),
             });
