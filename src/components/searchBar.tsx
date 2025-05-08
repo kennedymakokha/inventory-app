@@ -11,9 +11,9 @@ const SearchBar: React.FC<Props> = ({ placeholder = 'Search...', loading }) => {
     const { query, setQuery } = useSearch();
     return (
         <>
-            {loading ? <View className="bg-secondary-700   p-2 h-10 rounded-md animate-pulse "/> :
+            {loading ? <View className="bg-secondary-700   p-2 h-10 rounded-md animate-pulse " /> :
 
-                <View className="w-full border border-primary-600 px-2">
+                <View className="w-full border border-green-400 rounded-md px-2">
                     <TextInput
                         value={query}
                         onChangeText={setQuery}

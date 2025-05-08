@@ -8,24 +8,24 @@ const screenWidth = Dimensions.get('window').width;
 const itemWidth = (screenWidth);
 const itemLargeWidth = (screenWidth);
 const renderItem = ({ item }: any) => (
-    <View className={`flex-row justify-between w-[50%] rounded-md  h-40 items-center p-1 sm:p-3`}>
-
-        <View className={`flex items-center gap-y-2 w-full  shadow-3xl ${item.synced === 0 ? "bg-primary-100" : "bg-primary-50"}  h-full rounded-md justify-center`}>
-            
-            <Text className="text-base  text-sm sm:text-2xl  uppercase text-center font-bold tracking-widest">
-                {item.product_name}
-            </Text>
-            <Text className="text-base b-2 bg-secondary-300  rounded-md  px-2 ">
-                Ksh {item.price} 
-            </Text>
-            <View className='flex items-center flex-row justify-between w-full px-5'>
-              
-
+    <View className="flex-row bg-green-100 mx-4 my-2 rounded-xl shadow p-3 items-center"  >
+        {/* <Image source={item.image} className="w-12 h-8 mr-4 resize-contain" /> */}
+        < View className="flex-1 " >
+            <View className="flex-row gap-x-2 items-center">
+                <View>
+                    <Text className="font-bold text-base">{item.product_name}</Text>
+                </View>
             </View>
 
-        </View>
-
-    </View>
+            <Text className="text-gray-500 text-xs">{item.description}</Text>
+            <View className="flex-row justify-between items-center mt-2">
+                <View className="bg-slate-400 px-2 py-1 rounded">
+                    <Text className="text-xs text-slate-900">{item.quantity} {item.quantity !== 1 ? 'pcs' : 'pc'}</Text>
+                </View>
+                <Text className="font-bold text-base text-green-700">Ksh {item.price.toFixed(2)}</Text>
+            </View>
+        </View >
+    </View >
 
 );
 

@@ -125,12 +125,10 @@ const ProductScreen = () => {
         }
     };
 
-
+ 
     return (
-        <View className="flex-1 min-h-[300px] bg-secondary-900 px-5">
-``
+        <View className="flex-1 min-h-[300px] bg-slate-900 px-5">
             <View className="flex-1 ">
-               
                 {loading ? (
                     <SkeletonList />
                 ) : (<FlatList
@@ -138,8 +136,7 @@ const ProductScreen = () => {
                     data={products}
                     keyExtractor={(item, index) => String(item.id || item.product_name || index)}
                     renderItem={renderItem}
-                    numColumns={2}
-                    onEndReached={loadMoreData}
+                    onEndReached={() => loadDataCallback(offset, filter)}
                     onEndReachedThreshold={0.5}
                     ListFooterComponent={loading ? <ActivityIndicator className="my-4 text-secondary" /> : null}
                     refreshControl={
@@ -174,8 +171,8 @@ const ProductScreen = () => {
 
             {/* Floating Button */}
             <View className="absolute bottom-5 left-5 gap-y-5 right-5 z-50 items-center">
-                <View className="flex-row w-full justify-between ">
-                    <Fab icon="plus" loading={false} title="+" handleclick={onUploadPress} />
+                <View className="flex-row w-full justify-end ">
+                    {/* <Fab icon="plus" loading={false} title="+" handleclick={onUploadPress} /> */}
 
                     <Fab icon="plus" loading={false} title="+" handleclick={() => setModalVisible(true)} />
 

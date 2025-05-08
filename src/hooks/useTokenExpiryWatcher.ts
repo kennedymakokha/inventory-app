@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { jwtDecode } from 'jwt-decode';
 import { useNavigation } from '@react-navigation/native';
-import LoginScreen from '../screens/Logincreen';
 
 interface JWTPayload {
     exp: number;

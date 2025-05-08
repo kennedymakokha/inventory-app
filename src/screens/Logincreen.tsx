@@ -26,13 +26,14 @@ const LoginScreen = ({ navigation }: any) => {
     const handleLogin = async () => {
         try {
             setLoading(true)
-            const res = await authorizedFetch(`https://6fb5-41-139-236-221.ngrok-free.app/api/auth/login`, {
+            const res = await authorizedFetch(`http://185.113.249.137:5000/api/auth/login`, {
                 method: 'POST',
                 body: JSON.stringify(item),
             });
             await login(res.token)
-            console.log(res)
-           await AsyncStorage.setItem('userId', res.user._id);
+
+            await AsyncStorage.setItem('userId', res.user._id);
+            await AsyncStorage.setItem('user', res.user);
             setLoading(false)
             navigation.navigate('Products');
         } catch (err) {

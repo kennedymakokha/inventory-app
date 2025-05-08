@@ -73,33 +73,35 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => 
                 <Icon name="swap-horizontal-outline" size={20} color="#fff" />
                 <Text className="tracking-widest uppercase text-center text-white text-base ml-3">Products</Text>
             </TouchableOpacity>
+
             <TouchableOpacity
                 className="flex-row items-center my-4"
                 onPress={() => navigation.navigate('Home', { screen: `inventory` })
                     // navigation.navigate('inventory')
                 }
             >
-                <Icon name="swap-horizontal-outline" size={20} color="#fff" />
+                <Icon name="cog" size={20} color="#fff" />
                 <Text className="tracking-widest uppercase text-center text-white text-base ml-3">Inventory</Text>
             </TouchableOpacity>
 
-            {/* <TouchableOpacity
+            <TouchableOpacity
                 className="flex-row items-center my-4"
-                onPress={() => navigation.navigate('profile')}
+                onPress={() => navigation.navigate('Home', { screen: `sales` })
+                    // navigation.navigate('inventory')
+                }
             >
-                <Icon name="person-outline" size={20} color="#fff" />
-                <Text className="tracking-widest uppercase text-center text-white text-base ml-3">Profile</Text>
-            </TouchableOpacity> */}
-            {loading ? (
-                <ActivityIndicator size="large" color="#007AFF" />
-            ) : <TouchableOpacity
-                className="flex-row bg-red-500 py-4 rounded-md justify-center animate-pulse items-center my-4"
-                onPress={handleSync}
+                <Icon name="swap-horizontal-outline" size={20} color="#fff" />
+                <Text className="tracking-widest uppercase text-center text-white text-base ml-3">sales</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+                className="flex-row items-center my-4"
+                onPress={() => navigation.navigate('Home', { screen: `salesreport` })
+                    // navigation.navigate('inventory')
+                }
             >
-                <MaterialCommunityIcons name="cloud-sync" size={30} color="#fff" />
-                <Text className="text-white text-base text-bold text-xl ml-3">Sync</Text>
-            </TouchableOpacity>}
-
+                <Icon name="book" size={20} color="#fff" />
+                <Text className="tracking-widest uppercase text-center text-white text-base ml-3">Sales Report</Text>
+            </TouchableOpacity>
 
             {/* Footer */}
             <View className="mt-auto mb-20 border-t border-gray-700 pt-5">

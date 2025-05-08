@@ -27,7 +27,7 @@ function CustomHeader({ title, add }: { title: string, add?: boolean }) {
 }
 
 
-export function CustomHeaderWithSearch({ title, add }: { title: string, add?: boolean }) {
+export function CustomHeaderWithSearch({ title, noSearch }: { title: string, noSearch?: boolean }) {
     const navigation = useNavigation<NavigationProp<authStackParamList>>();
 
 
@@ -35,16 +35,16 @@ export function CustomHeaderWithSearch({ title, add }: { title: string, add?: bo
         <View className="flex-row items-center gap-x-2 p-4 w-full shadow-2xl bg-secondary-900 shadow-md">
             <TouchableOpacity
                 onPress={() => navigation.goBack()}
-                className="mr-4 w-[10%]"
+                className=" w-[10%]"
             >
                 <Ionicons name="chevron-back-sharp" size={24} color="#d4af37" />
             </TouchableOpacity>
             <View className="flex-row items-center  justify-between  ">
-                <Text className="text-lg uppercase text-primary-500 font-semibold  tracking-widest">{title}</Text>
+                <Text className="text-lg uppercase text-white font-bold  tracking-widest">{title}</Text>
             </View>
-            <View className="flex-row items-center   justify-between w-1/2  ">
+            {!noSearch&&<View className="flex-row items-center   justify-between w-1/2  ">
                 <SearchBar placeholder="search" />
-            </View>
+            </View>}
 
         </View>
     );

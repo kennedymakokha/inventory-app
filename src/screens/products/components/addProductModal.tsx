@@ -28,7 +28,7 @@ const AddProductModal = ({ modalVisible, msg, setMsg, setItem, PostLocally, fetc
                 setModalVisible(!modalVisible);
             }}>
             <View className='flex-1 px-10  bg-secondary-900 justify-center'>
-                <Text className="text-2xl font-bold text-center text-primary-500 mb-5">New Product</Text>
+                <Text className="text-2xl font-bold text-center uppercase text-green-500 mb-5">New Product</Text>
 
                 <InputContainer
                     label="Product"
@@ -52,12 +52,7 @@ const AddProductModal = ({ modalVisible, msg, setMsg, setItem, PostLocally, fetc
                     keyboardType="numeric"
                 />
                 <TextArea
-                    // className=""
-                    // multiline
-                    // numberOfLines={10}
-                    // textAlignVertical="top" // ensures the text starts at the top
                     placeholder="Type your message..."
-                    // placeholderTextColor="#999"
                     value={item.description}
                     onChangeText={(text: string) => handleChange("description", text)}
                 />

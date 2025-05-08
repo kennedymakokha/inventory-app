@@ -1,5 +1,5 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { authStackParamList } from "../../models";
+import { authStackParamList, ReportParamList } from "../../models";
 import LoginScreen from "../screens/Logincreen";
 import { useAuthContext } from "../context/authContext";
 import ProductScreen from "../screens/products/product.screen";
@@ -10,10 +10,12 @@ import DashboardScreen from "../screens/DashboardScreen";
 import InventoryScreen from "../screens/inventory/inventory.screen";
 import SearchBar from "../components/searchBar";
 import { View } from "react-native";
+import SalesScreen from "../screens/sales/salesScreen";
+import SalesReport from "../screens/reports/sales";
 
 const Stack = createNativeStackNavigator<authStackParamList>();
 
-
+const ReporStack = createNativeStackNavigator<ReportParamList>();
 const Tab = createBottomTabNavigator();
 
 function ProductsTabs() {
@@ -93,13 +95,59 @@ export function RootStack() {
       <Stack.Screen name="products"
         options={{
           title: "",
-          header: () => <CustomHeaderWithSearch title="My Inventory" />
+          header: () => <CustomHeaderWithSearch title="Products" />
         }}
         component={ProductsTabs} />
       <Stack.Screen name="inventory" options={{
         title: "",
-        header: () => <CustomHeaderWithSearch title="My Inventory" />
+        header: () => <CustomHeaderWithSearch title="Inventory" />
       }} component={InventoryScreen} />
+      <Stack.Screen name="sales" options={{
+        title: "",
+        header: () => <CustomHeaderWithSearch title="Sales" />
+      }} component={SalesScreen} />
+      <Stack.Screen name="salesreport" options={{
+        title: "",
+        header: () => <CustomHeaderWithSearch noSearch title="Sales Report" />
+      }} component={ReportStack} />
+
+
+    </Stack.Navigator>
+  );
+}
+
+export function ReportStack() {
+
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: true,
+        headerStyle: {
+          backgroundColor: '#0f172a', // change this to your desired color
+        },
+        headerTintColor: '#d4af37', // optional: change back button and title color
+        headerTitleStyle: {
+          fontWeight: 'bold',
+
+        },
+      }}
+    >
+      <ReporStack.Screen name="salesReport" options={{ headerShown: false }} component={SalesReport} />
+      {/*  <Stack.Screen name="products"
+        options={{
+          title: "",
+          header: () => <CustomHeaderWithSearch title="Products" />
+        }}
+        component={ProductsTabs} />
+      <Stack.Screen name="inventory" options={{
+        title: "",
+        header: () => <CustomHeaderWithSearch title="Inventory" />
+      }} component={InventoryScreen} />
+      <Stack.Screen name="sales" options={{
+        title: "",
+        header: () => <CustomHeaderWithSearch title="Sales" />
+      }} component={SalesScreen} /> */}
+
 
     </Stack.Navigator>
   );

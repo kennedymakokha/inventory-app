@@ -31,6 +31,11 @@ export type authStackParamList = {
     dashboard: any
     products: undefined
     inventory: undefined
+    sales: undefined
+    salesreport: undefined
+}
+export type ReportParamList = {
+    salesReport: undefined
 }
 
 export type User = {
@@ -49,4 +54,11 @@ export type InputProps = {
     hide?: boolean,
     setHide?: any,
     label?: string
+};
+
+export type CartItem = {
+    id: string;
+    product_name: string;
+    price: number;
+    quantity: number;
 };

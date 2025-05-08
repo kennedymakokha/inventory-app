@@ -30,7 +30,7 @@ export const getProducts = async (db: SQLiteDatabase): Promise<any[]> => {
         db.transaction((tx: any) => {
 
             tx.executeSql(
-                `SELECT * FROM products ORDER BY updatedAt DESC `,
+                `SELECT * FROM products `,
                 [],
                 (_: any, { rows }: any) => {
                     const allProducts = rows.raw();
@@ -108,7 +108,7 @@ export const saveProductItems = async (
 
         // 2. Insert product
         const insertQuery = `
-        INSERT OR REPLACE INTO products 
+        INSERT INTO products 
         (product_name, price,Bprice,createdBy, description, quantity, synced, created_at, updatedAt)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
