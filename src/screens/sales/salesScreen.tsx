@@ -11,6 +11,8 @@ import Toast from '../../components/Toast';
 import { InputContainer } from '../../components/Input';
 import { useSearch } from '../../context/searchContext';
 import { SkeletonList } from './components/skeleton';
+import PageHeader from '../../components/pageHeader';
+import SearchBar from '../../components/searchBar';
 
 
 const SalesScreen = () => {
@@ -172,19 +174,11 @@ const SalesScreen = () => {
     const filtered = products.filter((item: any) => item.product_name.includes(query))
     return (
         <View className="flex-1 dark:bg-slate-900 ">
-            <View className="bg-green-700 p-4 rounded-b-2xl">
-                <View>
-                    <Text className="text-white text-xl font-bold">Joana Leite</Text>
-                    <View className="bg-gray-200 px-2 py-1 rounded mt-1 self-start">
-                        <Text className="text-xs font-semibold text-gray-700">SO-00001</Text>
-                    </View>
-                    <Text className="text-white text-xs mt-1">Req. ship date Nov 28, 2019</Text>
-                    <View className="flex-row space-x-2 mt-2">
-                        <Text className="bg-green-500 text-white px-2 py-1 rounded text-xs">Fulfilled</Text>
-                        <Text className="bg-orange-500 text-white px-2 py-1 rounded text-xs">Paid $1,000.00</Text>
-                    </View>
-                </View>
-            </View>
+            <PageHeader component={() => {
+                return (
+                    <SearchBar white placeholder="search for a Product" />
+                )
+            }} />
             {/* <Text className="text-2xl font-bold text-center dark:text-slate-900 text-white mb-4">Sales</Text> */}
             {loading ? (
                 <SkeletonList />

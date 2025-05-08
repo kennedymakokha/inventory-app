@@ -94,70 +94,111 @@ export const fetchSales = async (db: SQLiteDatabase): Promise<any[]> => {
 // }
 // }
 export function fetchGroupedProfit(db: SQLiteDatabase, groupType: any, callback: any) {
-    console.log("transaction-begins")
-    let query = '';
 
+    let query = '';
     // Construct query based on groupType (weekly, monthly, yearly)
     switch (groupType) {
         case 'all':
             query = `
-         SELECT 
-              sales.id AS sales_id,
-              sales.product_id,
-              sales.synced,
-              products.product_name,
-              products.quantity AS product_quantity,
-              products.price AS product_price,
-              sales.created_at,
-              sales.updatedAt
-           FROM sales
-           JOIN products ON sales.product_id = products.id
-           ORDER BY sales.updatedAt DESC
-           LIMIT 10`;
+        SELECT 
+            products.product_name,
+            SUM(sales.quantity) AS total_units_sold,
+            SUM((products.price - products.Bprice) * sales.quantity) AS total_profit,
+            products.price AS product_price,
+            sales.created_at AS day,
+            products.Bprice AS product_Bprice,
+            products.quantity AS current_stock
+        FROM sales
+        JOIN products ON sales.product_id = products.id
+        GROUP BY products.product_name
+        ORDER BY total_profit DESC;`;
+            break;
+        case 'daily':
+            query = `
+            SELECT 
+        sales.product_id,
+        sales.synced,
+        strftime('%Y-%m-%d', sales.created_at) AS day,
+        products.product_name,
+        products.price AS product_price,
+        products.Bprice AS product_Bprice,
+        products.quantity AS current_stock,
+        SUM((products.price - products.Bprice) * sales.quantity) AS total_profit,
+        SUM(sales.quantity) AS total_units_sold
+    FROM sales
+    JOIN products ON sales.product_id = products.id
+    WHERE strftime('%Y-%m', sales.created_at) = strftime('%Y-%m', 'now')
+    GROUP BY sales.product_id, day
+    ORDER BY day DESC, total_profit DESC
+    LIMIT 10;`;
             break;
         case 'weekly':
             query = `
-          SELECT 
-            p.product_name,
-            strftime('%Y-W%W', s.created_at) AS week,
-            SUM((p.price - p.Bprice) * p.quantity) AS total_profit,
-          FROM sales s
-          JOIN products p ON s.product_id = p.id
-          GROUP BY p.product_name, week
-          ORDER BY week DESC;
+       SELECT 
+    sales.product_id,
+    products.product_name,
+    products.price AS product_price,
+    products.Bprice AS product_Bprice,
+    products.quantity AS current_stock,
+    strftime('%Y-W%W', sales.created_at) AS day,  -- e.g., "2025-W18"
+    SUM((products.price - products.Bprice) * sales.quantity) AS total_profit,
+    SUM(sales.quantity) AS total_units_sold
+FROM sales
+JOIN products ON sales.product_id = products.id
+GROUP BY sales.product_id, day
+ORDER BY day DESC, total_profit DESC
+LIMIT 10;
         `;
             break;
         case 'monthly':
             query = `
-             SELECT 
-              sales.id AS sales_id,
-              sales.product_id,
-              sales.synced,
-              strftime('%Y-%m-%d', sales.created_at) AS day,
-              products.product_name,
-              products.quantity AS product_quantity,
-              products.price AS product_price,
-              SUM((products.price - products.Bprice) * sales.quantity) AS total_profit,
-              sales.created_at,
-              sales.updatedAt
-           FROM sales
-           JOIN products ON sales.product_id = products.id
-           ORDER BY day DESC
-        
-           LIMIT 10;
-        `
-                ;
+       SELECT 
+    sales.product_id,
+    products.product_name,
+    products.price AS product_price,
+    products.Bprice AS product_Bprice,
+    products.quantity AS current_stock,
+    strftime('%m', sales.created_at) AS month_number,
+    strftime('%Y', sales.created_at) AS year,
+    CASE strftime('%m', sales.created_at)
+        WHEN '01' THEN 'Jan'
+        WHEN '02' THEN 'Feb'
+        WHEN '03' THEN 'Mar'
+        WHEN '04' THEN 'Apr'
+        WHEN '05' THEN 'May'
+        WHEN '06' THEN 'Jun'
+        WHEN '07' THEN 'Jul'
+        WHEN '08' THEN 'Aug'
+        WHEN '09' THEN 'Sep'
+        WHEN '10' THEN 'Oct'
+        WHEN '11' THEN 'Nov'
+        WHEN '12' THEN 'Dec'
+    END AS day,
+    SUM((products.price - products.Bprice) * sales.quantity) AS total_profit,
+    SUM(sales.quantity) AS total_units_sold
+FROM sales
+JOIN products ON sales.product_id = products.id
+GROUP BY sales.product_id, month_number, year
+ORDER BY year DESC, month_number DESC, total_profit DESC
+LIMIT 10;
+`;
             break;
         case 'yearly':
             query = `
           SELECT 
-            p.product_name,
-            strftime('%Y-%m', s.timestamp) AS month,
-            SUM((p.selling_price - p.buying_price) * s.quantity) AS total_profit
-          FROM sales s
-          JOIN products p ON s.product_id = p.id
-          GROUP BY p.product_name, month
-          ORDER BY month DESC;
+    sales.product_id,
+    products.product_name,
+    products.price AS product_price,
+    products.Bprice AS product_Bprice,
+    products.quantity AS current_stock,
+    strftime('%Y', sales.created_at) AS day,  -- Year shown in "day" column
+    SUM((products.price - products.Bprice) * sales.quantity) AS total_profit,
+    SUM(sales.quantity) AS total_units_sold
+FROM sales
+JOIN products ON sales.product_id = products.id
+GROUP BY sales.product_id, day
+ORDER BY day DESC, total_profit DESC
+LIMIT 10;
         `;
             break;
         default:

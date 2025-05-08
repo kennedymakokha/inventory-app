@@ -12,7 +12,7 @@ import { User } from '../../models';
 const LoginScreen = ({ navigation }: any) => {
     const [msg, setMsg] = useState({ msg: "", state: "" });
     const [loading, setLoading] = useState(false)
-    const [item, setItem] = useState({ phone_number: "0700000000", password: 'makokha1' });
+    const [item, setItem] = useState({ phone_number: "", password: '' });
     const { token, login } = useAuthContext();
     const handleChange = (key: keyof User, value: string) => {
         setMsg({ msg: "", state: "" });
@@ -26,7 +26,7 @@ const LoginScreen = ({ navigation }: any) => {
     const handleLogin = async () => {
         try {
             setLoading(true)
-            const res = await authorizedFetch(`http://185.113.249.137:5000/api/auth/login`, {
+            const res = await authorizedFetch(`https://scanapi.marapesa.com/api/auth/login`, {
                 method: 'POST',
                 body: JSON.stringify(item),
             });

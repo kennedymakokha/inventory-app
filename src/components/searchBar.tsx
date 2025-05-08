@@ -5,21 +5,22 @@ import { useSearch } from '../context/searchContext';
 type Props = {
     placeholder?: string;
     loading?: boolean
+    white?: boolean
 };
 
-const SearchBar: React.FC<Props> = ({ placeholder = 'Search...', loading }) => {
+const SearchBar: React.FC<Props> = ({ placeholder = 'Search...', loading, white }) => {
     const { query, setQuery } = useSearch();
     return (
         <>
             {loading ? <View className="bg-secondary-700   p-2 h-10 rounded-md animate-pulse " /> :
 
-                <View className="w-full border border-green-400 rounded-md px-2">
+                <View className={`w-full ${white ? "bg-slate-50 rounded-md" : "border border-green-400"} rounded-md px-2`}>
                     <TextInput
                         value={query}
                         onChangeText={setQuery}
                         placeholder={placeholder}
-                        className="w-full px-3 py-2 h-10 text-end text-primary-100 rounded-md text-black"
-                        placeholderTextColor="#ffceff"
+                        className={`w-full px-3 py-2 h-10 text-end ${white?"text-green-400":"text-primary-900 "}rounded-md   `}
+                        placeholderTextColor={white?"black":"#ffceff"}
                     />
                 </View>
             }

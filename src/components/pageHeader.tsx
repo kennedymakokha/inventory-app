@@ -3,7 +3,7 @@ import React, { useEffect } from 'react'
 import { FormatDate } from '../../utils/formatDate'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-const PageHeader = ({ Component }: any) => {
+const PageHeader = ({ component }: { component: () => React.ReactNode }) => {
     let user
     useEffect(() => {
         const userobj = async () => {
@@ -20,7 +20,7 @@ const PageHeader = ({ Component }: any) => {
                     <Text className="text-xs font-semibold text-gray-700">SO-00001</Text>
                 </View>
                 <Text className="text-white text-xs mt-1">Req.date {FormatDate(Date())}</Text>
-                {/* {<Component />} */}
+                {component()}
             </View>
         </View>
     )

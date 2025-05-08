@@ -30,19 +30,19 @@ const CheckoutModal = ({ modalVisible, cartItems, msg, setMsg, setItem, PostLoca
             onRequestClose={() => {
                 setModalVisible(!modalVisible);
             }}>
-            <View className="flex-1 mt-14 px-2" style={{ height: screenHight }}>
-                <View className="bg-slate-200 dark:bg-slate-800 p-4 min-h-full h-full rounded-lg shadow-md">
-                    <Text className="text-xl font-bold mb-3 text-slate-900 dark:text-white">🛒 Checkout</Text>
+            <View className="flex-1  px-2 bg-slate-900" >
+                <View className="dark:bg-green-100 bg-slate-800 p-4 min-h-3/4 mt-20 h-3/4 rounded-lg shadow-md">
+                    <Text className="text-xl font-bold mb-3 dark:text-slate-900 text-white">🛒 Checkout</Text>
 
                     <FlatList
                         data={cartItems}
                         keyExtractor={(item) => item.id}
                         renderItem={({ item }) => (
                             <View className="flex-row justify-between mb-2">
-                                <Text className="text-slate-800  dark:text-slate-200">
+                                <Text className="dark:text-slate-800  text-slate-200">
                                     {item.product_name} x {item.quantity}
                                 </Text>
-                                <Text className="text-slate-800 dark:text-slate-200">
+                                <Text className="dark:text-slate-800 text-slate-200">
                                     Ksh {calculateSubtotal(item).toFixed(2)}
                                 </Text>
                             </View>

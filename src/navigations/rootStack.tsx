@@ -104,7 +104,7 @@ export function RootStack() {
       }} component={InventoryScreen} />
       <Stack.Screen name="sales" options={{
         title: "",
-        header: () => <CustomHeaderWithSearch title="Sales" />
+        header: () => <CustomHeaderWithSearch   noSearch title="Sales" />
       }} component={SalesScreen} />
       <Stack.Screen name="salesreport" options={{
         title: "",
