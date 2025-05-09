@@ -95,16 +95,16 @@ export function RootStack() {
       <Stack.Screen name="products"
         options={{
           title: "",
-          header: () => <CustomHeaderWithSearch title="Products" />
+          header: () => <CustomHeaderWithSearch noSearch title="Products" />
         }}
         component={ProductsTabs} />
       <Stack.Screen name="inventory" options={{
         title: "",
-        header: () => <CustomHeaderWithSearch title="Inventory" />
+        header: () => <CustomHeaderWithSearch noSearch title="Inventory" />
       }} component={InventoryScreen} />
       <Stack.Screen name="sales" options={{
         title: "",
-        header: () => <CustomHeaderWithSearch   noSearch title="Sales" />
+        header: () => <CustomHeaderWithSearch noSearch title="Sales" />
       }} component={SalesScreen} />
       <Stack.Screen name="salesreport" options={{
         title: "",

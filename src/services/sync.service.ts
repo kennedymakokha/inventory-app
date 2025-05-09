@@ -4,19 +4,20 @@
 import { authorizedFetch } from '../middleware/auth.middleware';
 import { getDBConnection } from './db-service';
 import { getUnsyncedProducts, markProductAsSynced } from './product.service';
-
-const API_URL = 'https://5e27-41-139-236-221.ngrok-free.app/api'; // Replace with your backend base URL
+import { API_URL } from '@env';
 
 export const syncData = async () => {
     try {
+        console.log("sycing data")
         const db = await getDBConnection();
         const unsyncedProducts = await getUnsyncedProducts(db, 1000);
+        
         for (const product of unsyncedProducts) {
-            const response = await authorizedFetch(`${API_URL}/products/sync`, {
+            const response = await authorizedFetch(`${API_URL}api/products/sync`, {
                 method: 'POST',
                 body: JSON.stringify(product),
             });
-            if (response.success===true ) {
+            if (response.success === true) {
                 await markProductAsSynced(product.id, db);
             }
         }

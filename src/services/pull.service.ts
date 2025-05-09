@@ -4,8 +4,7 @@ import { getNow } from './../../utils';
 import { authorizedFetch } from '../middleware/auth.middleware';
 import { SQLiteDatabase } from 'react-native-sqlite-storage';
 import { getDBConnection } from './db-service';
-
-const API_URL = 'https://5e27-41-139-236-221.ngrok-free.app/api'; // Replace with actual backend URL
+import { API_URL } from '@env';
 
 // Helper to get last sync timestamp (could also use AsyncStorage)
 let lastSync = '2020-01-01T00:00:00.000Z'; // default fallback
@@ -61,13 +60,13 @@ export const pullServerUpdates = async () => {
     try {
         // Pull Products
         const db = await getDBConnection();
-        const productRes = await authorizedFetch(`${API_URL}/products/updates?since=${lastSync}`);
+        const productRes = await authorizedFetch(`${API_URL}api/products/updates?since=${lastSync}`);
 
 
         for (let index = 0; index < productRes.length; index++) {
 
             const p = productRes[index];
-            
+
             updateLocalProduct(p, db);
         }
 

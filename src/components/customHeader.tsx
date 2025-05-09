@@ -11,16 +11,26 @@ function CustomHeader({ title, add }: { title: string, add?: boolean }) {
 
 
     return (
-        <View className="flex-row items-center p-4 bg-secondary-900 shadow-md">
+        <View className="flex-row items-center justify-between p-4 bg-secondary-900 shadow-md">
+            <View className="flex-row items-center">
+                <TouchableOpacity
+                    onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+                    className="mr-4"
+                >
+                    <Ionicons name="menu" size={24} color="#d4af37" />
+                </TouchableOpacity>
+                <View className="flex-row items-center  justify-between  ">
+                    <Text className="text-lg uppercase text-primary-500 font-semibold  tracking-widest">{title}</Text>
+                </View>
+            </View>
+
             <TouchableOpacity
                 onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
                 className="mr-4"
             >
-                <Ionicons name="menu" size={24} color="#d4af37" />
+                <Ionicons name="cart-sharp" size={24} color="#d4af37" />
             </TouchableOpacity>
-            <View className="flex-row items-center  justify-between w-full ">
-                <Text className="text-lg uppercase text-primary-500 font-semibold  tracking-widest">{title}</Text>
-            </View>
+
 
         </View>
     );
@@ -42,7 +52,7 @@ export function CustomHeaderWithSearch({ title, noSearch }: { title: string, noS
             <View className="flex-row items-center  justify-between  ">
                 <Text className="text-lg uppercase text-white font-bold  tracking-widest">{title}</Text>
             </View>
-            {!noSearch&&<View className="flex-row items-center   justify-between w-1/2  ">
+            {!noSearch && <View className="flex-row items-center   justify-between w-1/2  ">
                 <SearchBar placeholder="search" />
             </View>}
 

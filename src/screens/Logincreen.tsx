@@ -8,12 +8,17 @@ import { authorizedFetch } from '../middleware/auth.middleware';
 import Button from '../components/Button';
 import { useAuthContext } from '../context/authContext';
 import { User } from '../../models';
+import { setCredentials } from '../features/auth/authSlice';
+import { useDispatch } from 'react-redux';
+import { useLoginMutation } from '../services/authApi';
 
 const LoginScreen = ({ navigation }: any) => {
     const [msg, setMsg] = useState({ msg: "", state: "" });
     const [loading, setLoading] = useState(false)
     const [item, setItem] = useState({ phone_number: "", password: '' });
-    const { token, login } = useAuthContext();
+    const [loginUser, { isLoading, error }] = useLoginMutation();
+    const dispatch = useDispatch()
+    const { login } = useAuthContext();
     const handleChange = (key: keyof User, value: string) => {
         setMsg({ msg: "", state: "" });
 
@@ -23,22 +28,34 @@ const LoginScreen = ({ navigation }: any) => {
         }));
     };
 
-    const handleLogin = async () => {
-        try {
-            setLoading(true)
-            const res = await authorizedFetch(`https://scanapi.marapesa.com/api/auth/login`, {
-                method: 'POST',
-                body: JSON.stringify(item),
-            });
-            await login(res.token)
 
-            await AsyncStorage.setItem('userId', res.user._id);
-            await AsyncStorage.setItem('user', res.user);
-            setLoading(false)
-            navigation.navigate('Products');
-        } catch (err) {
-            setLoading(false)
-            Alert.alert('Login Failed', 'Invalid credentials');
+    const handleLogin = async (e?: any) => {
+        try {
+            setMsg({ msg: "", state: "" });
+
+            if (!item.phone_number || !item.password) {
+                setMsg({ msg: "Both fields are required", state: "error" });
+                return;
+            }
+
+            const data = await loginUser(item).unwrap()
+
+            if (data.ok === true) {
+                dispatch(setCredentials({ ...data }))
+                await AsyncStorage.setItem("accessToken", data.token);
+                if (data?.exp) {
+                    await AsyncStorage.setItem("tokenExpiry", data.exp.toString());
+                    await login(data.token);
+                }
+                setMsg({ msg: `Login successful! Redirecting...`, state: "success" })
+
+            }
+        } catch (error: any) {
+            console.error(error);
+            setMsg({ msg: error.message || error.data || "Error Occured try again 😧😧😧 !!!", state: "error" });
+
+        } finally {
+
         }
     };
 

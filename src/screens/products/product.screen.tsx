@@ -7,6 +7,7 @@ import {
     FlatList,
     RefreshControl,
     Text,
+    TouchableOpacity,
     useColorScheme,
     View,
 } from 'react-native';
@@ -23,6 +24,7 @@ import { SkeletonList } from './skeleton';
 import UploadProductsModal from './components/uploadProduct.modal';
 import SearchBar from '../../components/searchBar';
 import { useSearch } from '../../context/searchContext';
+import PageHeader from '../../components/pageHeader';
 
 
 const ProductScreen = () => {
@@ -125,9 +127,10 @@ const ProductScreen = () => {
         }
     };
 
- 
+
     return (
         <View className="flex-1 min-h-[300px] bg-slate-900 px-5">
+            <PageHeader />
             <View className="flex-1 ">
                 {loading ? (
                     <SkeletonList />

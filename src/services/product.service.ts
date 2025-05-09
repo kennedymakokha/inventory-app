@@ -8,6 +8,23 @@ import RNFS from 'react-native-fs'; // Already included in many RN setups
 import { pick, types, keepLocalCopy } from '@react-native-documents/picker';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+
+
+export const createSyncTable = async (db: SQLiteDatabase) => {
+    // create table if not exists
+    const query = `CREATE TABLE IF NOT EXISTS sync_status (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    last_sync TEXT
+  );`;
+    await db.executeSql(query);
+};
+
+export const sync = async (db: SQLiteDatabase) => {
+    await db.executeSql(`INSERT INTO sync_status (last_sync) VALUES (datetime('now'))`);
+};
+export const Unsyncsync = async (db: SQLiteDatabase) => {
+    await db.executeSql(`DELETE FROM sync_status`);
+};
 export const createProductTable = async (db: SQLiteDatabase) => {
     // create table if not exists
     const query = `CREATE TABLE IF NOT EXISTS products (
@@ -124,7 +141,22 @@ export const saveProductItems = async (
             new Date().toISOString(),
             new Date().toISOString()
         ]);
+//         // 3. Get last inserted product ID
+//         const [idResult] = await db.executeSql(`SELECT last_insert_rowid() as id`);
+//         const productId = idResult.rows.item(0).id;
 
+//         // 4. Create inventory record
+//         const insertInventoryQuery = `
+//       INSERT INTO inventory (product_id, quantity, updatedAt,createdBy,synced)
+//       VALUES (?, ?, ?, ?, ?)
+//   `;
+//         await db.executeSql(insertInventoryQuery, [
+//             productId,
+//             item.quantity,
+//             item.synced = false,
+//             new Date().toISOString(),
+//             item.createdBy
+//         ]);
         // 3. Return updated product list
         return await getProducts(db);
 
@@ -201,7 +233,7 @@ export const fullSync = async () => {
     try {
         console.log('🔄 Starting full sync...');
         await syncData();           // Push unsynced local changes
-        await pullServerUpdates();  // Pull latest server changes
+        // await pullServerUpdates();  // Pull latest server changes
         console.log('✅ Full sync complete.');
     } catch (err) {
         console.error('❌ Full sync failed:', err);

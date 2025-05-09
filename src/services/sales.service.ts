@@ -115,91 +115,147 @@ export function fetchGroupedProfit(db: SQLiteDatabase, groupType: any, callback:
             break;
         case 'daily':
             query = `
-            SELECT 
-        sales.product_id,
-        sales.synced,
-        strftime('%Y-%m-%d', sales.created_at) AS day,
-        products.product_name,
-        products.price AS product_price,
-        products.Bprice AS product_Bprice,
-        products.quantity AS current_stock,
-        SUM((products.price - products.Bprice) * sales.quantity) AS total_profit,
-        SUM(sales.quantity) AS total_units_sold
-    FROM sales
-    JOIN products ON sales.product_id = products.id
-    WHERE strftime('%Y-%m', sales.created_at) = strftime('%Y-%m', 'now')
-    GROUP BY sales.product_id, day
-    ORDER BY day DESC, total_profit DESC
-    LIMIT 10;`;
+        SELECT 
+            sales.product_id,
+            sales.synced,
+            strftime('%Y-%m-%d', sales.created_at) AS day,
+            products.product_name,
+            products.price AS product_price,
+            products.Bprice AS product_Bprice,
+            products.quantity AS current_stock,
+            SUM((products.price - products.Bprice) * sales.quantity) AS total_profit,
+            SUM(sales.quantity) AS total_units_sold
+        FROM sales
+        JOIN products ON sales.product_id = products.id
+        WHERE strftime('%Y-%m', sales.created_at) = strftime('%Y-%m', 'now')
+        GROUP BY sales.product_id, day
+        ORDER BY day DESC, total_profit DESC
+        LIMIT 10;`;
             break;
         case 'weekly':
             query = `
        SELECT 
-    sales.product_id,
-    products.product_name,
-    products.price AS product_price,
-    products.Bprice AS product_Bprice,
-    products.quantity AS current_stock,
-    strftime('%Y-W%W', sales.created_at) AS day,  -- e.g., "2025-W18"
-    SUM((products.price - products.Bprice) * sales.quantity) AS total_profit,
-    SUM(sales.quantity) AS total_units_sold
-FROM sales
-JOIN products ON sales.product_id = products.id
-GROUP BY sales.product_id, day
-ORDER BY day DESC, total_profit DESC
-LIMIT 10;
+            sales.product_id,
+            products.product_name,
+            products.price AS product_price,
+            products.Bprice AS product_Bprice,
+            products.quantity AS current_stock,
+            strftime('%Y-W%W', sales.created_at) AS day,  -- e.g., "2025-W18"
+            SUM((products.price - products.Bprice) * sales.quantity) AS total_profit,
+            SUM(sales.quantity) AS total_units_sold
+        FROM sales
+        JOIN products ON sales.product_id = products.id
+        GROUP BY sales.product_id, day
+        ORDER BY day DESC, total_profit DESC
+        LIMIT 10;
         `;
             break;
         case 'monthly':
             query = `
-       SELECT 
-    sales.product_id,
-    products.product_name,
-    products.price AS product_price,
-    products.Bprice AS product_Bprice,
-    products.quantity AS current_stock,
-    strftime('%m', sales.created_at) AS month_number,
-    strftime('%Y', sales.created_at) AS year,
-    CASE strftime('%m', sales.created_at)
-        WHEN '01' THEN 'Jan'
-        WHEN '02' THEN 'Feb'
-        WHEN '03' THEN 'Mar'
-        WHEN '04' THEN 'Apr'
-        WHEN '05' THEN 'May'
-        WHEN '06' THEN 'Jun'
-        WHEN '07' THEN 'Jul'
-        WHEN '08' THEN 'Aug'
-        WHEN '09' THEN 'Sep'
-        WHEN '10' THEN 'Oct'
-        WHEN '11' THEN 'Nov'
-        WHEN '12' THEN 'Dec'
-    END AS day,
-    SUM((products.price - products.Bprice) * sales.quantity) AS total_profit,
-    SUM(sales.quantity) AS total_units_sold
-FROM sales
-JOIN products ON sales.product_id = products.id
-GROUP BY sales.product_id, month_number, year
-ORDER BY year DESC, month_number DESC, total_profit DESC
-LIMIT 10;
-`;
+        SELECT 
+            sales.product_id,
+            products.product_name,
+            products.price AS product_price,
+            products.Bprice AS product_Bprice,
+            products.quantity AS current_stock,
+            strftime('%m', sales.created_at) AS month_number,
+            strftime('%Y', sales.created_at) AS year,
+            CASE strftime('%m', sales.created_at)
+                WHEN '01' THEN 'Jan'
+                WHEN '02' THEN 'Feb'
+                WHEN '03' THEN 'Mar'
+                WHEN '04' THEN 'Apr'
+                WHEN '05' THEN 'May'
+                WHEN '06' THEN 'Jun'
+                WHEN '07' THEN 'Jul'
+                WHEN '08' THEN 'Aug'
+                WHEN '09' THEN 'Sep'
+                WHEN '10' THEN 'Oct'
+                WHEN '11' THEN 'Nov'
+                WHEN '12' THEN 'Dec'
+                END AS day,
+            SUM((products.price - products.Bprice) * sales.quantity) AS total_profit,
+            SUM(sales.quantity) AS total_units_sold
+        FROM sales
+        JOIN products ON sales.product_id = products.id
+        GROUP BY sales.product_id, month_number, year
+        ORDER BY year DESC, month_number DESC, total_profit DESC
+        LIMIT 10;`;
             break;
         case 'yearly':
             query = `
-          SELECT 
-    sales.product_id,
-    products.product_name,
-    products.price AS product_price,
-    products.Bprice AS product_Bprice,
-    products.quantity AS current_stock,
-    strftime('%Y', sales.created_at) AS day,  -- Year shown in "day" column
-    SUM((products.price - products.Bprice) * sales.quantity) AS total_profit,
-    SUM(sales.quantity) AS total_units_sold
-FROM sales
-JOIN products ON sales.product_id = products.id
-GROUP BY sales.product_id, day
-ORDER BY day DESC, total_profit DESC
-LIMIT 10;
-        `;
+        SELECT 
+            sales.product_id,
+            products.product_name,
+            products.price AS product_price,
+            products.Bprice AS product_Bprice,
+            products.quantity AS current_stock,
+            strftime('%Y', sales.created_at) AS day,  -- Year shown in "day" column
+            SUM((products.price - products.Bprice) * sales.quantity) AS total_profit,
+            SUM(sales.quantity) AS total_units_sold
+        FROM sales
+        JOIN products ON sales.product_id = products.id
+        GROUP BY sales.product_id, day
+        ORDER BY day DESC, total_profit DESC
+        LIMIT 10;`;
+            break;
+        case 'non-profit':
+            query = `
+        SELECT 
+            strftime('%w', sales.created_at) AS weekday,
+            SUM(sales.quantity * products.price) AS total_sales,
+            SUM((products.price - products.Bprice) * sales.quantity) AS total_profit
+        FROM sales
+        JOIN products ON sales.product_id = products.id
+        WHERE strftime('%Y-%W', sales.created_at) = strftime('%Y-%W', 'now')
+        GROUP BY weekday
+        ORDER BY weekday ASC;
+          `;
+            break;
+        case 'best':
+            query = `
+        SELECT 
+            products.product_name,
+            SUM((products.price - products.Bprice) * sales.quantity) AS profit
+        FROM sales
+        JOIN products ON sales.product_id = products.id
+        WHERE date(sales.created_at) = date('now')
+        GROUP BY sales.product_id
+        ORDER BY profit DESC
+        LIMIT 1;
+          `;
+            break;
+        case 'worst':
+            query = `
+        SELECT 
+              products.product_name,
+              SUM((products.price - products.Bprice) * sales.quantity) AS profit
+          FROM sales
+          JOIN products ON sales.product_id = products.id
+          WHERE date(sales.created_at) = date('now')
+          GROUP BY sales.product_id
+          ORDER BY profit ASC
+          LIMIT 1;
+            `;
+            break;
+        case 'profit':
+            query = `
+           SELECT 
+      SUM((products.price - products.Bprice) * sales.quantity) AS total_profit
+    FROM sales
+    JOIN products ON sales.product_id = products.id
+    WHERE date(sales.created_at) = date('now');
+                `;
+            break;
+        case 'low-stock':
+            query = `
+           SSELECT 
+  product_name,
+  quantity
+FROM products
+WHERE quantity < 10
+ORDER BY quantity ASC;
+                `;
             break;
         default:
             return;

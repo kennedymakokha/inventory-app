@@ -10,6 +10,7 @@ import InventoryModal from './components/addInventoryModal';
 import { getProducts } from '../../services/product.service';
 import { useSearch } from '../../context/searchContext';
 import { uniqueInventory } from '../../../utils/useDropDown';
+import PageHeader from '../../components/pageHeader';
 
 export default function InventoryScreen() {
     const initialState = {
@@ -85,6 +86,7 @@ export default function InventoryScreen() {
 
     return (
         <View className="flex-1 min-h-[300px] bg-secondary-900 px-5">
+             <PageHeader />
             <View className="flex-1 ">
                 {loading ? (
                     <SkeletonList />
@@ -92,19 +94,18 @@ export default function InventoryScreen() {
                     data={filteredData}
                     keyExtractor={(item: any) => item.inventory_id}
                     renderItem={({ item }: any) => (
-                        <View className={`flex-row justify-between ${item.synced === 0 ? "bg-primary-100" : "bg-primary-50"} p-4 rounded-lg shadow-md mt-2`}>
+                        <View className={`flex-row justify-between ${item.synced === 0 ? "bg-green-100" : "bg-green-50"} p-4 rounded-lg shadow-md mt-2`}>
                             <View>
-                                <Text className="font-bold text-secondary-900 dark:text-white text-lg">
+                                <Text className="font-bold text-secondary-900  text-lg">
                                     {item.product_name}
                                 </Text>
-                                <Text className="text-gray-600 dark:text-gray-300">
+                                <Text className="dark:text-gray-600 text-gray-300">
                                     Stock: {item.product_quantity}
                                 </Text>
-                                <Text className="text-slate-900 dark:text-slate-200 font-bold">
+                                <Text className="dark:text-slate-900 text-slate-200 font-bold">
                                     Price: @{parseFloat(item.product_price).toFixed(2)}
                                 </Text>
                             </View>
-
                             <TouchableOpacity
                                 onPress={() => openModal(item)}
                                 className={`${item.product_quantity < 20 ? "bg-red-600" : "bg-green-600"} dark:bg-secondary-800 p-2 flex items-center justify-center rounded`}>
