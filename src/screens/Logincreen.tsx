@@ -37,16 +37,18 @@ const LoginScreen = ({ navigation }: any) => {
                 setMsg({ msg: "Both fields are required", state: "error" });
                 return;
             }
-
+            setLoading(true)
             const data = await loginUser(item).unwrap()
 
             if (data.ok === true) {
                 dispatch(setCredentials({ ...data }))
                 await AsyncStorage.setItem("accessToken", data.token);
+                await AsyncStorage.setItem('userId', data.user._id);
                 if (data?.exp) {
                     await AsyncStorage.setItem("tokenExpiry", data.exp.toString());
                     await login(data.token);
                 }
+                setLoading(false)
                 setMsg({ msg: `Login successful! Redirecting...`, state: "success" })
 
             }

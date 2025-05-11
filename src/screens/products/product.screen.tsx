@@ -14,7 +14,7 @@ import {
 
 import { getDBConnection } from '../../services/db-service';
 import { ProductItem, ToDoItem } from '../../../models';
-import { createProductTable, fullSync, getProducts, getSychedProducts, getUnsyncedProducts, handleCSVUpload, saveProductItems } from '../../services/product.service';
+import { createProductTable, fullSync, getProducts, getSychedProducts, getUnsyncedProducts, saveProductItems } from '../../services/product.service';
 import { Fab } from '../../components/Button';
 import AddProductModal from './components/addProductModal';
 import renderItem from './components/productItem';
@@ -25,6 +25,7 @@ import UploadProductsModal from './components/uploadProduct.modal';
 import SearchBar from '../../components/searchBar';
 import { useSearch } from '../../context/searchContext';
 import PageHeader from '../../components/pageHeader';
+import { createInventoryTable } from '../../services/inventory.service';
 
 
 const ProductScreen = () => {
@@ -35,6 +36,8 @@ const ProductScreen = () => {
     const initialState = {
         product_name: "",
         price: "",
+        expiryDate: "",
+        initial_stock: "",
         description: "",
         quantity: 0,
         Bprice: 0
@@ -94,6 +97,7 @@ const ProductScreen = () => {
         try {
             const db = await getDBConnection();
             await createProductTable(db);
+            await createInventoryTable(db);
             const storedItems = await saveProductItems(db, item);
             setProducts(storedItems);
             setItem(initialState);
@@ -117,15 +121,6 @@ const ProductScreen = () => {
     //         console.error(error);
     //     }
     // };
-    const onUploadPress = async () => {
-        try {
-            const db = await getDBConnection();
-            await handleCSVUpload(db);
-            Alert.alert("Success", "CSV file uploaded and imported.");
-        } catch (error) {
-            Alert.alert("Error", "Failed to upload CSV.");
-        }
-    };
 
 
     return (

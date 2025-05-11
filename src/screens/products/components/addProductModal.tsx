@@ -1,13 +1,14 @@
-import { View, Text, Modal, TextInput } from 'react-native'
+import { View, Text, Modal, TextInput, TouchableOpacity, Platform } from 'react-native'
 import React, { useState } from 'react'
 import { InputContainer, TextArea } from '../../../components/Input';
 import { authorizedFetch } from '../../../middleware/auth.middleware';
 import Toast from '../../../components/Toast';
 import Button from '../../../components/Button';
 import { ProductItem } from '../../../../models';
-
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const AddProductModal = ({ modalVisible, msg, setMsg, setItem, PostLocally, fetchProducts, item, setModalVisible }: any) => {
+    const [showPicker, setShowPicker] = useState(false);
     const handleChange = (key: keyof ProductItem, value: string) => {
         setMsg({ msg: "", state: "" });
 
@@ -17,6 +18,8 @@ const AddProductModal = ({ modalVisible, msg, setMsg, setItem, PostLocally, fetc
         }));
     }
 
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 1000);
 
     return (
 
@@ -37,22 +40,57 @@ const AddProductModal = ({ modalVisible, msg, setMsg, setItem, PostLocally, fetc
                     onChangeText={(text: string) => handleChange("product_name", text)}
                     keyboardType="text"
                 />
+
+                <InputContainer
+                    label="Buying Price"
+                    placeholder="Buying Price"
+                    value={item.Bprice}
+                    onChangeText={(text: string) => handleChange("Bprice", text)}
+                    keyboardType="numeric"
+                />
                 <InputContainer
                     label="Seling Price"
-                    placeholder="price"
+                    placeholder="Selling price"
                     value={item.price}
                     onChangeText={(text: string) => handleChange("price", text)}
                     keyboardType="numeric"
                 />
                 <InputContainer
-                    label="Buying Price"
-                    placeholder="Bprice"
-                    value={item.Bprice}
-                    onChangeText={(text: string) => handleChange("Bprice", text)}
+                    label="Initial Stock"
+                    placeholder="initial Stock"
+                    value={item.initial_stock}
+                    onChangeText={(text: string) => handleChange("initial_stock", text)}
                     keyboardType="numeric"
                 />
+                <View>
+                    {item.initial_stock && <TouchableOpacity
+                        onPress={() => setShowPicker(true)}
+                        className="border  border-gray-300 h-14 flex justify-center bg-secondary-50 rounded-md px-4 py-2 my-2 bg-white"
+                    >
+                        <Text className="text-black text-lg font-bold  text-base text-secodary-500">
+                            {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : 'Select Expiry Date'}
+                        </Text>
+                    </TouchableOpacity>}
+
+                    {showPicker && (
+                        <DateTimePicker
+                            value={item.expiryDate ? new Date(item.expiryDate) : new Date()}
+                            mode="date"
+                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                            onChange={(event, selectedDate) => {
+                                setShowPicker(Platform.OS === 'ios'); // stays open on iOS
+                                if (selectedDate) {
+                                    setItem((prev: any) => ({
+                                        ...prev,
+                                        expiryDate: selectedDate.toISOString(),
+                                    }));
+                                }
+                            }}
+                        />
+                    )}
+                </View>
                 <TextArea
-                    placeholder="Type your message..."
+                    placeholder="Product description ..."
                     value={item.description}
                     onChangeText={(text: string) => handleChange("description", text)}
                 />

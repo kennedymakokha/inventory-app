@@ -7,7 +7,9 @@ export type ProductItem = {
     _id?: string;
     id?: string | any
     product_name: string;
+    expiryDate?: any
     price: string;
+    initial_stock: string,
     quantity: number
     createdBy?: string | any,
     Bprice?: number
@@ -19,6 +21,7 @@ export type InventoryItem = {
     _id?: string;
     id?: string | any
     product_id: string;
+    expiryDate?: any
     quantity: string
     updatedAt?: string
     synced?: boolean
@@ -33,6 +36,10 @@ export type authStackParamList = {
     inventory: undefined
     sales: undefined
     salesreport: undefined
+    inventory_Dashboard: undefined
+    inventory_Details: {
+        product: any;
+    } | undefined | any;
 }
 export type ReportParamList = {
     salesReport: undefined

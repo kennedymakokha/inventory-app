@@ -18,9 +18,10 @@ const SearchBar: React.FC<Props> = ({ placeholder = 'Search...', loading, white 
                     <TextInput
                         value={query}
                         onChangeText={setQuery}
+                        autoFocus={false}
                         placeholder={placeholder}
-                        className={`w-full px-3 py-2 h-10 text-end ${white?"text-green-400":"text-primary-900 "}rounded-md   `}
-                        placeholderTextColor={white?"black":"#ffceff"}
+                        className={`w-full px-3 py-2 h-10 text-end ${white ? "text-green-400" : "text-primary-900 "}rounded-md   `}
+                        placeholderTextColor={white ? "black" : "#ffceff"}
                     />
                 </View>
             }

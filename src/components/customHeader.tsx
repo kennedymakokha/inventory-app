@@ -42,20 +42,28 @@ export function CustomHeaderWithSearch({ title, noSearch }: { title: string, noS
 
 
     return (
-        <View className="flex-row items-center gap-x-2 p-4 w-full shadow-2xl bg-secondary-900 shadow-md">
-            <TouchableOpacity
-                onPress={() => navigation.goBack()}
-                className=" w-[10%]"
-            >
-                <Ionicons name="chevron-back-sharp" size={24} color="#d4af37" />
-            </TouchableOpacity>
-            <View className="flex-row items-center  justify-between  ">
-                <Text className="text-lg uppercase text-white font-bold  tracking-widest">{title}</Text>
-            </View>
-            {!noSearch && <View className="flex-row items-center   justify-between w-1/2  ">
-                <SearchBar placeholder="search" />
-            </View>}
+        <View className="flex-row justify-between items-center gap-x-2 p-4 w-full shadow-2xl bg-secondary-900 shadow-md">
 
+            <View className="flex-row  items-center">
+                <TouchableOpacity
+                    onPress={() => navigation.goBack()}
+                    className=" "
+                >
+                    <Ionicons name="chevron-back-sharp" size={24} color="#d4af37" />
+                </TouchableOpacity>
+                <View className="flex-row items-center  justify-between  ">
+                    <Text className="text-lg uppercase text-white font-bold  tracking-widest">{title}</Text>
+                </View>
+                {!noSearch && <View className="flex-row items-center   justify-between w-1/2  ">
+                    <SearchBar placeholder="search" />
+                </View>}
+            </View>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("sales")}
+                className="mr-4"
+            >
+                <Ionicons name="cart-sharp" size={24} color="#d4af37" />
+            </TouchableOpacity>
         </View>
     );
 }

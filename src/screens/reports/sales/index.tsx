@@ -38,7 +38,7 @@ const SalesReport = () => {
 
 
     return (
-        <View className="flex-1 dark:bg-slate-900 ">
+        <View className="flex-1 bg-slate-900 ">
             <PageHeader component={() => {
                 return (
                     <View className="flex-row justify-around  gap-x-1 py-3 ">

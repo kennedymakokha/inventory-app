@@ -8,34 +8,46 @@ import { API_URL } from '@env';
 
 // Helper to get last sync timestamp (could also use AsyncStorage)
 let lastSync = '2020-01-01T00:00:00.000Z'; // default fallback
+const formatSQLiteDate = (isoString: string) => {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return null;
 
+    // Format: YYYY-MM-DD HH:MM:SS
+    return d.toISOString().replace('T', ' ').substring(0, 19);
+};
 export const updateLocalProduct = (product: any, db: SQLiteDatabase) => {
-    console.log("PRODUCT", product)
+    const created_at = formatSQLiteDate(product.createdAt);
+    const updated_at = formatSQLiteDate(product.updatedAt);
     db.transaction((tx: any) => {
         tx.executeSql(
             'SELECT * FROM products WHERE product_name = ?',
             [product.product_name],
             (_: any, { rows }: any) => {
                 if (rows.length > 0) {
+                    console.log("first", product.product_name)
                     tx.executeSql(
                         'UPDATE products SET price = ?, updatedAt = ?, synced = 1 WHERE product_name = ?',
-                        [product.price, product.updatedAt, product.product_name]
+                        [product.price, updated_at, product.product_name,]
                     );
                 } else {
+                    console.log("second", product)
                     tx.executeSql(
                         `INSERT OR REPLACE INTO products 
-                        (product_name, price, description, synced, created_at, updatedAt)
-                        VALUES (?, ?, ?, ?, ?, ?)`,
-                        // 'INSERT INTO products (product_name, price, updatedAt, synced) VALUES (?, ?, ?, 1)',
-                        [product.product_name, product.price, product.description, 1, product.createdAt, product.updatedAt]
-                    );
+    (product_name, price,Bprice, description, synced, created_at, updatedAt, createdBy)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                        [product.product_name, product.price,200, product.description, 1, created_at, updated_at, product.createdBy],
+                        (_: any, result: any) => console.log("Insert success:", result),
+                        (_: any, error: any) => {
+                            console.error("Insert error:", error);
+                            return true; // stop the transaction on error
+                        });
                 }
             }
         );
     });
 };
 
-const updateLocalInventory = (item: any, db: SQLiteDatabase) => {
+export const updateLocalInventory = (item: any, db: SQLiteDatabase) => {
     db.transaction((tx: any) => {
         tx.executeSql(
             'SELECT * FROM inventory WHERE product = ?',
@@ -56,12 +68,10 @@ const updateLocalInventory = (item: any, db: SQLiteDatabase) => {
         );
     });
 };
-export const pullServerUpdates = async () => {
+export const pullServerUpdates = async (productRes: any) => {
     try {
         // Pull Products
         const db = await getDBConnection();
-        const productRes = await authorizedFetch(`${API_URL}api/products/updates?since=${lastSync}`);
-
 
         for (let index = 0; index < productRes.length; index++) {
 

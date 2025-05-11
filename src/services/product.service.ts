@@ -37,6 +37,7 @@ export const createProductTable = async (db: SQLiteDatabase) => {
       description TEXT,
       quantity REAL DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      expiryDate DATETIME DEFAULT CURRENT_TIMESTAMP,
       updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
     )`;
 
@@ -108,13 +109,26 @@ export const saveProductItems = async (
     db: SQLiteDatabase,
     item: ProductItem
 ): Promise<ProductItem[]> => {
-    try {
-        const trimmedName = item.product_name.trim();
-        item.synced = false;
-        item.quantity = 0;
-        item.createdBy = await AsyncStorage.getItem('userId')
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 1000);
 
-        // 1. Check if product already exists (case-insensitive)
+    try {
+
+        const trimmedName = item.product_name.trim();
+        const createdBy = await AsyncStorage.getItem('userId');
+        const now = new Date().toISOString();
+        const initial_stock = item.initial_stock
+        const synced = 0;
+        const expiryDate = item.expiryDate === '' ? futureDate.toISOString() : item.expiryDate
+        item = {
+            ...item,
+            product_name: trimmedName,
+            quantity: 0,
+            synced: false,
+            createdBy: createdBy || '',
+        };
+
+        // 1. Check if product exists
         const checkQuery = `SELECT COUNT(*) as count FROM products WHERE LOWER(product_name) = LOWER(?)`;
         const checkResult = await db.executeSql(checkQuery, [trimmedName]);
         const count = checkResult[0].rows.item(0).count;
@@ -123,48 +137,92 @@ export const saveProductItems = async (
             throw new Error(`❗ Product "${trimmedName}" already exists.`);
         }
 
-        // 2. Insert product
-        const insertQuery = `
+        // 2. Insert into products
+        const insertProductQuery = `
         INSERT INTO products 
-        (product_name, price,Bprice,createdBy, description, quantity, synced, created_at, updatedAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (product_name, price, Bprice, createdBy, description, quantity, synced,expiryDate, created_at, updatedAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
-
-        await db.executeSql(insertQuery, [
+        await db.executeSql(insertProductQuery, [
             trimmedName,
             parseFloat(item.price),
-            item.Bprice,
+            parseFloat(String(item.Bprice || '0')),
             item.createdBy,
-            item.description,
-            item.quantity,
-            item.synced ? 1 : 0,
-            new Date().toISOString(),
-            new Date().toISOString()
+            item.description || '',
+            initial_stock,
+            synced,
+            expiryDate,
+            now,
+            now,
         ]);
-//         // 3. Get last inserted product ID
-//         const [idResult] = await db.executeSql(`SELECT last_insert_rowid() as id`);
-//         const productId = idResult.rows.item(0).id;
 
-//         // 4. Create inventory record
-//         const insertInventoryQuery = `
-//       INSERT INTO inventory (product_id, quantity, updatedAt,createdBy,synced)
-//       VALUES (?, ?, ?, ?, ?)
-//   `;
-//         await db.executeSql(insertInventoryQuery, [
-//             productId,
-//             item.quantity,
-//             item.synced = false,
-//             new Date().toISOString(),
-//             item.createdBy
-//         ]);
-        // 3. Return updated product list
+        // 3. Get product ID
+        const productIdResult = await db.executeSql(`SELECT id FROM products WHERE LOWER(product_name) = LOWER(?)`, [trimmedName]);
+        const productId = productIdResult[0].rows.item(0).id;
+
+        // 4. Insert into inventory with initial stock
+        const insertInventoryQuery = `
+        INSERT INTO inventory 
+        (product_id, quantity, synced,expiryDate, createdBy, created_at, updatedAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `;
+        await db.executeSql(insertInventoryQuery, [productId, initial_stock, 0, expiryDate, item.createdBy, now, now]);
+
+        // 5. Return updated products
         return await getProducts(db);
 
-    } catch (error) {
-        console.error('❌ Error saving product:', error);
+    } catch (error: any) {
+        console.error('❌ Error saving product:', error.message || error);
         throw error;
     }
 };
+
+
+// export const saveProductItems = async (
+//     db: SQLiteDatabase,
+//     item: ProductItem
+// ): Promise<ProductItem[]> => {
+//     try {
+//         const trimmedName = item.product_name.trim();
+//         item.synced = false;
+//         item.quantity = 0;
+//         item.createdBy = await AsyncStorage.getItem('userId')
+
+//         // 1. Check if product already exists (case-insensitive)
+//         const checkQuery = `SELECT COUNT(*) as count FROM products WHERE LOWER(product_name) = LOWER(?)`;
+//         const checkResult = await db.executeSql(checkQuery, [trimmedName]);
+//         const count = checkResult[0].rows.item(0).count;
+
+//         if (count > 0) {
+//             throw new Error(`❗ Product "${trimmedName}" already exists.`);
+//         }
+
+//         // 2. Insert product
+//         const insertQuery = `
+//         INSERT INTO products 
+//         (product_name, price,Bprice,createdBy, description, quantity, synced, created_at, updatedAt)
+//         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+//       `;
+
+//         await db.executeSql(insertQuery, [
+//             trimmedName,
+//             parseFloat(item.price),
+//             item.Bprice,
+//             item.createdBy,
+//             item.description,
+//             item.quantity,
+//             item.synced ? 1 : 0,
+//             new Date().toISOString(),
+//             new Date().toISOString()
+//         ]);
+
+//         return await getProducts(db);
+
+//     } catch (error) {
+//         console.error('❌ Error saving product:', error);
+//         throw error;
+//     }
+// };
 
 // export const saveProductItems = async (
 //     db: SQLiteDatabase,
@@ -241,47 +299,47 @@ export const fullSync = async () => {
 };
 
 
-export const handleCSVUpload = async (db: SQLiteDatabase) => {
-    try {
-        const [res] = await pick({
-            type: [types.plainText, types.csv], // Accept plain text and CSV files
-        });
+// export const handleCSVUpload = async (db: SQLiteDatabase) => {
+//     try {
+//         const [res] = await pick({
+//             type: [types.plainText, types.csv], // Accept plain text and CSV files
+//         });
 
-        const filePath = res.uri;
+//         const filePath = res.uri;
 
-        // iOS may prefix with "file://", Android might use content://
-        const fileContent = await RNFS.readFile(decodeURIComponent(filePath.replace('file://', '')), 'utf8');
+//         // iOS may prefix with "file://", Android might use content://
+//         const fileContent = await RNFS.readFile(decodeURIComponent(filePath.replace('file://', '')), 'utf8');
 
-        const results = Papa.parse(fileContent, {
-            header: true,
-            skipEmptyLines: true,
-        });
+//         const results = Papa.parse(fileContent, {
+//             header: true,
+//             skipEmptyLines: true,
+//         });
 
-        const rows = results.data as Array<Record<string, any>>;
+//         const rows = results.data as Array<Record<string, any>>;
 
-        for (const row of rows) {
-            const product = {
-                product_name: row.product_name,
-                price: row.price?.toString() || '0',
-                quantity: row.quantity?.toString() || '0',
-                Bprice: row.Bprice?.toString() || '0',
-                createdBy: row.createdBy?.toString() || '0',
-                description: row.description || '',
-                synced: false
-            };
-            await saveProductItems(db, product);
-        }
+//         for (const row of rows) {
+//             const product = {
+//                 product_name: row.product_name,
+//                 price: row.price?.toString() || '0',
+//                 quantity: row.quantity?.toString() || '0',
+//                 Bprice: row.Bprice?.toString() || '0',
+//                 createdBy: row.createdBy?.toString() || '0',
+//                 description: row.description || '',
+//                 synced: false
+//             };
+//             await saveProductItems(db, product);
+//         }
 
-        console.log("✅ CSV imported successfully.");
-    } catch (err: any) {
-        if (err.code === 'USER_CANCELLED') {
-            console.log("⚠️ User cancelled the picker");
-        } else {
-            console.log(err)
-            console.error("❌ Failed to import CSV:", err);
-        }
-    }
-};
+//         console.log("✅ CSV imported successfully.");
+//     } catch (err: any) {
+//         if (err.code === 'USER_CANCELLED') {
+//             console.log("⚠️ User cancelled the picker");
+//         } else {
+//             console.log(err)
+//             console.error("❌ Failed to import CSV:", err);
+//         }
+//     }
+// };
 
 
 export const insertInventory = (product: string, quantity: number, db: SQLiteDatabase,) => {
@@ -297,31 +355,31 @@ export const insertInventory = (product: string, quantity: number, db: SQLiteDat
     });
 };
 
-export const getUnsyncedInventory = (db: SQLiteDatabase,): Promise<any[]> => {
-    return new Promise((resolve, reject) => {
-        db.transaction((tx: any) => {
-            tx.executeSql(
-                'SELECT * FROM inventory WHERE synced = 0',
-                [],
-                (_: any, { rows }: any) => resolve(rows._array),
-                (_: any, error: any) => reject(error)
-            );
-        });
-    });
-};
+// export const getUnsyncedInventory = (db: SQLiteDatabase,): Promise<any[]> => {
+//     return new Promise((resolve, reject) => {
+//         db.transaction((tx: any) => {
+//             tx.executeSql(
+//                 'SELECT * FROM inventory WHERE synced = 0',
+//                 [],
+//                 (_: any, { rows }: any) => resolve(rows._array),
+//                 (_: any, error: any) => reject(error)
+//             );
+//         });
+//     });
+// };
 
-export const markInventoryAsSynced = (id: number, db: SQLiteDatabase,) => {
-    return new Promise((resolve, reject) => {
-        db.transaction((tx: any) => {
-            tx.executeSql(
-                'UPDATE inventory SET synced = 1 WHERE id = ?',
-                [id],
-                (_: any, result: any) => resolve(result),
-                (_: any, error: any) => reject(error)
-            );
-        });
-    });
-};
+// export const markInventoryAsSynced = (id: number, db: SQLiteDatabase,) => {
+//     return new Promise((resolve, reject) => {
+//         db.transaction((tx: any) => {
+//             tx.executeSql(
+//                 'UPDATE inventory SET synced = 1 WHERE id = ?',
+//                 [id],
+//                 (_: any, result: any) => resolve(result),
+//                 (_: any, error: any) => reject(error)
+//             );
+//         });
+//     });
+// };
 
 
 

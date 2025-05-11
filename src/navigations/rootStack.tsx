@@ -12,6 +12,7 @@ import SearchBar from "../components/searchBar";
 import { View } from "react-native";
 import SalesScreen from "../screens/sales/salesScreen";
 import SalesReport from "../screens/reports/sales";
+import InventoryDetails from "../screens/inventory/inventoryDetails";
 
 const Stack = createNativeStackNavigator<authStackParamList>();
 
@@ -99,9 +100,8 @@ export function RootStack() {
         }}
         component={ProductsTabs} />
       <Stack.Screen name="inventory" options={{
-        title: "",
-        header: () => <CustomHeaderWithSearch noSearch title="Inventory" />
-      }} component={InventoryScreen} />
+        headerShown: false
+      }} component={InventoryStack} />
       <Stack.Screen name="sales" options={{
         title: "",
         header: () => <CustomHeaderWithSearch noSearch title="Sales" />
@@ -148,6 +148,30 @@ export function ReportStack() {
         header: () => <CustomHeaderWithSearch title="Sales" />
       }} component={SalesScreen} /> */}
 
+
+    </Stack.Navigator>
+  );
+}
+export function InventoryStack() {
+
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: true }}>
+
+      <Stack.Screen name="inventory_Dashboard"
+        options={{
+          title: "",
+          header: () => <CustomHeaderWithSearch noSearch title="Inventory" />
+        }}
+        component={InventoryScreen} />
+      <Stack.Screen name="inventory_Details" component={InventoryDetails}
+        options={({ route }: any) => {
+          console.log(route)
+          return {
+            // title: route.params.product.product_name,
+            header: () => <CustomHeaderWithSearch noSearch title={`${route.params.product.product_name}`} />
+          }
+        }}
+      />
 
     </Stack.Navigator>
   );

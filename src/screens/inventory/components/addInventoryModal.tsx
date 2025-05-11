@@ -1,4 +1,4 @@
-import { View, Text, Modal, TextInput } from 'react-native'
+import { View, Text, Modal, TextInput, TouchableOpacity, Platform } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { InputContainer, TextArea } from '../../../components/Input';
 import { authorizedFetch } from '../../../middleware/auth.middleware';
@@ -9,10 +9,11 @@ import SelectInput from '../../../components/sellectInput';
 import { getProducts } from '../../../services/product.service';
 import { getDBConnection } from '../../../services/db-service';
 import { toDropdownOptions } from '../../../../utils/useDropDown';
-
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 
 const InventoryModal = ({ modalVisible, closeModal, product, msg, setMsg, setItem, PostLocally, item }: any) => {
+     const [showPicker, setShowPicker] = useState(false);
     const handleChange = (key: keyof InventoryItem, value: string) => {
         setMsg({ msg: "", state: "" });
 
@@ -49,7 +50,6 @@ const InventoryModal = ({ modalVisible, closeModal, product, msg, setMsg, setIte
                     onChange={(e: any) => handleChange("product_id", e)}
                     options={toDropdownOptions(products, "product_name", "id")}
                 />
-
                 <InputContainer
                     label="quantity"
                     placeholder="quantity"
@@ -57,6 +57,33 @@ const InventoryModal = ({ modalVisible, closeModal, product, msg, setMsg, setIte
                     onChangeText={(text: string) => handleChange("quantity", text)}
                     keyboardType="numeric"
                 />
+                <View>
+                    <TouchableOpacity
+                        onPress={() => setShowPicker(true)}
+                        className="border  border-gray-300 h-14 flex justify-center bg-secondary-50 rounded-md px-4 py-2 mb-2 bg-white"
+                    >
+                        <Text className="text-black text-lg font-bold  text-base text-secodary-500">
+                            {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : 'Select Expiry Date'}
+                        </Text>
+                    </TouchableOpacity>
+
+                    {showPicker && (
+                        <DateTimePicker
+                            value={item.expiryDate ? new Date(item.expiryDate) : new Date()}
+                            mode="date"
+                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                            onChange={(event, selectedDate) => {
+                                setShowPicker(Platform.OS === 'ios'); // stays open on iOS
+                                if (selectedDate) {
+                                    setItem((prev: any) => ({
+                                        ...prev,
+                                        expiryDate: selectedDate.toISOString(),
+                                    }));
+                                }
+                            }}
+                        />
+                    )}
+                </View>
 
                 {msg.msg && <Toast msg={msg.msg} state={msg.state} />}
                 <View className="flex w-full flex-row  ">

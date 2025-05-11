@@ -5,35 +5,33 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
 import { useAuthContext } from '../context/authContext';
 import { getDBConnection } from '../services/db-service';
-import { fullSync, getUnsyncedProducts } from '../services/product.service';
-import { pullServerUpdates } from '../services/pull.service';
+import { createProductTable, fullSync, getUnsyncedProducts, markProductAsSynced } from '../services/product.service';
+import { pullServerUpdates, updateLocalProduct } from '../services/pull.service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { usePullProductsQuery, useSyncProductMutation } from '../services/productApi';
+import { getUnsyncedInventory } from '../services/inventory.service';
+import { handleSync } from '../../utils/syncFunctions';
+
 
 
 
 const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => {
+    let lastSync = '2025-05-05T20:20:16.065Z'; // default fallback
     const { token, logout } = useAuthContext();
     const [data, setData] = useState<any[]>([])
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
+    const [syncProduct] = useSyncProductMutation()
+    const { data: Products, error, refetch } = usePullProductsQuery(lastSync)
     const logoutUser = async () => {
         await logout()
-        await AsyncStorage.removeItem('accessToken')
-
+        await AsyncStorage.clear()
     }
-    const handleSync = async () => {
-        setLoading(true);
-        setMessage('');
-        try {
-            await fullSync();
-            await pullServerUpdates()
-            setMessage('✅ Sync successful!');
-        } catch (err) {
-            setMessage('❌ Sync failed.');
-        } finally {
-            setLoading(false);
-        }
-    };
+    const handleSyncs = async () => {
+        await refetch()
+        handleSync({ syncProduct, setMessage, products: Products, setLoading })
+    }
+   
     return (
         <View className="flex-1 bg-secondary-900 pt-16 px-5">
             {/* Header */}
@@ -97,7 +95,7 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => 
                 <ActivityIndicator size="large" color="#007AFF" />
             ) : <TouchableOpacity
                 className="flex-row bg-red-500 py-4 rounded-md justify-center animate-pulse items-center my-4"
-                onPress={handleSync}
+                onPress={() => handleSyncs()}
             >
                 <MaterialCommunityIcons name="cloud-sync" size={30} color="#fff" />
                 <Text className="text-white text-base text-bold text-xl ml-3">Sync</Text>

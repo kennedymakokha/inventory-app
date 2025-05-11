@@ -99,11 +99,11 @@ export const TextArea = ({ value, onChangeText, placeholder }: { placeholder?: s
     return (
 
         <TextInput
-            className="min-h-[30%] border font-bold text-lg mt-2 mb-5 text-secodary-500  bg-green-100 rounded-xl p-4 "
+            className="min-h-[10%] border font-bold text-lg mt-2 mb-5 text-secodary-500  bg-green-100 rounded-xl p-4 "
             placeholder={placeholder}
             placeholderTextColor={"gray"}
             multiline
-            numberOfLines={10}
+            numberOfLines={2}
             textAlignVertical="top"
             value={value}
             onChangeText={onChangeText}

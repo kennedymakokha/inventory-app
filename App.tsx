@@ -11,15 +11,8 @@ import { PersistGate } from 'redux-persist/integration/react';
 import { useAuthContext } from './src/context/authContext';
 function App(): React.JSX.Element {
   const [loading, setLoading] = useState(true)
-  // const AppWithAuth = () => {
-  //   const { token, logout } = useAuthContext();
-  //   useTokenExpiryWatcher(token, logout);
-  //   useTokenExpiryWatcher(token, logout); // 👈 auto-logout watcher
-  //   return token ? <RootDrawer /> : <AuthStack />;
-  // };
   const AppWithAuth = () => {
     const { token, logout } = useAuthContext();
-    console.log(token)
     useTokenExpiryWatcher(token, logout);
     useTokenExpiryWatcher(token, logout); // 👈 auto-logout watcher
     return token ? <RootDrawer /> : <AuthStack />;

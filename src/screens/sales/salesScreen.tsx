@@ -22,7 +22,7 @@ const SalesScreen = () => {
     const [loading, setLoading] = useState(false);
     const [batchVisible, setbatchVisible] = useState<Record<string, string>>({});
     const [msg, setMsg] = useState({ msg: "", state: "" });
-    const [quantities, setQuantities] = useState<Record<string, string>>({});
+    const [quantities, setQuantities] = useState<Record<string, string>>({ "": "1" });
     const [state, setState] = useState<Record<string, boolean>>({});
     useEffect(() => {
         const loadProducts = async () => {
@@ -110,7 +110,7 @@ const SalesScreen = () => {
 
     const total = cart.reduce((sum, item: any) => sum + item.quantity * item.price, 0);
     const renderItem = ({ item }: any) => (
-        <TouchableOpacity className="flex-row bg-green-100 mx-4 my-2 rounded-xl shadow p-3 items-center"  >
+        <View className="flex-row bg-green-100 mx-4 my-2 rounded-xl shadow p-3 items-center"  >
             {/* <Image source={item.image} className="w-12 h-8 mr-4 resize-contain" /> */}
             < View className="flex-1 " >
                 <View className="flex-row gap-x-2 items-center">
@@ -127,39 +127,52 @@ const SalesScreen = () => {
                     >
                         <Text className="font-bold text-base">{item.product_name}</Text>
                     </TouchableOpacity>
-                    {quantities[item.id] && <TouchableOpacity
+                    <TouchableOpacity
                         onPress={() => {
-                            setQuantities((prev) => ({
-                                ...prev,
-                                [item.id]: (parseInt(prev[item.id] || '0', 10)) - 1,
-                            }))
-                            setState((prev) => ({
-                                ...prev,
-                                [item.id]: false,
-                            }))
-                        }}
-                        className="bg-green-600 px-2 my-1  h-6 flex items-center justify-center rounded ml-4" >
-                        <Text className="text-white text-xs">{quantities[item.id]}</Text>
-                    </TouchableOpacity>}
-                    {batchVisible[item.id] && <TextInput className={`px-4 mr-2  w-20 h-4 flex items-center  text-xs font-bold text-base border  rounded-lg `}
+                            quantities[item.id] > "0" &&
+                                setQuantities((prev) => ({
+                                    ...prev,
+                                    [item.id]: (parseInt(prev[item.id] || '0', 10)) - 1,
+                                })); setState((prev) => ({
+                                    ...prev,
+                                    [item.id]: false,
+                                }))
+                        }} className=" flex border px-2 w-10 items-center justify-center rounded-md border-green-400">
+                        <Text className=' text-green-500 text-4xl'>-</Text>
+                    </TouchableOpacity>
+
+                    <TextInput className={`px-4   w-20 items-center justify-center flex items-center text-black bg-slate-100  text-xs font-bold text-base `}
+                        autoFocus={true}
                         onChangeText={(text: string) =>
                             setQuantities((prev) => ({
                                 ...prev,
                                 [item.id]: text,
                             }))
                         }
+                        value={`${quantities[item.id] !== undefined ? quantities[item.id] : 0}`}
                         keyboardType="numeric"
-                    />}
+                    />
+                    <TouchableOpacity
+                        onPress={() => {
+                            setQuantities((prev) => ({
+                                ...prev,
+                                [item.id]: (parseInt(prev[item.id] || '0', 10)) + 1,
+                            })); setState((prev) => ({
+                                ...prev,
+                                [item.id]: false,
+                            }))
+                        }} className=" flex border px-2 w-10 items-center justify-center rounded-md border-green-400">
+                        <Text className=' text-green-500 text-3xl'>+</Text>
+                    </TouchableOpacity>
 
                     {state[item.id] ? <Icon name="cart-arrow-down" color="#1e293b" size={20} /> : quantities[item.id] && <TouchableOpacity
                         onPress={() => handleAddToCart(item)}
-                        className="bg-green-600 px-4 h-6  rounded "
-                    >
-                        <Text className="text-white font-semibold">Add</Text>
+                        className="bg-green-600 px-4 py-1  rounded "
+                    > <View className=" flex  px-2  items-center justify-center rounded-md ">
+                            <Text className="text-white text-2xl font-semibold">Add</Text>
+                        </View>
                     </TouchableOpacity>}
-
                 </View>
-
                 <Text className="text-gray-500 text-xs">{item.description}</Text>
                 <View className="flex-row justify-between items-center mt-2">
                     <TouchableWithoutFeedback onPress={() => handleDoubleTap(item.id)} className="bg-slate-400 px-2 py-1 rounded">
@@ -168,12 +181,12 @@ const SalesScreen = () => {
                     <Text className="font-bold text-green-700  text-base">Ksh {item.price.toFixed(2)}</Text>
                 </View>
             </View >
-        </TouchableOpacity >
+        </View >
     );
     const { query, setQuery } = useSearch();
     const filtered = products.filter((item: any) => item.product_name.includes(query))
     return (
-        <View className="flex-1 dark:bg-slate-900 ">
+        <View className="flex-1 bg-slate-900 ">
             <PageHeader component={() => {
                 return (
                     <SearchBar white placeholder="search for a Product" />

@@ -17,6 +17,7 @@ export const createInventoryTable = async (db: SQLiteDatabase) => {
         quantity INTEGER NOT NULL,
          createdBy TEXT NOT NULL ,
       synced INTEGER NOT NULL,
+      expiryDate DATETIME DEFAULT CURRENT_TIMESTAMP,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
     )`;
@@ -76,7 +77,7 @@ export const getSychedinventories = async (db: SQLiteDatabase, offset: any): Pro
         });
     });
 };
-export const getUnsynced = async (db: SQLiteDatabase, offset: any): Promise<any[]> => {
+export const getUnsyncedInventory = async (db: SQLiteDatabase, offset: any): Promise<any[]> => {
     return new Promise((resolve, reject) => {
         db.transaction((tx: any) => {
 
@@ -133,12 +134,13 @@ export const saveInventoryItem = async (
             // 1. Insert into inventory
             await tx.executeSql(
                 `INSERT OR REPLACE INTO inventory 
-           (product_id, quantity, synced,createdBy, created_at, updatedAt)
-           VALUES (?, ?, ?, ?, ?, ?)`,
+           (product_id, quantity, synced,expiryDate,createdBy, created_at, updatedAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
                 [
                     item.product_id,
                     parseFloat(item.quantity),
                     item.synced ? 1 : 0,
+                    item.expiryDate,
                     item.createdBy,
                     now,
                     now
@@ -158,68 +160,29 @@ export const saveInventoryItem = async (
     }
 };
 
-// export const saveInventoryItem = async (
-//     db: SQLiteDatabase,
-//     item: InventoryItem
-// ): Promise<InventoryItem[]> => {
-//     try {
-//         const now = new Date().toISOString();
-//         item.synced = false;
-
-//         await db.transaction(async tx => {
-//             // 1. Insert into inventory
-//             await tx.executeSql(
-//                 `INSERT OR REPLACE INTO inventory 
-//            (product_id, quantity, synced, created_at, updatedAt)
-//            VALUES (?, ?, ?, ?, ?)`,
-//                 [
-//                     item.product_id,
-//                     parseFloat(item.quantity),
-//                     item.synced ? 1 : 0,
-//                     now,
-//                     now
-//                 ]
-//             );
-
-
-//         });
-
-//         // 3. Return updated inventory list
-//         return await getinventories(db);
-
-//     } catch (error) {
-//         console.error('❌ Error saving inventory item:', error);
-//         throw error;
-//     }
-// };
-
-
-// export const saveInventoryItem = async (
-//     db: SQLiteDatabase,
-//     item: InventoryItem
-// ): Promise<InventoryItem[]> => {
-//     try {
-//         const now = new Date().toISOString();
-//         item.synced = false;
-//         const insertQuery = `
-//         INSERT OR REPLACE INTO inventory 
-//         (product_id, quantity, synced, created_at, updatedAt)
-//         VALUES (?, ?, ?, ?, ?)`;
-//         await db.executeSql(insertQuery, [
-//             item.product_id,
-//             parseFloat(item.quantity),
-//             item.synced ? 1 : 0,
-//             now,
-//             now
-//         ]);
-//         console.log(await getinventories(db))
-//         return await getinventories(db);
-//     } catch (error) {
-//         console.error('❌ Error saving inventory item:', error);
-//         throw error;
-//     }
-// };
-
+export const getInventoriesByProductId = (
+    product_id: number | string,
+    db: SQLiteDatabase
+): Promise<any[]> => {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(
+                'SELECT * FROM inventory WHERE product_id = ?  ORDER BY inventory.updatedAt DESC'
+                ,
+                [product_id],
+                (_, results) => {
+                    const inventories = results.rows.raw(); // get raw array
+                    resolve(inventories);
+                },
+                (_, error) => {
+                    console.error("Error fetching inventories:", error);
+                    reject(error);
+                    return true;
+                }
+            );
+        });
+    });
+};
 export const softDeleteProduct = async (db: SQLiteDatabase, id: number) => {
     await db.executeSql(
         `UPDATE products SET deleted_at = datetime('now'), updated_at = datetime('now') WHERE id = ?`,
