@@ -5,33 +5,59 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
 import { useAuthContext } from '../context/authContext';
 import { getDBConnection } from '../services/db-service';
-import { createProductTable, fullSync, getUnsyncedProducts, markProductAsSynced } from '../services/product.service';
+import { createProductTable, getLastSyncTime, getUnsyncedProducts, markProductAsSynced } from '../services/product.service';
 import { pullServerUpdates, updateLocalProduct } from '../services/pull.service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePullProductsQuery, useSyncProductMutation } from '../services/productApi';
 import { getUnsyncedInventory } from '../services/inventory.service';
 import { handleSync } from '../../utils/syncFunctions';
+import { usePullinventoryQuery, useSyncInventoryMutation } from '../services/inventoryApi';
+import { getNow } from '../../utils';
+import { useSelector } from 'react-redux';
+import { usePullSalesQuery, useSyncSalesMutation } from '../services/salesApi';
 
 
 
 
 const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => {
-    let lastSync = '2025-05-05T20:20:16.065Z'; // default fallback
+
     const { token, logout } = useAuthContext();
     const [data, setData] = useState<any[]>([])
+    const [lastSync, setLastSync] = useState('2025-05-05T20:20:16.065Z')
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
     const [syncProduct] = useSyncProductMutation()
+    const [syncInventory] = useSyncInventoryMutation()
+    const [syncSales] = useSyncSalesMutation()
+
     const { data: Products, error, refetch } = usePullProductsQuery(lastSync)
+    const { data: inventories, refetch: refetchinentory } = usePullinventoryQuery(lastSync)
+    const { data: sales, refetch: refetchSales } = usePullSalesQuery(lastSync)
+    const { user } = useSelector((state: any) => state.auth)
+
     const logoutUser = async () => {
         await logout()
         await AsyncStorage.clear()
     }
+    const getLastSync = async () => {
+        const db = await getDBConnection();
+        let lastSync = await getLastSyncTime(db)
+
+
+    }
     const handleSyncs = async () => {
         await refetch()
-        handleSync({ syncProduct, setMessage, products: Products, setLoading })
+        await refetchSales()
+        await refetchinentory()
+        getLastSync()
+        handleSync({ syncProduct,syncSales, sales, syncInventory, setMessage, products: Products, inventories, setLoading })
     }
-   
+    useEffect(() => {
+
+        getLastSync()
+    }, [inventories])
+
+
     return (
         <View className="flex-1 bg-secondary-900 pt-16 px-5">
             {/* Header */}
@@ -40,7 +66,7 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => 
                     source={require('../assets/logo.png')}
                     className="size-40 rounded-full mb-2"
                 />
-                <Text className="text-white text-lg">Welcome!</Text>
+                <Text className="text-white text-lg">Welcome! {user.name}</Text>
             </View>
             {!!message && (
                 <Text className="text-center mt-2 text-white">{message}</Text>

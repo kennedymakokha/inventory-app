@@ -55,44 +55,27 @@ export const fetchSales = async (db: SQLiteDatabase): Promise<any[]> => {
         });
     });
 };
-// function fetchSalesData(db, groupType, callback) {
-//     let query = '';
-//     switch (groupType) {
-//         case 'weekly':
-//             query = `
-//           SELECT product_name, strftime('%Y-W%W', timestamp) as period, SUM(value) as total
-//           FROM sales
-//           GROUP BY product_name, period
-//           ORDER BY period DESC
-//         `;
-//             break;
-//         case 'monthly':
-//             query = `
-//           SELECT product_name, strftime('%Y-%m-%d', timestamp) as period, SUM(value) as total
-//           FROM sales
-//           GROUP BY product_name, period
-//           ORDER BY period DESC
-//         `;
-//             break;
-//         case 'yearly':
-//             query = `
-//           SELECT product_name, strftime('%Y-%m', timestamp) as period, SUM(value) as total
-//           FROM sales
-//           GROUP BY product_name, period
-//           ORDER BY period DESC
-//         `;
-//             break;
-//         default:
-//             return;
-//     }
+export const getUnsyncedSales = async (db: SQLiteDatabase, offset: any): Promise<any[]> => {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx: any) => {
 
-//     db.transaction(tx => {
-//         tx.executeSql(query, [], (_, { rows }) => {
-//             callback(rows._array);
-//         });
-//     });
-// }
-// }
+            tx.executeSql(
+                `SELECT * FROM sales WHERE synced = 0 `,
+                [],
+                (_: any, { rows }: any) => {
+                    const allProducts = rows.raw(); // Already a usable array
+                    // console.log("📦 Unsynced products:", allProducts);
+                    resolve(allProducts);            // ✅ send to frontend or caller
+                },
+                (_: any, error: any) => {
+                    console.error("❌ SELECT failed:", error);
+                    reject(error);
+                    return true;
+                }
+            );
+        });
+    });
+};
 export function fetchGroupedProfit(db: SQLiteDatabase, groupType: any, callback: any) {
 
     let query = '';
@@ -268,6 +251,18 @@ ORDER BY quantity ASC;
         });
     });
 }
+export const markSaleAsSynced = (id: number, db: SQLiteDatabase) => {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx: any) => {
+            tx.executeSql(
+                'UPDATE sales SET synced = 1 WHERE id = ?',
+                [id],
+                (_: any, result: any) => resolve(result),
+                (_: any, error: any) => reject(error)
+            );
+        });
+    });
+};
 
 
 export const updateItemSale = (db: SQLiteDatabase, id: number, incomingQuantity: number) => {
@@ -375,34 +370,6 @@ export const finalizeSale = async (
         }
     );
 };
-// export const finalizeSale = async (
-//     db: SQLiteDatabase,
-//     cartItems: CartItem[],
-
-// ): Promise<void> => {
-//     try {
-//         const now = new Date().toISOString();
-//         const synced = false;
-//         const createdBy = await AsyncStorage.getItem('userId')
-//         await db.transaction(async (tx) => {
-//             for (const item of cartItems) {
-//                 await tx.executeSql(
-//                     `INSERT INTO sales (product_id, quantity,synced, createdBy, created_at,updatedAt)
-//              VALUES (?, ?, ?, ?, ?, ?)`,
-//                     [item.id, item.quantity, synced, createdBy, now, now]
-//                 );
-
-//                 // 2. Update product stock (subtract sold quantity)
-//                  updateItemQuantity(db, parseInt(item.id), item.quantity)
-//             }
-//         });
-
-//         console.log('✅ Sale finalized and stock updated.');
-//     } catch (error) {
-//         console.error('❌ Failed to finalize sale:', error);
-//         throw error;
-//     }
-// };
 
 export const updateItemQuantity = (db: SQLiteDatabase, id: number, incomingQuantity: number) => {
     db.transaction(tx => {

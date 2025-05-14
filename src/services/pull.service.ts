@@ -24,18 +24,16 @@ export const updateLocalProduct = (product: any, db: SQLiteDatabase) => {
             [product.product_name],
             (_: any, { rows }: any) => {
                 if (rows.length > 0) {
-                    console.log("first", product.product_name)
                     tx.executeSql(
                         'UPDATE products SET price = ?, updatedAt = ?, synced = 1 WHERE product_name = ?',
                         [product.price, updated_at, product.product_name,]
                     );
                 } else {
-                    console.log("second", product)
                     tx.executeSql(
                         `INSERT OR REPLACE INTO products 
     (product_name, price,Bprice, description, synced, created_at, updatedAt, createdBy)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                        [product.product_name, product.price,200, product.description, 1, created_at, updated_at, product.createdBy],
+                        [product.product_name, product.price, 200, product.description, 1, created_at, updated_at, product.createdBy],
                         (_: any, result: any) => console.log("Insert success:", result),
                         (_: any, error: any) => {
                             console.error("Insert error:", error);
@@ -46,6 +44,56 @@ export const updateLocalProduct = (product: any, db: SQLiteDatabase) => {
         );
     });
 };
+export const updateLocalSale = (product: any, db: SQLiteDatabase) => {
+    const created_at = formatSQLiteDate(product.createdAt);
+    const updated_at = formatSQLiteDate(product.updatedAt);
+  
+    db.transaction((tx: any) => {
+      tx.executeSql(
+        'SELECT * FROM sales WHERE product_id = ?',
+        [product._id],
+        (_: any, { rows }: any) => {
+          if (rows.length > 0) {
+            // Product exists — update it
+            tx.executeSql(
+              'UPDATE sales SET quantity = ?, updatedAt = ?, synced = 1 WHERE product_id = ?',
+              [product.quantity, updated_at, product._id],
+              () => console.log('Update success'),
+              (_: any, error: any) => {
+                console.error('Update error:', error);
+                return true;
+              }
+            );
+          } else {
+            // Product doesn't exist — insert into sales (not products!)
+            tx.executeSql(
+              `INSERT INTO sales 
+                (quantity, product_id, synced, created_at, updatedAt, createdBy)
+                VALUES (?, ?, ?, ?, ?, ?)`,
+              [
+                product.quantity,
+                product._id,
+                1,
+                created_at,
+                updated_at,
+                product.createdBy
+              ],
+              (_: any, result: any) => console.log('Insert success:', result),
+              (_: any, error: any) => {
+                console.error('Insert error:', error);
+                return true;
+              }
+            );
+          }
+        },
+        (_: any, error: any) => {
+          console.error('SELECT error:', error);
+          return true;
+        }
+      );
+    });
+  };
+  
 
 export const updateLocalInventory = (item: any, db: SQLiteDatabase) => {
     db.transaction((tx: any) => {
@@ -69,6 +117,7 @@ export const updateLocalInventory = (item: any, db: SQLiteDatabase) => {
     });
 };
 export const pullServerUpdates = async (productRes: any) => {
+
     try {
         // Pull Products
         const db = await getDBConnection();
@@ -80,13 +129,7 @@ export const pullServerUpdates = async (productRes: any) => {
             updateLocalProduct(p, db);
         }
 
-        // // Pull Inventory
-        // const inventoryRes = await authorizedFetch(`${API_URL}/inventory/updates?since=${lastSync}`);
-        // for (const i of inventoryRes.data) {
-        //     updateLocalInventory(i);
-        // }
 
-        lastSync = getNow(); // Update lastSync timestamp
         console.log('✅ Pulled server updates');
     } catch (err) {
         console.error('❌ Pull failed:', err);

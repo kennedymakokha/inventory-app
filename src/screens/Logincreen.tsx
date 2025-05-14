@@ -15,6 +15,7 @@ import { useLoginMutation } from '../services/authApi';
 const LoginScreen = ({ navigation }: any) => {
     const [msg, setMsg] = useState({ msg: "", state: "" });
     const [loading, setLoading] = useState(false)
+    const [progress, setprogress] = useState("")
     const [item, setItem] = useState({ phone_number: "", password: '' });
     const [loginUser, { isLoading, error }] = useLoginMutation();
     const dispatch = useDispatch()
@@ -31,6 +32,7 @@ const LoginScreen = ({ navigation }: any) => {
 
     const handleLogin = async (e?: any) => {
         try {
+            setprogress("starting")
             setMsg({ msg: "", state: "" });
 
             if (!item.phone_number || !item.password) {
@@ -38,20 +40,28 @@ const LoginScreen = ({ navigation }: any) => {
                 return;
             }
             setLoading(true)
+            setprogress("hitting api")
             const data = await loginUser(item).unwrap()
+            setprogress("finished  api")
 
             if (data.ok === true) {
+                setprogress("Data truei")
                 dispatch(setCredentials({ ...data }))
                 await AsyncStorage.setItem("accessToken", data.token);
                 await AsyncStorage.setItem('userId', data.user._id);
                 if (data?.exp) {
+                    setprogress("expiry found")
                     await AsyncStorage.setItem("tokenExpiry", data.exp.toString());
                     await login(data.token);
                 }
                 setLoading(false)
                 setMsg({ msg: `Login successful! Redirecting...`, state: "success" })
 
+            } else {
+                setLoading(false)
+                setprogress("Data false")
             }
+
         } catch (error: any) {
             console.error(error);
             setMsg({ msg: error.message || error.data || "Error Occured try again 😧😧😧 !!!", state: "error" });
@@ -71,6 +81,7 @@ const LoginScreen = ({ navigation }: any) => {
                         resizeMode="cover" // or 'contain', 'stretch'
                     />
                 </View>
+                <Text className='text-white'>{progress}</Text>
                 <Input
                     label="Phone Number"
                     placeholder="Phone nunber"

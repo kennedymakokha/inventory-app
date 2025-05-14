@@ -12,12 +12,44 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const createSyncTable = async (db: SQLiteDatabase) => {
     // create table if not exists
-    const query = `CREATE TABLE IF NOT EXISTS sync_status (
+    const query = `CREATE TABLE IF NOT EXISTS sync_meta (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     last_sync TEXT
   );`;
     await db.executeSql(query);
 };
+
+export const setLastSyncTime = (db: SQLiteDatabase, timestamp: string) => {
+    db.transaction(tx => {
+        tx.executeSql(
+            `INSERT OR REPLACE INTO sync_meta (key, value) VALUES (?, ?)`,
+            ['last_sync', timestamp],
+        );
+    });
+};
+
+export const getLastSyncTime = (db: SQLiteDatabase): Promise<string | null> => {
+    return new Promise((resolve, reject) => {
+        db.transaction(tx => {
+            tx.executeSql(
+                `SELECT value FROM sync_meta WHERE key = ?`,
+                ['last_sync'],
+                (_, results) => {
+                    if (results.rows.length > 0) {
+                        resolve(results.rows.item(0).value);
+                    } else {
+                        resolve(null);
+                    }
+                },
+                (_, error) => {
+                    reject(error);
+                    return false;
+                }
+            );
+        });
+    });
+};
+
 
 export const sync = async (db: SQLiteDatabase) => {
     await db.executeSql(`INSERT INTO sync_status (last_sync) VALUES (datetime('now'))`);
@@ -35,6 +67,7 @@ export const createProductTable = async (db: SQLiteDatabase) => {
       createdBy TEXT NOT NULL ,
       synced INTEGER NOT NULL,
       description TEXT,
+      product_id TEXT,
       quantity REAL DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       expiryDate DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -140,13 +173,14 @@ export const saveProductItems = async (
         // 2. Insert into products
         const insertProductQuery = `
         INSERT INTO products 
-        (product_name, price, Bprice, createdBy, description, quantity, synced,expiryDate, created_at, updatedAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (product_name, price, Bprice,product_id, createdBy, description, quantity, synced,expiryDate, created_at, updatedAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
         await db.executeSql(insertProductQuery, [
             trimmedName,
             parseFloat(item.price),
             parseFloat(String(item.Bprice || '0')),
+            "",
             item.createdBy,
             item.description || '',
             initial_stock,
@@ -177,95 +211,6 @@ export const saveProductItems = async (
     }
 };
 
-
-// export const saveProductItems = async (
-//     db: SQLiteDatabase,
-//     item: ProductItem
-// ): Promise<ProductItem[]> => {
-//     try {
-//         const trimmedName = item.product_name.trim();
-//         item.synced = false;
-//         item.quantity = 0;
-//         item.createdBy = await AsyncStorage.getItem('userId')
-
-//         // 1. Check if product already exists (case-insensitive)
-//         const checkQuery = `SELECT COUNT(*) as count FROM products WHERE LOWER(product_name) = LOWER(?)`;
-//         const checkResult = await db.executeSql(checkQuery, [trimmedName]);
-//         const count = checkResult[0].rows.item(0).count;
-
-//         if (count > 0) {
-//             throw new Error(`❗ Product "${trimmedName}" already exists.`);
-//         }
-
-//         // 2. Insert product
-//         const insertQuery = `
-//         INSERT INTO products 
-//         (product_name, price,Bprice,createdBy, description, quantity, synced, created_at, updatedAt)
-//         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-//       `;
-
-//         await db.executeSql(insertQuery, [
-//             trimmedName,
-//             parseFloat(item.price),
-//             item.Bprice,
-//             item.createdBy,
-//             item.description,
-//             item.quantity,
-//             item.synced ? 1 : 0,
-//             new Date().toISOString(),
-//             new Date().toISOString()
-//         ]);
-
-//         return await getProducts(db);
-
-//     } catch (error) {
-//         console.error('❌ Error saving product:', error);
-//         throw error;
-//     }
-// };
-
-// export const saveProductItems = async (
-//     db: SQLiteDatabase,
-//     item: ProductItem
-// ): Promise<ProductItem[]> => {
-//     try {
-
-//         const trimmedName = item.product_name.trim();
-//         item.synced = false;
-//         item.quantity = 0
-//         // 1. Check for existing product
-//         const checkQuery = `SELECT COUNT(*) as count FROM products WHERE LOWER(product_name) = LOWER(?)`;
-//         const checkResult = await db.executeSql(checkQuery, [trimmedName]);
-//         const count = checkResult[0].rows.item(0).count;
-
-//         if (count > 0) {
-//             throw new Error(`❗ Product "${trimmedName}" already exists.`);
-//         }
-
-//         // 2. Insert product
-//         const insertQuery = `
-//         INSERT OR REPLACE INTO products 
-//         (product_name, price, description,quantity, synced, created_at, updatedAt)
-//         VALUES (?, ?, ?, ?, ?, ?, ?)
-//       `;
-
-//         await db.executeSql(insertQuery, [
-//             trimmedName,
-//             parseFloat(item.price),
-//             item.description,
-//             item.quantity,
-//             item.synced ? 1 : 0,
-//             new Date().toISOString(),
-//             new Date().toISOString()
-//         ]);
-
-//         // 3. Return updated list
-//         return await getProducts(db);
-//     } catch (error) {
-//         console.error('❌ Error saving product:', error);
-//         throw error;
-//     }
-// };
 export const softDeleteProduct = async (db: SQLiteDatabase, id: number) => {
     await db.executeSql(
         `UPDATE products SET deleted_at = datetime('now'), updated_at = datetime('now') WHERE id = ?`,
@@ -275,7 +220,6 @@ export const softDeleteProduct = async (db: SQLiteDatabase, id: number) => {
 
 
 export const markProductAsSynced = (id: number, db: SQLiteDatabase) => {
-    console.log(id)
     return new Promise((resolve, reject) => {
         db.transaction((tx: any) => {
             tx.executeSql(
@@ -287,16 +231,7 @@ export const markProductAsSynced = (id: number, db: SQLiteDatabase) => {
         });
     });
 };
-export const fullSync = async () => {
-    try {
-        console.log('🔄 Starting full sync...');
-        await syncData();           // Push unsynced local changes
-        // await pullServerUpdates();  // Pull latest server changes
-        console.log('✅ Full sync complete.');
-    } catch (err) {
-        console.error('❌ Full sync failed:', err);
-    }
-};
+
 
 
 // export const handleCSVUpload = async (db: SQLiteDatabase) => {
