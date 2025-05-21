@@ -7,8 +7,8 @@ export const authorizedFetch = async (
     options: RequestInit = {}
 ): Promise<any> => {
     try {
-        const token = await AsyncStorage.getItem('auth_token');
-        console.log("Token", token)
+        const token = await AsyncStorage.getItem('accessToken');
+        // console.log("Token", token)
         const headers = {
             'Content-Type': 'application/json',
             ...(options.headers || {}),

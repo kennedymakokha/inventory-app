@@ -5,10 +5,10 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
 import { useAuthContext } from '../context/authContext';
 import { getDBConnection } from '../services/db-service';
-import { createProductTable, getLastSyncTime, getUnsyncedProducts, markProductAsSynced } from '../services/product.service';
+import { createProductTable, getLastSyncTime, getUnsyncedProducts, markProductAsSynced, syncAllProducts } from '../services/product.service';
 import { pullServerUpdates, updateLocalProduct } from '../services/pull.service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { usePullProductsQuery, useSyncProductMutation } from '../services/productApi';
+import { useBulksyncMutation, usePullProductsQuery, usePullupdatedsinceQuery, useSyncProductMutation } from '../services/productApi';
 import { getUnsyncedInventory } from '../services/inventory.service';
 import { handleSync } from '../../utils/syncFunctions';
 import { usePullinventoryQuery, useSyncInventoryMutation } from '../services/inventoryApi';
@@ -26,11 +26,11 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => 
     const [lastSync, setLastSync] = useState('2025-05-05T20:20:16.065Z')
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
-    const [syncProduct] = useSyncProductMutation()
+    const [syncProduct] = useBulksyncMutation()
     const [syncInventory] = useSyncInventoryMutation()
     const [syncSales] = useSyncSalesMutation()
 
-    const { data: Products, error, refetch } = usePullProductsQuery(lastSync)
+    const { data: Products, error, refetch } = usePullupdatedsinceQuery(lastSync)
     const { data: inventories, refetch: refetchinentory } = usePullinventoryQuery(lastSync)
     const { data: sales, refetch: refetchSales } = usePullSalesQuery(lastSync)
     const { user } = useSelector((state: any) => state.auth)
@@ -39,25 +39,33 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => 
         await logout()
         await AsyncStorage.clear()
     }
-    const getLastSync = async () => {
-        const db = await getDBConnection();
-        let lastSync = await getLastSyncTime(db)
 
+    // const handleSyncs = async () => {
+    //     await refetch()
+    //     await refetchSales()
+    //     await refetchinentory()
+    //     getLastSync()
+    //     handleSync({ syncProduct,syncSales, sales, syncInventory, setMessage, products: Products, inventories, setLoading })
+    // }
+    // useEffect(() => {
+
+    //     getLastSync()
+    // }, [inventories])const sync = 
+
+  
+    const syncLocalProduct = async () => {
+        try {
+            await refetch()
+            setLoading(true)
+            const db = await getDBConnection();
+            await syncAllProducts(db, Products, syncProduct)
+            setLoading(false)
+        } catch (error) {
+            setLoading(false)
+            console.log(error)
+        }
 
     }
-    const handleSyncs = async () => {
-        await refetch()
-        await refetchSales()
-        await refetchinentory()
-        getLastSync()
-        handleSync({ syncProduct,syncSales, sales, syncInventory, setMessage, products: Products, inventories, setLoading })
-    }
-    useEffect(() => {
-
-        getLastSync()
-    }, [inventories])
-
-
     return (
         <View className="flex-1 bg-secondary-900 pt-16 px-5">
             {/* Header */}
@@ -121,7 +129,7 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => 
                 <ActivityIndicator size="large" color="#007AFF" />
             ) : <TouchableOpacity
                 className="flex-row bg-red-500 py-4 rounded-md justify-center animate-pulse items-center my-4"
-                onPress={() => handleSyncs()}
+                onPress={() => syncLocalProduct()}
             >
                 <MaterialCommunityIcons name="cloud-sync" size={30} color="#fff" />
                 <Text className="text-white text-base text-bold text-xl ml-3">Sync</Text>

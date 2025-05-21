@@ -3,22 +3,15 @@ import React, { useEffect, useState } from 'react'
 import SalesReportTable from '../components/salesTable';
 import PageHeader from '../../../components/pageHeader';
 import { getDBConnection } from '../../../services/db-service';
-import { getProducts } from '../../../services/product.service';
-import { fetchGroupedProfit, fetchSales } from '../../../services/sales.service';
-import { FormatDate, getDurationFromNow } from '../../../../utils/formatDate';
-
+import { fetchCumulativeProfit, fetchGroupedProfit } from '../../../services/sales.service';
+import { adminFilter, Adminheaders, getadminSalesReportData, getSalesReportData, salesFilter, salesheaders } from '../../../../utils/getsalesdata';
+import { useSelector } from 'react-redux';
+import { DataSales } from '../../../../models';
 const SalesReport = () => {
 
-    const headers =
-
-        [{ key: 'day', label: 'period' },
-        { key: 'product_name', label: 'product' },
-        { key: 'product_price', label: 'Selling Pricw' },
-        { key: 'product_Bprice', label: 'Buying Price' },
-        { key: 'current_stock', label: 'Current Stock' },
-        { key: 'total_units_sold', label: 'sold' },
-        { key: 'total_profit', label: 'Profit' },
-        ]
+    const { user } = useSelector((state: any) => state.auth)
+   
+    const [datasales, setdataSales] = useState<DataSales | null>(null);
     const [sales, setSales] = useState([]);
     const [loading, setLoading] = useState(false);
     const [state, setState] = useState<Record<string, boolean>>({});
@@ -27,22 +20,25 @@ const SalesReport = () => {
         const fetchProfits = async () => {
             setLoading(true)
             const db = await getDBConnection();
+            fetchCumulativeProfit(db, filter.toLocaleLowerCase(), (data: any) => {
+                setdataSales(data);
+                setLoading(false)
+            });
             fetchGroupedProfit(db, filter.toLocaleLowerCase(), (data: any) => {
-                console.log(`${filter} Profit Data:`, data);
                 setSales(data);
                 setLoading(false)
             });
         }
         fetchProfits()
     }, [filter]);
-
-
+  
+    let filterData: any = user?.role === "superAdmin" ? adminFilter : salesFilter
     return (
         <View className="flex-1 bg-slate-900 ">
             <PageHeader component={() => {
                 return (
-                    <View className="flex-row justify-around  gap-x-1 py-3 ">
-                        {[{ id: 1, title: "All" }, { id: 2, title: "Daily" }, { id: 3, title: "Weekly" }, { id: 4, title: "Monthly" }, { id: 5, title: "Yearly" }].map((tab) => (
+                    <View className="flex-row flex-wrap w-full  justify-around  gap-x-1 py-3 ">
+                        {filterData.map((tab: any) => (
                             <TouchableOpacity key={tab.id} onPress={
                                 () => {
                                     setState((prev) => ({
@@ -51,16 +47,20 @@ const SalesReport = () => {
                                     })); setFilter(tab.title)
                                 }
                             } className={`flex h-full px-2 py-1 ${state[tab.id] && filter === tab.title ? "bg-transparent border-slate-100 border  text-white" : "bg-white"} shadow-2xl rounded-md`}>
-                                <Text key={tab.id} className={`${state[tab.id] && filter === tab.title ? "text-white" : ""} font-semibold`}>{tab.title}</Text>
+                                <Text key={tab.id} className={`${state[tab.id] && filter === tab.title ? "text-white" : "capitalize text-center"} font-semibold`}>{tab.title}</Text>
                             </TouchableOpacity>
 
                         ))}
                     </View>
                 )
             }} />
+            <View className="flex items-center justify-between flex-row px-10">
+                <Text className="text-lg font-bold uppercase text-green-700 text-center my-2">{filter} Sales Report</Text>
+                <Text className="text-blue-500 font-bold tracking-widest">{datasales?.total_sales_revenue}/-</Text>
+            </View>
 
-            <Text className="text-lg font-bold text-green-700 text-center my-2">{filter} Sales Report</Text>
-            <SalesReportTable headers={headers} data={sales.map(({ day, product_name, product_price, product_Bprice, current_stock, total_units_sold, total_profit }) => ({ day, product_name, product_price, product_Bprice, current_stock, total_units_sold, total_profit }))} />
+
+            <SalesReportTable headers={user?.role === "superAdmin" ? Adminheaders : salesheaders} data={user?.role === "superAdmin" ? getadminSalesReportData(sales) : getSalesReportData(sales)} />
         </View>
     )
 }

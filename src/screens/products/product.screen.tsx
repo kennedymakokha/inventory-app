@@ -14,7 +14,7 @@ import {
 
 import { getDBConnection } from '../../services/db-service';
 import { ProductItem, ToDoItem } from '../../../models';
-import { createProductTable, fullSync, getProducts, getSychedProducts, getUnsyncedProducts, saveProductItems } from '../../services/product.service';
+import { createProductTable, getProducts, getSychedProducts, getUnsyncedProducts, saveProductItems } from '../../services/product.service';
 import { Fab } from '../../components/Button';
 import AddProductModal from './components/addProductModal';
 import renderItem from './components/productItem';
@@ -26,6 +26,7 @@ import SearchBar from '../../components/searchBar';
 import { useSearch } from '../../context/searchContext';
 import PageHeader from '../../components/pageHeader';
 import { createInventoryTable } from '../../services/inventory.service';
+import { useCreateProductMutation } from '../../services/productApi';
 
 
 const ProductScreen = () => {
@@ -43,6 +44,7 @@ const ProductScreen = () => {
         Bprice: 0
     }
     const [loading, setLoading] = useState(false);
+    const [postProductToMongoDB] = useCreateProductMutation()
     const [products, setProducts] = useState<ProductItem[]>([]);
     const [refreshing, setRefreshing] = useState(false);
     const [msg, setMsg] = useState({ msg: "", state: "" });
@@ -74,12 +76,9 @@ const ProductScreen = () => {
     }, [filter]);
     const onRefresh = async () => {
         try {
-            console.log(filter);
             setRefreshing(true);
-
             const res: any = await loadDataCallback(0, filter); // Usually refresh starts at offset 0
-            console.log(res);
-            setProducts(res);
+            setRefreshing(false)
         } catch (error) {
             console.error('❌ Refresh failed:', error);
         } finally {
@@ -98,7 +97,7 @@ const ProductScreen = () => {
             const db = await getDBConnection();
             await createProductTable(db);
             await createInventoryTable(db);
-            const storedItems = await saveProductItems(db, item);
+            const storedItems = await saveProductItems(db, item, postProductToMongoDB);
             setProducts(storedItems);
             setItem(initialState);
             setModalVisible(false);

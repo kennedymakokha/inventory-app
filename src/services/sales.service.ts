@@ -15,6 +15,7 @@ export const createSalesTable = async (db: SQLiteDatabase) => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         product_id INTEGER NOT NULL,
         quantity INTEGER NOT NULL,
+        soldprice REAL,
         createdBy TEXT NOT NULL ,
       synced INTEGER NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -86,8 +87,10 @@ export function fetchGroupedProfit(db: SQLiteDatabase, groupType: any, callback:
         SELECT 
             products.product_name,
             SUM(sales.quantity) AS total_units_sold,
-            SUM((products.price - products.Bprice) * sales.quantity) AS total_profit,
-            products.price AS product_price,
+            SUM(sales.soldprice * sales.quantity) AS total_sales_revenue,
+            SUM((sales.soldprice - products.Bprice) * sales.quantity) AS total_profit,
+            SUM((products.price - products.Bprice) * sales.quantity) AS expected_profit,
+            sales.soldprice AS product_price,
             sales.created_at AS day,
             products.Bprice AS product_Bprice,
             products.quantity AS current_stock
@@ -106,7 +109,9 @@ export function fetchGroupedProfit(db: SQLiteDatabase, groupType: any, callback:
             products.price AS product_price,
             products.Bprice AS product_Bprice,
             products.quantity AS current_stock,
-            SUM((products.price - products.Bprice) * sales.quantity) AS total_profit,
+            SUM(sales.soldprice * sales.quantity) AS total_sales_revenue,
+            SUM((sales.soldprice - products.Bprice) * sales.quantity) AS total_profit,
+            SUM((products.price - products.Bprice) * sales.quantity) AS expected_profit,
             SUM(sales.quantity) AS total_units_sold
         FROM sales
         JOIN products ON sales.product_id = products.id
@@ -124,7 +129,9 @@ export function fetchGroupedProfit(db: SQLiteDatabase, groupType: any, callback:
             products.Bprice AS product_Bprice,
             products.quantity AS current_stock,
             strftime('%Y-W%W', sales.created_at) AS day,  -- e.g., "2025-W18"
-            SUM((products.price - products.Bprice) * sales.quantity) AS total_profit,
+            SUM(sales.soldprice * sales.quantity) AS total_sales_revenue,
+            SUM((sales.soldprice - products.Bprice) * sales.quantity) AS total_profit,
+            SUM((products.price - products.Bprice) * sales.quantity) AS expected_profit,
             SUM(sales.quantity) AS total_units_sold
         FROM sales
         JOIN products ON sales.product_id = products.id
@@ -157,7 +164,9 @@ export function fetchGroupedProfit(db: SQLiteDatabase, groupType: any, callback:
                 WHEN '11' THEN 'Nov'
                 WHEN '12' THEN 'Dec'
                 END AS day,
-            SUM((products.price - products.Bprice) * sales.quantity) AS total_profit,
+            SUM(sales.soldprice * sales.quantity) AS total_sales_revenue,
+                SUM((sales.soldprice - products.Bprice) * sales.quantity) AS total_profit,
+            SUM((products.price - products.Bprice) * sales.quantity) AS expected_profit,
             SUM(sales.quantity) AS total_units_sold
         FROM sales
         JOIN products ON sales.product_id = products.id
@@ -174,7 +183,9 @@ export function fetchGroupedProfit(db: SQLiteDatabase, groupType: any, callback:
             products.Bprice AS product_Bprice,
             products.quantity AS current_stock,
             strftime('%Y', sales.created_at) AS day,  -- Year shown in "day" column
-            SUM((products.price - products.Bprice) * sales.quantity) AS total_profit,
+            SUM(sales.soldprice * sales.quantity) AS total_sales_revenue,
+            SUM((sales.soldprice - products.Bprice) * sales.quantity) AS total_profit,
+            SUM((products.price - products.Bprice) * sales.quantity) AS expected_profit,
             SUM(sales.quantity) AS total_units_sold
         FROM sales
         JOIN products ON sales.product_id = products.id
@@ -240,7 +251,83 @@ WHERE quantity < 10
 ORDER BY quantity ASC;
                 `;
             break;
-        default:
+            case 'today':
+                query = `
+            SELECT 
+                products.product_name,
+                SUM(sales.quantity) AS total_units_sold,
+                SUM(sales.soldprice * sales.quantity) AS total_sales_revenue,
+                SUM((sales.soldprice - products.Bprice) * sales.quantity) AS total_profit,
+                SUM((products.price - products.Bprice) * sales.quantity) AS expected_profit,
+                sales.soldprice AS product_price,
+                sales.created_at AS day,
+                products.Bprice AS product_Bprice,
+                products.quantity AS current_stock
+            FROM sales
+            JOIN products ON sales.product_id = products.id
+            WHERE date(sales.created_at) = date('now')
+            GROUP BY products.product_name
+            ORDER BY total_profit DESC;`;
+                break;
+    
+            case 'last-week':
+                query = `
+            SELECT 
+                products.product_name,
+                SUM(sales.quantity) AS total_units_sold,
+                SUM(sales.soldprice * sales.quantity) AS total_sales_revenue,
+                SUM((sales.soldprice - products.Bprice) * sales.quantity) AS total_profit,
+                SUM((products.price - products.Bprice) * sales.quantity) AS expected_profit,
+                sales.soldprice AS product_price,
+                sales.created_at AS day,
+                products.Bprice AS product_Bprice,
+                products.quantity AS current_stock
+            FROM sales
+            JOIN products ON sales.product_id = products.id
+            WHERE date(sales.created_at) >= date('now', '-7 days') AND date(sales.created_at) < date('now')
+            GROUP BY products.product_name
+            ORDER BY total_profit DESC;`;
+                break;
+    
+            case 'last-month':
+                query = `
+            SELECT 
+                products.product_name,
+                SUM(sales.quantity) AS total_units_sold,
+                SUM(sales.soldprice * sales.quantity) AS total_sales_revenue,
+                SUM((sales.soldprice - products.Bprice) * sales.quantity) AS total_profit,
+                SUM((products.price - products.Bprice) * sales.quantity) AS expected_profit,
+                sales.soldprice AS product_price,
+                sales.created_at AS day,
+                products.Bprice AS product_Bprice,
+                products.quantity AS current_stock
+            FROM sales
+            JOIN products ON sales.product_id = products.id
+            WHERE date(sales.created_at) >= date('now', '-1 month') AND date(sales.created_at) < date('now')
+            GROUP BY products.product_name
+            ORDER BY total_profit DESC;`;
+                break;
+    
+            case 'last-3months':
+                query = `
+            SELECT 
+                products.product_name,
+                SUM(sales.quantity) AS total_units_sold,
+                SUM(sales.soldprice * sales.quantity) AS total_sales_revenue,
+                SUM((sales.soldprice - products.Bprice) * sales.quantity) AS total_profit,
+                SUM((products.price - products.Bprice) * sales.quantity) AS expected_profit,
+                sales.soldprice AS product_price,
+                sales.created_at AS day,
+                products.Bprice AS product_Bprice,
+                products.quantity AS current_stock
+            FROM sales
+            JOIN products ON sales.product_id = products.id
+            WHERE date(sales.created_at) >= date('now', '-3 months') AND date(sales.created_at) < date('now')
+            GROUP BY products.product_name
+            ORDER BY total_profit DESC;`;
+                break;
+    
+            default:
             return;
     }
 
@@ -251,6 +338,104 @@ ORDER BY quantity ASC;
         });
     });
 }
+export function fetchCumulativeProfit(db: SQLiteDatabase, timeframe: string, callback: any) {
+    let query = '';
+
+    switch (timeframe) {
+        case 'today':
+            query = `
+                SELECT 
+                    SUM(sales.soldprice * sales.quantity) AS total_sales_revenue,
+                    SUM((sales.soldprice - products.Bprice) * sales.quantity) AS total_profit,
+                    SUM((products.price - products.Bprice) * sales.quantity) AS expected_profit
+                FROM sales
+                JOIN products ON sales.product_id = products.id
+                WHERE date(sales.created_at) = date('now');
+            `;
+            break;
+
+        case 'last-week':
+            query = `
+                SELECT 
+                    SUM(sales.soldprice * sales.quantity) AS total_sales_revenue,
+                    SUM((sales.soldprice - products.Bprice) * sales.quantity) AS total_profit,
+                    SUM((products.price - products.Bprice) * sales.quantity) AS expected_profit
+                FROM sales
+                JOIN products ON sales.product_id = products.id
+                WHERE date(sales.created_at) >= date('now', '-7 days') AND date(sales.created_at) < date('now');
+            `;
+            break;
+
+        case 'last-month':
+            query = `
+                SELECT 
+                    SUM(sales.soldprice * sales.quantity) AS total_sales_revenue,
+                    SUM((sales.soldprice - products.Bprice) * sales.quantity) AS total_profit,
+                    SUM((products.price - products.Bprice) * sales.quantity) AS expected_profit
+                FROM sales
+                JOIN products ON sales.product_id = products.id
+                WHERE date(sales.created_at) >= date('now', '-1 month') AND date(sales.created_at) < date('now');
+            `;
+            break;
+
+        case 'last-3months':
+            query = `
+                SELECT 
+                    SUM(sales.soldprice * sales.quantity) AS total_sales_revenue,
+                    SUM((sales.soldprice - products.Bprice) * sales.quantity) AS total_profit,
+                    SUM((products.price - products.Bprice) * sales.quantity) AS expected_profit
+                FROM sales
+                JOIN products ON sales.product_id = products.id
+                WHERE date(sales.created_at) >= date('now', '-3 months') AND date(sales.created_at) < date('now');
+            `;
+            break;
+
+        case 'monthly':
+            query = `
+                SELECT 
+                    SUM(sales.soldprice * sales.quantity) AS total_sales_revenue,
+                    SUM((sales.soldprice - products.Bprice) * sales.quantity) AS total_profit,
+                    SUM((products.price - products.Bprice) * sales.quantity) AS expected_profit
+                FROM sales
+                JOIN products ON sales.product_id = products.id
+                WHERE strftime('%Y-%m', sales.created_at) = strftime('%Y-%m', 'now');
+            `;
+            break;
+
+        case 'yearly':
+            query = `
+                SELECT 
+                    SUM(sales.soldprice * sales.quantity) AS total_sales_revenue,
+                    SUM((sales.soldprice - products.Bprice) * sales.quantity) AS total_profit,
+                    SUM((products.price - products.Bprice) * sales.quantity) AS expected_profit
+                FROM sales
+                JOIN products ON sales.product_id = products.id
+                WHERE strftime('%Y', sales.created_at) = strftime('%Y', 'now');
+            `;
+            break;
+
+        case 'all':
+            query = `
+                SELECT 
+                    SUM(sales.soldprice * sales.quantity) AS total_sales_revenue,
+                    SUM((sales.soldprice - products.Bprice) * sales.quantity) AS total_profit,
+                    SUM((products.price - products.Bprice) * sales.quantity) AS expected_profit
+                FROM sales
+                JOIN products ON sales.product_id = products.id;
+            `;
+            break;
+
+        default:
+            return;
+    }
+
+    db.transaction(tx => {
+        tx.executeSql(query, [], (_, { rows }) => {
+            callback(rows.item(0)); // Return a single object
+        });
+    });
+}
+
 export const markSaleAsSynced = (id: number, db: SQLiteDatabase) => {
     return new Promise((resolve, reject) => {
         db.transaction((tx: any) => {
@@ -297,11 +482,12 @@ export const saveSalesItem = async (
             // 1. Insert into inventory
             await tx.executeSql(
                 `INSERT OR REPLACE INTO inventory 
-           (product_id, quantity, synced,createdBy, created_at, updatedAt)
-           VALUES (?, ?, ?, ?, ?, ?)`,
+           (product_id, quantity,soldprice, synced,createdBy, created_at, updatedAt)
+           VALUES (?, ?, ?, ?, ?,?, ?)`,
                 [
                     item.product_id,
                     parseFloat(item.quantity),
+                    parseFloat(String(item.soldprice || '0')),
                     item.synced ? 1 : 0,
                     item.createdBy,
                     now,
@@ -336,9 +522,9 @@ export const finalizeSale = async (
             cartItems.forEach((item) => {
                 // Insert into sales
                 tx.executeSql(
-                    `INSERT INTO sales (product_id, quantity, synced, createdBy, created_at, updatedAt)
-             VALUES (?, ?, ?, ?, ?, ?)`,
-                    [item.id, item.quantity, synced, createdBy, now, now],
+                    `INSERT INTO sales (product_id, quantity,soldprice, synced, createdBy, created_at, updatedAt)
+             VALUES (?, ?, ?, ?, ?, ?,?)`,
+                    [item.id, item.quantity, item.price, synced, createdBy, now, now],
                     (_, res) => {
                         console.log(`✅ Inserted sale for item ID: ${item.id}`);
                     },
