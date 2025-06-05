@@ -3,6 +3,7 @@ import { CartItem, InventoryItem, ProductItem } from "../../models";
 import { getNow } from "../../utils";
 import { syncData } from "./sync.service";
 import { pullServerUpdates } from "./pull.service";
+import NetInfo from '@react-native-community/netinfo';
 import Papa from 'papaparse';
 import RNFS from 'react-native-fs'; // Already included in many RN setups
 import { pick, types, keepLocalCopy } from '@react-native-documents/picker';
@@ -251,8 +252,8 @@ WHERE quantity < 10
 ORDER BY quantity ASC;
                 `;
             break;
-            case 'today':
-                query = `
+        case 'today':
+            query = `
             SELECT 
                 products.product_name,
                 SUM(sales.quantity) AS total_units_sold,
@@ -268,10 +269,10 @@ ORDER BY quantity ASC;
             WHERE date(sales.created_at) = date('now')
             GROUP BY products.product_name
             ORDER BY total_profit DESC;`;
-                break;
-    
-            case 'last-week':
-                query = `
+            break;
+
+        case 'last-week':
+            query = `
             SELECT 
                 products.product_name,
                 SUM(sales.quantity) AS total_units_sold,
@@ -287,10 +288,10 @@ ORDER BY quantity ASC;
             WHERE date(sales.created_at) >= date('now', '-7 days') AND date(sales.created_at) < date('now')
             GROUP BY products.product_name
             ORDER BY total_profit DESC;`;
-                break;
-    
-            case 'last-month':
-                query = `
+            break;
+
+        case 'last-month':
+            query = `
             SELECT 
                 products.product_name,
                 SUM(sales.quantity) AS total_units_sold,
@@ -306,10 +307,10 @@ ORDER BY quantity ASC;
             WHERE date(sales.created_at) >= date('now', '-1 month') AND date(sales.created_at) < date('now')
             GROUP BY products.product_name
             ORDER BY total_profit DESC;`;
-                break;
-    
-            case 'last-3months':
-                query = `
+            break;
+
+        case 'last-3months':
+            query = `
             SELECT 
                 products.product_name,
                 SUM(sales.quantity) AS total_units_sold,
@@ -325,9 +326,9 @@ ORDER BY quantity ASC;
             WHERE date(sales.created_at) >= date('now', '-3 months') AND date(sales.created_at) < date('now')
             GROUP BY products.product_name
             ORDER BY total_profit DESC;`;
-                break;
-    
-            default:
+            break;
+
+        default:
             return;
     }
 
@@ -469,44 +470,153 @@ export const updateItemSale = (db: SQLiteDatabase, id: number, incomingQuantity:
     });
 };
 
-export const saveSalesItem = async (
-    db: SQLiteDatabase,
-    item: InventoryItem
-): Promise<InventoryItem[]> => {
-    try {
-        const now = new Date().toISOString();
+// export const saveSalesItem = async (
+//     db: SQLiteDatabase,
+//     item: InventoryItem
+// ): Promise<InventoryItem[]> => {
+//     try {
+//         const now = new Date().toISOString();
 
-        item.synced = false;
-        item.createdBy = await AsyncStorage.getItem('userId')
-        await db.transaction(async tx => {
-            // 1. Insert into inventory
-            await tx.executeSql(
-                `INSERT OR REPLACE INTO inventory 
-           (product_id, quantity,soldprice, synced,createdBy, created_at, updatedAt)
-           VALUES (?, ?, ?, ?, ?,?, ?)`,
-                [
-                    item.product_id,
-                    parseFloat(item.quantity),
-                    parseFloat(String(item.soldprice || '0')),
-                    item.synced ? 1 : 0,
-                    item.createdBy,
-                    now,
-                    now
-                ]
-            );
-            const db = await getDBConnection();
-            await updateItemSale(db, parseInt(item.product_id), parseFloat(item.quantity))
+//         item.synced = false;
+//         item.createdBy = await AsyncStorage.getItem('userId')
+//         await db.transaction(async tx => {
+//             // 1. Insert into inventory
+//             await tx.executeSql(
+//                 `INSERT OR REPLACE INTO inventory 
+//            (product_id, quantity,soldprice, synced,createdBy, created_at, updatedAt)
+//            VALUES (?, ?, ?, ?, ?,?, ?)`,
+//                 [
+//                     item.product_id,
+//                     parseFloat(item.quantity),
+//                     parseFloat(String(item.soldprice || '0')),
+//                     item.synced ? 1 : 0,
+//                     item.createdBy,
+//                     now,
+//                     now
+//                 ]
+//             );
+//             const db = await getDBConnection();
+//             await updateItemSale(db, parseInt(item.product_id), parseFloat(item.quantity))
 
-        });
+//         });
 
-        // 3. Return updated inventory list
-        return await fetchSales(db);
+//         // 3. Return updated inventory list
+//         return await fetchSales(db);
 
-    } catch (error) {
-        console.error('❌ Error saving inventory item:', error);
-        throw error;
-    }
-};
+//     } catch (error) {
+//         console.error('❌ Error saving inventory item:', error);
+//         throw error;
+//     }
+// };
+
+
+// export const saveSalesItem = async (
+//   db: SQLiteDatabase,
+//   item: InventoryItem
+// ): Promise<InventoryItem[]> => {
+//   try {
+//     const now = new Date().toISOString();
+//     const userId = await AsyncStorage.getItem('userId');
+//     item.createdBy = userId || '';
+//     const isConnected = await NetInfo.fetch().then(state => state.isConnected);
+
+//     if (isConnected) {
+//       try {
+//         // Try saving to MongoDB backend
+//         const response = await axios.post('https://your-api.com/sales', {
+//           product_id: item.product_id,
+//           quantity: item.quantity,
+//           soldprice: item.soldprice,
+//           createdBy: item.createdBy,
+//           createdAt: now,
+//           updatedAt: now,
+//         });
+
+//         // If successful, mark item as synced
+//         item.synced = true;
+//       } catch (err) {
+//         console.warn('🌐 MongoDB sync failed. Saving locally.', err);
+//         item.synced = false;
+//       }
+//     } else {
+//       item.synced = false;
+//     }
+
+//     // Save to SQLite regardless
+//     await db.transaction(async tx => {
+//       await tx.executeSql(
+//         `INSERT OR REPLACE INTO inventory 
+//          (product_id, quantity, soldprice, synced, createdBy, created_at, updatedAt)
+//          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+//         [
+//           item.product_id,
+//           parseFloat(item.quantity),
+//           parseFloat(String(item.soldprice || '0')),
+//           item.synced ? 1 : 0,
+//           item.createdBy,
+//           now,
+//           now,
+//         ]
+//       );
+
+//       const dbConn = await getDBConnection();
+//       await updateItemSale(dbConn, parseInt(item.product_id), parseFloat(item.quantity));
+//     });
+
+//     return await fetchSales(db);
+//   } catch (error) {
+//     console.error('❌ Error saving inventory item:', error);
+//     throw error;
+//   }
+// };
+
+// export const finalizeSale = async (
+//     db: SQLiteDatabase,
+//     cartItems: CartItem[]
+// ): Promise<void> => {
+//     const now = new Date().toISOString();
+//     const synced = 0;
+//     const createdBy = await AsyncStorage.getItem('userId');
+
+//     db.transaction(
+//         (tx) => {
+//             cartItems.forEach((item) => {
+//                 // Insert into sales
+//                 tx.executeSql(
+//                     `INSERT INTO sales (product_id, quantity,soldprice, synced, createdBy, created_at, updatedAt)
+//              VALUES (?, ?, ?, ?, ?, ?,?)`,
+//                     [item.id, item.quantity, item.price, synced, createdBy, now, now],
+//                     (_, res) => {
+//                         console.log(`✅ Inserted sale for item ID: ${item.id}`);
+//                     },
+//                     (_, error) => {
+//                         console.error(`❌ Failed to insert sale for item ID: ${item.id}`, error);
+//                         return false;
+//                     }
+//                 );
+
+//                 // Update product quantity
+//                 tx.executeSql(
+//                     `UPDATE products SET quantity = quantity - ? WHERE id = ?`,
+//                     [item.quantity, item.id],
+//                     (_, res) => {
+//                         console.log(`✅ Updated stock for item ID: ${item.id}`);
+//                     },
+//                     (_, error) => {
+//                         console.error(`❌ Failed to update stock for item ID: ${item.id}`, error);
+//                         return false;
+//                     }
+//                 );
+//             });
+//         },
+//         (error) => {
+//             console.error('❌ Transaction failed:', error);
+//         },
+//         () => {
+//             console.log('✅ Transaction completed successfully');
+//         }
+//     );
+// };
 
 
 export const finalizeSale = async (
@@ -514,16 +624,35 @@ export const finalizeSale = async (
     cartItems: CartItem[]
 ): Promise<void> => {
     const now = new Date().toISOString();
-    const synced = 0;
     const createdBy = await AsyncStorage.getItem('userId');
+    const isConnected = await NetInfo.fetch().then(state => state.isConnected);
 
     db.transaction(
         (tx) => {
-            cartItems.forEach((item) => {
-                // Insert into sales
+            cartItems.forEach(async (item) => {
+                let synced = 0;
+
+                if (isConnected) {
+                    try {
+                        await axios.post('https://your-api.com/sales', {
+                            product_id: item.id,
+                            quantity: item.quantity,
+                            soldprice: item.price,
+                            createdBy,
+                            createdAt: now,
+                            updatedAt: now
+                        });
+                        synced = 1;
+                        console.log(`🌐 Synced sale for item ID: ${item.id}`);
+                    } catch (err) {
+                        console.warn(`⚠️ Sync failed for item ID: ${item.id}. Saving locally.`, err);
+                    }
+                }
+
+                // Insert into local sales table
                 tx.executeSql(
-                    `INSERT INTO sales (product_id, quantity,soldprice, synced, createdBy, created_at, updatedAt)
-             VALUES (?, ?, ?, ?, ?, ?,?)`,
+                    `INSERT INTO sales (product_id, quantity, soldprice, synced, createdBy, created_at, updatedAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
                     [item.id, item.quantity, item.price, synced, createdBy, now, now],
                     (_, res) => {
                         console.log(`✅ Inserted sale for item ID: ${item.id}`);
@@ -534,7 +663,7 @@ export const finalizeSale = async (
                     }
                 );
 
-                // Update product quantity
+                // Update product quantity locally
                 tx.executeSql(
                     `UPDATE products SET quantity = quantity - ? WHERE id = ?`,
                     [item.quantity, item.id],

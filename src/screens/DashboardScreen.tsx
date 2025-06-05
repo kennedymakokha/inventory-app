@@ -4,7 +4,7 @@ import { LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 import { getDBConnection } from '../services/db-service';
 import { fetchGroupedProfit } from '../services/sales.service';
-import { createSyncTable, fullSync } from '../services/product.service';
+import { createSyncTable } from '../services/product.service';
 import { pullServerUpdates } from '../services/pull.service';
 
 const screenWidth = Dimensions.get('window').width;

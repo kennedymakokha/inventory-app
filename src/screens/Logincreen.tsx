@@ -40,9 +40,9 @@ const LoginScreen = ({ navigation }: any) => {
                 return;
             }
             setLoading(true)
-            setprogress("hitting api")
+           
             const data = await loginUser(item).unwrap()
-            setprogress("finished  api")
+          
 
             if (data.ok === true) {
                 setprogress("Data truei")
@@ -50,7 +50,7 @@ const LoginScreen = ({ navigation }: any) => {
                 await AsyncStorage.setItem("accessToken", data.token);
                 await AsyncStorage.setItem('userId', data.user._id);
                 if (data?.exp) {
-                    setprogress("expiry found")
+                  
                     await AsyncStorage.setItem("tokenExpiry", data.exp.toString());
                     await login(data.token);
                 }
