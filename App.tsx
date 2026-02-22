@@ -9,6 +9,9 @@ import { AuthStack, RootStack } from './src/navigations/rootStack';
 import { RootDrawer } from './src/navigations/rootDrawer';
 import { PersistGate } from 'redux-persist/integration/react';
 import { useAuthContext } from './src/context/authContext';
+import PrintTest from './src/screens/printTest';
+import { requestBluetoothPermissions } from './src/utils/permsions';
+import { initPrinter } from './src/services/printerService';
 function App(): React.JSX.Element {
   const [loading, setLoading] = useState(true)
   const AppWithAuth = () => {
@@ -18,7 +21,16 @@ function App(): React.JSX.Element {
     return token ? <RootDrawer /> : <AuthStack />;
 
   };
+ useEffect(() => {
+  const setupPrinter = async () => {
+    const granted = await requestBluetoothPermissions();
+    if (!granted) return;
 
+    await initPrinter();
+  };
+
+  setupPrinter();
+}, []);
   return (
     <View className="flex-1 dark bg-black-50">
       <StatusBar animated={true} backgroundColor="#000000" />

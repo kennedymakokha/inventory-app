@@ -74,7 +74,7 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => 
                     source={require('../assets/logo.png')}
                     className="size-40 rounded-full mb-2"
                 />
-                <Text className="text-white text-lg">Welcome! {user.name}</Text>
+                <Text className="text-white text-lg">Welcome! {user?.name}</Text>
             </View>
             {!!message && (
                 <Text className="text-center mt-2 text-white">{message}</Text>

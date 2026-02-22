@@ -16,7 +16,7 @@ const LoginScreen = ({ navigation }: any) => {
     const [msg, setMsg] = useState({ msg: "", state: "" });
     const [loading, setLoading] = useState(false)
     const [progress, setprogress] = useState("")
-    const [item, setItem] = useState({ phone_number: "0700000000", password: 'makokha1' });
+    const [item, setItem] = useState({ phone_number: "0716017221", password: '+254716017221' });
     const [loginUser, { isLoading, error }] = useLoginMutation();
     const dispatch = useDispatch()
     const { login } = useAuthContext();

@@ -1,4 +1,4 @@
-import { View, Text, Modal, TextInput, Dimensions } from 'react-native'
+import { View, Text, Modal, TextInput, Dimensions, Alert } from 'react-native'
 import React, { useState } from 'react'
 import { InputContainer, TextArea } from '../../../components/Input';
 import { authorizedFetch } from '../../../middleware/auth.middleware';
@@ -6,13 +6,134 @@ import Toast from '../../../components/Toast';
 import Button from '../../../components/Button';
 import { CartItem, ProductItem } from '../../../../models';
 import { FlatList } from 'react-native';
-
+import { printReceipt as printToPrinter } from '../../../services/printerService';
+import { useSelector } from 'react-redux';
 
 const CheckoutModal = ({ modalVisible, cartItems, PostLocally, setModalVisible }: any) => {
-
+ const { user } = useSelector((state: any) => state.auth)
     const calculateSubtotal = (item: CartItem) => item.price * item.quantity;
     const grandTotal = cartItems.reduce((sum: any, item: any) => sum + calculateSubtotal(item), 0);
+const buildReceiptText = ({
+  receiptNo,
+  invoiceId,
+  cartItems,
+  user,
+  paymentMethod, // "CASH" | "MPESA"
+  amountPaid,
+}: {
+  receiptNo: string;
+  invoiceId: string;
+  cartItems: any[];
+  user?: any;
+  paymentMethod: "CASH" | "MPESA";
+  amountPaid: number;
+}) => {
+  const width = 32;
+  const line = "--------------------------------\n";
 
+  let text = "";
+
+  // Header
+  text += `<C><b>CLIDE PHARMACEUTICALS</b></C>\n`;
+  text += `<C>P.O BOX 123 - NAIROBI</C>\n`;
+  text += `<C>Tel: 0712 345 678</C>\n`;
+  text += `<C>KRA PIN: P051234567X</C>\n`;
+  text += line;
+
+  const now = new Date();
+  const date = now.toISOString().split("T")[0];
+  const time = now.toTimeString().split(" ")[0];
+
+  text += `Receipt No: ${receiptNo}\n`;
+  text += `Invoice ID: ${invoiceId}\n`;
+  text += `Date: ${date} ${time}\n`;
+  text += line;
+
+  text += `<b>ITEMS</b>\n`;
+
+  let totalInclusive = 0;
+
+  cartItems.forEach((item) => {
+    const itemTotal = item.quantity * item.price;
+    totalInclusive += itemTotal;
+
+    const name =
+      item.product_name.length > width
+        ? item.product_name.substring(0, width)
+        : item.product_name;
+
+    text += `${name}\n`;
+
+    const left = `${item.quantity} x ${item.price.toFixed(2)}`;
+    const right = itemTotal.toFixed(2);
+
+    text += left.padEnd(width - right.length) + right + "\n";
+  });
+
+  text += line;
+
+  // VAT Inclusive 16%
+  const vat = totalInclusive * (16 / 116);
+  const net = totalInclusive - vat;
+
+  text += `Net (Ex VAT)`
+    .padEnd(width - net.toFixed(2).length) + net.toFixed(2) + "\n";
+
+  text += `VAT (16%)`
+    .padEnd(width - vat.toFixed(2).length) + vat.toFixed(2) + "\n";
+
+  text += line;
+
+  text += `<b>TOTAL`
+    .padEnd(width - totalInclusive.toFixed(2).length)
+    + totalInclusive.toFixed(2) + `</b>\n`;
+
+  text += line;
+
+  // Payment Section
+  const change = amountPaid - totalInclusive;
+
+  text += `Payment: ${paymentMethod}\n`;
+
+  text += `Amount Paid`
+    .padEnd(width - amountPaid.toFixed(2).length)
+    + amountPaid.toFixed(2) + "\n";
+
+  text += `Change`
+    .padEnd(width - change.toFixed(2).length)
+    + change.toFixed(2) + "\n";
+
+  text += line;
+
+  if (user?.name) {
+    text += `Served by: ${user.name}\n`;
+  }
+
+  text += `<C>MPESA TILL: 123456</C>\n`;
+  text += `<C>Prices VAT Inclusive</C>\n`;
+  text += `<C>Thank You & Get Well Soon!</C>\n\n`;
+
+  return text;
+};
+  const printReceipt = async (visitId:string,cartItems:any[]) => {
+    try {
+   
+      // Send string directly
+      await printToPrinter(buildReceiptText({
+  receiptNo:"   REC123456",
+  invoiceId:"   INV123456",
+  cartItems,
+  user,
+  paymentMethod:"CASH", // "CASH" | "MPESA"
+  amountPaid:grandTotal,
+}));
+   
+
+      // If you want logo and QR, handle them inside printerService
+    } catch (err) {
+      Alert.alert('Printer Error', 'Visit saved but receipt could not be printed');
+    }
+  };
     return (
 
         <Modal
@@ -53,7 +174,7 @@ const CheckoutModal = ({ modalVisible, cartItems, PostLocally, setModalVisible }
                             <Button handleclick={() => setModalVisible(false)} outline loading={false} title="Cancel" />
                         </View>
                         <View className="mt-2 w-1/2 px-2">
-                            <Button handleclick={PostLocally} loading={false} title="CheckOut" />
+                            <Button handleclick={() =>{ printReceipt("1245", cartItems);PostLocally()}} loading={false} title="CheckOut" />
 
                             {/* Cancel Button */}
                         </View>
