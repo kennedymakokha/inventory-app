@@ -1,24 +1,53 @@
-import { View, Text } from 'react-native'
-import React, { useEffect } from 'react'
-import { FormatDate } from '../../utils/formatDate'
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import SearchBar from './searchBar'
-import { useSelector } from 'react-redux'
+import { View, Text } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
+import SearchBar from './searchBar';
 
-const PageHeader = ({ component }: { component?: () => React.ReactNode | any }) => {
-    const { user } = useSelector((state: any) => state.auth)
-    return (
-        <View className="bg-green-700 p-4 rounded-b-xl">
-            <View>
-                <Text className="text-white text-xl font-bold uppercase">{user?.username}</Text>
-                <View className="bg-gray-200 px-2 py-1 rounded mt-1 self-start">
-                    <Text className="text-xs font-semibold text-gray-700">{user?.role}</Text>
-                </View>
-                <Text className="text-white text-xs mt-1">Req.date {FormatDate(Date())}</Text>
-                {component ? component() : <SearchBar white placeholder="search for a Product" />}
-            </View>
+const POSHeader = ({ component }: { component?: () => React.ReactNode }) => {
+  const { user } = useSelector((state: any) => state.auth);
+  const [dateTime, setDateTime] = useState('');
+
+  useEffect(() => {
+    const updateTime = () => setDateTime(new Date().toLocaleString());
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <View className="bg-slate-900 px-5 pt-6 pb-4 shadow-lg">
+      {/* Business Name */}
+      <Text className="text-white text-2xl text-center font-extrabold tracking-wide">
+        CLIDE PHARMACEUTICALS POS
+      </Text>
+
+      {/* User + Terminal Info */}
+      <View className="flex-row justify-between items-center mt-3">
+        {/* Cashier Info */}
+        <View>
+          <Text className="text-white text-lg font-semibold">{user?.username}</Text>
+          <View className="bg-white/20 px-3 py-1 rounded-full mt-1 self-start">
+            <Text className="text-xs font-bold text-white uppercase tracking-wide">
+              {user?.role}
+            </Text>
+          </View>
         </View>
-    )
-}
 
-export default PageHeader
+        {/* Terminal & Online Status */}
+        <View className="items-end">
+          <Text className="text-white text-sm font-medium">{dateTime}</Text>
+          <Text className="text-[#22C55E] text-xs font-semibold mt-1">
+            ● Online | Terminal: POS-01
+          </Text>
+        </View>
+      </View>
+
+      {/* Search / Custom Component */}
+      <View className="mt-4">
+        {component ? component() : <SearchBar white placeholder="Search products..." />}
+      </View>
+    </View>
+  );
+};
+
+export default POSHeader;

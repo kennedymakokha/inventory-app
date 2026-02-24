@@ -1,6 +1,6 @@
 import { BLEPrinter } from 'react-native-thermal-receipt-printer-image-qr';
 
-const PRINTER_MAC = '02:38:7D:AB:B2:52';
+export const PRINTER_MAC = '02:38:7D:AB:B2:52';
 
 let initialized = false;
 

@@ -1,11 +1,6 @@
 import { SQLiteDatabase } from "react-native-sqlite-storage";
 import { ProductItem } from "../../models";
 import { getNow } from "../../utils";
-import { syncData } from "./sync.service";
-import { pullServerUpdates } from "./pull.service";
-import Papa from 'papaparse';
-import RNFS from 'react-native-fs'; // Already included in many RN setups
-import { pick, types, keepLocalCopy } from '@react-native-documents/picker';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "@env";
 import { authorizedFetch } from "../middleware/auth.middleware";

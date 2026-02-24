@@ -32,7 +32,7 @@ function App(): React.JSX.Element {
   setupPrinter();
 }, []);
   return (
-    <View className="flex-1 dark bg-black-50">
+    <View className="flex-1 dark bg-[#1e293b]">
       <StatusBar animated={true} backgroundColor="#000000" />
       <Provider store={store}>
         <PersistGate loading={null} persistor={persistor}>

@@ -230,7 +230,7 @@ const SalesScreen = () => {
                         <SearchBar white placeholder="search for a Product" />
                     </View>
                     <View className='w-1/4 flex items-center justify-center '>
-                        <Text className='font-bold text-white'>{datasales?.total_sales_revenue.toFixed(2)}/-</Text>
+                        <Text className='font-bold text-white'>{datasales?.total_sales_revenue?.toFixed(2)}/-</Text>
                     </View>
 
                 </View>

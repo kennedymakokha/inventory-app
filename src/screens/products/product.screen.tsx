@@ -1,190 +1,205 @@
-
-
 import React, { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     FlatList,
     RefreshControl,
+    ScrollView,
     Text,
     TouchableOpacity,
-    useColorScheme,
     View,
+    useColorScheme
 } from 'react-native';
 
 import { getDBConnection } from '../../services/db-service';
-import { ProductItem, ToDoItem } from '../../../models';
+import { ProductItem } from '../../../models';
 import { createProductTable, getProducts, getSychedProducts, getUnsyncedProducts, saveProductItems } from '../../services/product.service';
-import { Fab } from '../../components/Button';
+
 import AddProductModal from './components/addProductModal';
-import renderItem from './components/productItem';
-import { validateItem } from '../validations/product.validation';
-import { useRoute } from '@react-navigation/native';
-import { SkeletonList } from './skeleton';
 import UploadProductsModal from './components/uploadProduct.modal';
-import SearchBar from '../../components/searchBar';
-import { useSearch } from '../../context/searchContext';
+import { validateItem } from '../validations/product.validation';
 import PageHeader from '../../components/pageHeader';
 import { createInventoryTable } from '../../services/inventory.service';
 import { useCreateProductMutation } from '../../services/productApi';
 
+import { useSearch } from '../../context/searchContext';
+import { SkeletonList } from './skeleton';
+import MultiFab from '../../components/multiFab';
+import RadialFab from '../../components/multiFab';
 
 const ProductScreen = () => {
     const isDarkMode = useColorScheme() === 'dark';
-    const route = useRoute();
-    const { query, setQuery } = useSearch()
-    const { filter }: any = route.params;
-    const initialState = {
-        product_name: "",
-        price: "",
-        expiryDate: "",
-        initial_stock: "",
-        description: "",
-        quantity: 0,
-        Bprice: 0
-    }
+    const { query, setQuery } = useSearch();
+    const initialState = { product_name: "", price: "", expiryDate: "", initial_stock: "", description: "", quantity: 0, Bprice: 0 };
+
     const [loading, setLoading] = useState(false);
-    const [postProductToMongoDB] = useCreateProductMutation()
     const [products, setProducts] = useState<ProductItem[]>([]);
     const [refreshing, setRefreshing] = useState(false);
-    const [msg, setMsg] = useState({ msg: "", state: "" });
-    const [offset, setOffSet] = useState(10)
-    const [item, setItem] = useState(initialState)
     const [modalVisible, setModalVisible] = useState(false);
-    const [uploadmodalVisible, setUploadModalVisible] = useState(false);
+    const [uploadModalVisible, setUploadModalVisible] = useState(false);
+    const [item, setItem] = useState(initialState);
+    const [msg, setMsg] = useState({ msg: "", state: "" });
+    const [offset, setOffset] = useState(10);
 
+    const [postProductToMongoDB] = useCreateProductMutation();
 
-
-
-    const loadDataCallback = useCallback(async (offset: any, filter: any) => {
+    const loadDataCallback = useCallback(async (offset = 0, filter = 'all') => {
         try {
+            setLoading(true);
             const db = await getDBConnection();
             await createProductTable(db);
-            let storedItems = [];
-            if (filter === 'all') {
-                storedItems = await getProducts(db);
-            } else if (filter === 'synced') {
-                storedItems = await getSychedProducts(db, offset);
-            } else if (filter === 'unsynced') {
-                storedItems = await getUnsyncedProducts(db, offset);
-            }
-            setProducts(storedItems); // even if it's empty, clear the list
-            setLoading(false);
-        } catch (error) {
-            console.error(error);
-        }
-    }, [filter]);
-    const onRefresh = async () => {
-        try {
-            setRefreshing(true);
-            const res: any = await loadDataCallback(0, filter); // Usually refresh starts at offset 0
-            setRefreshing(false)
-        } catch (error) {
-            console.error('❌ Refresh failed:', error);
-        } finally {
-            setRefreshing(false);
-        }
-    };
+            await createInventoryTable(db);
 
-    useEffect(() => {
-        setLoading(true);
-        loadDataCallback(offset, filter);
-    }, [loadDataCallback]);
+            let storedItems: ProductItem[] = [];
+            if (filter === 'all') storedItems = await getProducts(db);
+            if (filter === 'synced') storedItems = await getSychedProducts(db, offset);
+            if (filter === 'unsynced') storedItems = await getUnsyncedProducts(db, offset);
+
+            setProducts(storedItems);
+        } catch (error) {
+            console.error('❌ Error loading products:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    const onRefresh = async () => {
+        setRefreshing(true);
+        await loadDataCallback(0);
+        setRefreshing(false);
+    };
 
     const AddProduct = async () => {
         if (!validateItem(item, setMsg)) return;
+
         try {
             const db = await getDBConnection();
             await createProductTable(db);
             await createInventoryTable(db);
+
             const storedItems = await saveProductItems(db, item, postProductToMongoDB);
             setProducts(storedItems);
+
             setItem(initialState);
             setModalVisible(false);
             setMsg({ msg: '✅ Product added!', state: 'success' });
         } catch (error: any) {
-            console.log(error.message)
             setMsg({ msg: error.message || '❌ Could not add product.', state: 'error' });
         }
     };
-    const loadMoreData = async () => {
-        setOffSet(prev => (prev + 10))
-    }
-    // const deleteItem = async (id: number) => {
-    //     try {
-    //         const db = await getDBConnection();
-    //         await deleteTodoItem(db, id);
-    //         todos.splice(id, 1);
-    //         setTodos(todos.slice(0));
-    //     } catch (error) {
-    //         console.error(error);
-    //     }
-    // };
 
+    useEffect(() => {
+        loadDataCallback(offset);
+    }, [loadDataCallback, offset]);
+
+    // Professional Product Card
+    const renderProductCard = ({ item }: { item: ProductItem }) => {
+        const lowStock = item.quantity <= 5; // threshold for low stock
+        return (
+            <View style={{
+                backgroundColor: '#1e293b',
+                padding: 16,
+                borderRadius: 12,
+                marginBottom: 12,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.25,
+                shadowRadius: 4,
+                elevation: 5
+            }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{item.product_name}</Text>
+                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Ksh {item.price}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}>
+                    <Text style={{ color: lowStock ? '#ef4444' : '#22c55e', fontWeight: '600' }}>
+                        {item.quantity} in stock
+                    </Text>
+                    <Text style={{ color: '#9ca3af', fontSize: 12 }}>{item.expiryDate ? `Exp: ${item.expiryDate}` : ''}</Text>
+                </View>
+            </View>
+        );
+    };
 
     return (
-        <View className="flex-1 min-h-[300px] bg-slate-900 px-5">
+        <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+            {/* Page Header */}
             <PageHeader />
-            <View className="flex-1 ">
-                {loading ? (
-                    <SkeletonList />
-                ) : (<FlatList
-                    contentContainerStyle={{ paddingBottom: 100 }}
-                    data={products}
-                    keyExtractor={(item, index) => String(item.id || item.product_name || index)}
-                    renderItem={renderItem}
-                    onEndReached={() => loadDataCallback(offset, filter)}
-                    onEndReachedThreshold={0.5}
-                    ListFooterComponent={loading ? <ActivityIndicator className="my-4 text-secondary" /> : null}
-                    refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                    }
-                // contentContainerStyle={{ padding: 1 }}
-                />)}
+            {/* <PageHeader
+                component={() => (
+                    <SearchBar
+                        placeholder="Search products..."
+                        searchText={query}
+                        onChangeText={setQuery}
+                    />
+                )}
+            /> */}
 
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                className="h-12 bg-gray-100 px-2"
+            >
 
-
-                <AddProductModal
-                    setMsg={setMsg}
-                    msg={msg}
-                    PostLocally={AddProduct}
-                    modalVisible={modalVisible}
-                    setItem={setItem}
-                    fetchProducts={loadDataCallback}
-                    item={item}
-                    setModalVisible={setModalVisible}
-                />
-                <UploadProductsModal
-                    setMsg={setMsg}
-                    msg={msg}
-                    PostLocally={AddProduct}
-                    modalVisible={uploadmodalVisible}
-                    setItem={setItem}
-                    fetchProducts={loadDataCallback}
-                    item={item}
-                    setModalVisible={setUploadModalVisible}
-                />
-            </View>
-
-            {/* Floating Button */}
-            <View className="absolute bottom-5 left-5 gap-y-5 right-5 z-50 items-center">
-                <View className="flex-row w-full justify-end ">
-                    {/* <Fab icon="plus" loading={false} title="+" handleclick={onUploadPress} /> */}
-
-                    <Fab icon="plus" loading={false} title="+" handleclick={() => setModalVisible(true)} />
-
-                    {/* {loading ? (
-                        <ActivityIndicator size="large" color="#007AFF" />
-                    ) : (
-                        <Fab outline loading={false}
-                            title="Sync Now"
-                            handleclick={handleSync} />
-                    )} */}
+                <View className="flex-row items-center h-12 gap-x-3 space-x-4 px-2">
+                    {['all', 'synced', 'unsynced', 'all', 'synced', 'unsynced', 'all', 'synced', 'unsynced'].map(filter => (
+                        <TouchableOpacity key={filter} className="bg-white min-w-[80px] px-4 py-2 rounded-md shadow">
+                            <Text className="text-gray-800 text-center text-sm font-medium">{filter}</Text>
+                        </TouchableOpacity>
+                    ))}
                 </View>
-
+            </ScrollView>
+            <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 12 }}>
+                {/* {loading ? (
+          <SkeletonList />
+        ) : ( */}
+                <FlatList
+                    contentContainerStyle={{ paddingBottom: 120 }}
+                    data={products.filter(p => p.product_name.toLowerCase().includes(query.toLowerCase()))}
+                    keyExtractor={(item, index) => String(item.id || item.product_name || index)}
+                    renderItem={renderProductCard}
+                    onEndReached={() => setOffset(prev => prev + 10)}
+                    onEndReachedThreshold={0.5}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                />
+                {/* )} */}
             </View>
-        </View>
 
+            {/* Modals */}
+            <AddProductModal
+                setMsg={setMsg}
+                msg={msg}
+                PostLocally={AddProduct}
+                modalVisible={modalVisible}
+                setItem={setItem}
+                fetchProducts={loadDataCallback}
+                item={item}
+                setModalVisible={setModalVisible}
+            />
+            <UploadProductsModal
+                setMsg={setMsg}
+                msg={msg}
+                PostLocally={AddProduct}
+                modalVisible={uploadModalVisible}
+                setItem={setItem}
+                fetchProducts={loadDataCallback}
+                item={item}
+                setModalVisible={setUploadModalVisible}
+            />
+
+            {/* Floating Action Buttons */}
+            {/* Multi Action FAB */}
+            <RadialFab
+                mainColor="#1e293b"
+                mainIcon="menu"
+                radius={120}    // how far buttons spread
+                angle={90}      // fan angle
+                actions={[
+                    { icon: 'add-outline', label: 'Add Product', onPress: () => setModalVisible(true) },
+                    { icon: 'cloud-upload-outline', label: 'Upload', onPress: () => setUploadModalVisible(true) },
+                    { icon: 'settings-outline', label: 'Settings', onPress: () => console.log('Settings') },
+                ]}
+            />
+        </View>
     );
 };
 
