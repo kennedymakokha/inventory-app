@@ -16,10 +16,11 @@ import {
 import { getDBConnection, getTodoItems, saveTodoItems, createTable, deleteTodoItem } from '../services/db-service';
 import { ToDoItem } from '../../models';
 import { ToDoItemComponent } from '../components/ToDoItem';
+import { useSettings } from '../context/SettingsContext';
 
 
 const TodoScreen = () => {
-    const isDarkMode = useColorScheme() === 'dark';
+  const { isDarkMode } = useSettings();
     const [todos, setTodos] = useState<ToDoItem[]>([]);
     const [newTodo, setNewTodo] = useState('');
     const loadDataCallback = useCallback(async () => {

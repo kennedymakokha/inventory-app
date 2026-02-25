@@ -13,6 +13,8 @@ import { View } from "react-native";
 import SalesScreen from "../screens/sales/salesScreen";
 import SalesReport from "../screens/reports/sales";
 import InventoryDetails from "../screens/inventory/inventoryDetails";
+import CategoryScreen from "../screens/categories/categories.screen";
+import SettingsScreen from "../screens/settingsScreen";
 
 const Stack = createNativeStackNavigator<authStackParamList>();
 
@@ -102,6 +104,9 @@ export function RootStack() {
       <Stack.Screen name="inventory" options={{
         headerShown: false
       }} component={InventoryStack} />
+      <Stack.Screen name="categories" options={{
+        headerShown: false
+      }} component={CategoriesStack} />
       <Stack.Screen name="sales" options={{
         title: "",
         header: () => <CustomHeaderWithSearch noSearch title="Sales" />
@@ -110,7 +115,10 @@ export function RootStack() {
         title: "",
         header: () => <CustomHeaderWithSearch noSearch title="Sales Report" />
       }} component={ReportStack} />
-
+      <Stack.Screen name="settings" options={{
+        title: "",
+        header: () => <CustomHeaderWithSearch noSearch title="Settings" />
+      }} component={SettingsScreen} />
 
     </Stack.Navigator>
   );
@@ -133,21 +141,7 @@ export function ReportStack() {
       }}
     >
       <ReporStack.Screen name="salesReport" options={{ headerShown: false }} component={SalesReport} />
-      {/*  <Stack.Screen name="products"
-        options={{
-          title: "",
-          header: () => <CustomHeaderWithSearch title="Products" />
-        }}
-        component={ProductsTabs} />
-      <Stack.Screen name="inventory" options={{
-        title: "",
-        header: () => <CustomHeaderWithSearch title="Inventory" />
-      }} component={InventoryScreen} />
-      <Stack.Screen name="sales" options={{
-        title: "",
-        header: () => <CustomHeaderWithSearch title="Sales" />
-      }} component={SalesScreen} /> */}
-
+    
 
     </Stack.Navigator>
   );
@@ -172,6 +166,22 @@ export function InventoryStack() {
           }
         }}
       />
+
+    </Stack.Navigator>
+  );
+}
+export function CategoriesStack() {
+
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: true }}>
+
+      <Stack.Screen name="categories_Dashboard"
+        options={{
+          title: "",
+          header: () => <CustomHeaderWithSearch noSearch title="Categories" />
+        }}
+        component={CategoryScreen} />
+
 
     </Stack.Navigator>
   );

@@ -1,11 +1,11 @@
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native'
 import React from 'react'
 import Icon from 'react-native-vector-icons/Entypo'
-const Button = ({ handleclick, outline, title, loading }: { outline?: boolean, handleclick: any, title: any, loading: boolean }) => {
+const Button = ({ handleclick, disabled,outline, title, loading }: {disabled?: boolean, outline?: boolean, handleclick: any, title: any, loading: boolean }) => {
     return (
         <TouchableOpacity activeOpacity={1}
-            className={`${outline ? " border border-green-500 text-green-600" : "bg-green-500"} py-3 px-2 w-full rounded-xl`}
-            onPress={loading ? console.log("") : handleclick}
+            className={`${outline ? " border border-green-500 text-green-600" : "bg-green-500"} py-3 px-2 w-full rounded-xl ${disabled ? "opacity-50" : ""}`}
+            onPress={loading || disabled ? console.log("") : handleclick}
         >
             {loading ? <ActivityIndicator color="white" size={20} /> : <Text className={`text-center tracking-widest uppercase font-bold ${outline ? "text-green-500" : "text-green-800"} font-semibold text-lg`}>
                 {title}

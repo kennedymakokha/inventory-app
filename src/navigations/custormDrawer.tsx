@@ -52,7 +52,7 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => 
     //     getLastSync()
     // }, [inventories])const sync = 
 
-  
+
     const syncLocalProduct = async () => {
         try {
             await refetch()
@@ -97,6 +97,16 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => 
                 <Icon name="swap-horizontal-outline" size={20} color="#fff" />
                 <Text className="tracking-widest uppercase text-center text-white text-base ml-3">Products</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+                className="flex-row items-center my-4"
+                onPress={() =>
+                    navigation.navigate('Home', { screen: `categories` })
+                    // navigation.navigate('products')
+                }
+            >
+                <Icon name="swap-horizontal-outline" size={20} color="#fff" />
+                <Text className="tracking-widest uppercase text-center text-white text-base ml-3">Categories</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
                 className="flex-row items-center my-4"
@@ -125,7 +135,14 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => 
                 <Icon name="book" size={20} color="#fff" />
                 <Text className="tracking-widest uppercase text-center text-white text-base ml-3">Sales Report</Text>
             </TouchableOpacity>
-            {loading ? (
+
+            <TouchableOpacity
+                className="flex-row items-center my-4"
+                onPress={() => navigation.navigate('Home', { screen: `settings` })}
+            >
+                <Icon name="cog" size={20} color="#fff" />
+                <Text className="tracking-widest uppercase text-center text-white text-base ml-3">Settings</Text>
+            </TouchableOpacity>            {loading ? (
                 <ActivityIndicator size="large" color="#007AFF" />
             ) : <TouchableOpacity
                 className="flex-row bg-red-500 py-4 rounded-md justify-center animate-pulse items-center my-4"

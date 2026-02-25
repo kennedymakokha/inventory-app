@@ -1,196 +1,197 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
     FlatList,
     TextInput,
     TouchableOpacity,
-    Alert,
+    Modal,
     KeyboardAvoidingView,
     Platform,
-    ScrollView,
-    Keyboard
+    Keyboard,
+    StyleSheet
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome5';
+import { Camera, CameraType } from 'react-native-camera-kit';
 import { getProducts } from '../../services/product.service';
 import { getDBConnection } from '../../services/db-service';
 import { DataSales, ProductItem } from '../../../models';
 import CheckoutModal from './components/checkout';
 import { createSalesTable, fetchCumulativeProfit, finalizeSale } from '../../services/sales.service';
 import Toast from '../../components/Toast';
-
 import { useSearch } from '../../context/searchContext';
+import { useSettings } from '../../context/SettingsContext';
 import { SkeletonList } from './components/skeleton';
 import PageHeader from '../../components/pageHeader';
 import SearchBar from '../../components/searchBar';
 import { TouchableWithoutFeedback } from 'react-native-gesture-handler';
+import { Theme } from '../../utils/theme';
 
 const SalesScreen = () => {
+    const { isScanToCartEnabled, isDarkMode } = useSettings();
+    const { query } = useSearch();
+
     const [products, setProducts] = useState<ProductItem[]>([]);
     const [cart, setCart] = useState<ProductItem[]>([]);
     const [modalVisible, setModalVisible] = useState(false);
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [batchVisible, setBatchVisible] = useState<Record<string, string>>({});
     const [msg, setMsg] = useState({ msg: "", state: "" });
     const [quantities, setQuantities] = useState<Record<string, string>>({});
     const [sellingPrices, setSellingPrices] = useState<Record<string, string>>({});
     const [state, setState] = useState<Record<string, boolean>>({});
     const [datasales, setdataSales] = useState<DataSales | null>(null);
-    const { query } = useSearch();
 
+    const theme = isDarkMode ? Theme.dark : Theme.light;
     useEffect(() => {
-        const loadProducts = async () => {
-            setLoading(true);
-            const db = await getDBConnection();
-            const fetchedProducts: ProductItem[] = await getProducts(db);
-            setProducts(fetchedProducts);
-            setLoading(false);
-        };
-        loadProducts();
+        loadData();
     }, []);
+
+    const loadData = async () => {
+        setLoading(true);
+        const db = await getDBConnection();
+        const fetchedProducts: ProductItem[] = await getProducts(db);
+        setProducts(fetchedProducts);
+        fetchProfits();
+        setLoading(false);
+    };
+
     const fetchProfits = async () => {
-        setLoading(true)
         const db = await getDBConnection();
         fetchCumulativeProfit(db, "today", (data: any) => {
             setdataSales(data);
-            setLoading(false)
         });
+    };
 
-    }
+    const handleBarcodeScanned = (event: any) => {
+        const code = event.nativeEvent.codeStringValue;
+        if (!code) return;
+
+        const foundProduct = products.find(p => p.barcode === code);
+
+        if (foundProduct) {
+            if (isScanToCartEnabled) {
+                if (foundProduct.quantity > 0) {
+                    // Direct Add logic
+                    const customPrice = foundProduct.price;
+                    updateCartUI(foundProduct, 1, customPrice);
+                    setMsg({ msg: `✅ ${foundProduct.product_name} added to cart`, state: 'success' });
+                    setIsScannerOpen(false);
+                } else {
+                    setMsg({ msg: '❌ Item out of stock', state: 'error' });
+                }
+            } else {
+                // Focus/Manual logic: It effectively acts as a filter
+                setMsg({ msg: `🔍 Found: ${foundProduct.product_name}`, state: 'success' });
+                setIsScannerOpen(false);
+            }
+        } else {
+            setMsg({ msg: '❌ Barcode not recognized', state: 'error' });
+        }
+    };
+
+    const updateCartUI = (product: ProductItem, qty: number, price: number) => {
+        setCart((prevCart: any) => {
+            const existing = prevCart.find((item: any) => item.id === product.id);
+            if (existing) {
+                return prevCart.map((item: any) =>
+                    item.id === product.id ? { ...item, quantity: item.quantity + qty, price } : item
+                );
+            } else {
+                return [...prevCart, { ...product, quantity: qty, price }];
+            }
+        });
+        setState((prev) => ({ ...prev, [product.id]: true }));
+    };
+
+    const handleAddToCart = (product: ProductItem) => {
+        const qty = parseInt(quantities[product.id]) || 0;
+        const customPrice = parseFloat(sellingPrices[product.id]) || product.price;
+
+        if (qty <= 0) {
+            setMsg({ msg: 'Please enter a valid quantity!', state: 'error' });
+            return;
+        }
+
+        if (qty > product.quantity) {
+            setMsg({ msg: 'Quantity exceeds available stock!', state: 'error' });
+            return;
+        }
+
+        updateCartUI(product, qty, customPrice);
+        setQuantities((prev) => ({ ...prev, [product.id]: '' }));
+        setSellingPrices((prev) => ({ ...prev, [product.id]: '' }));
+    };
+
     const PostSale = async () => {
         try {
             const db = await getDBConnection();
             await createSalesTable(db);
             await finalizeSale(db, cart);
-            const fetchedProducts: ProductItem[] = await getProducts(db);
-            setProducts(fetchedProducts);
+            await loadData();
             setModalVisible(false);
             setQuantities({});
             setState({});
             setSellingPrices({});
-            fetchProfits()
             setCart([]);
-            setMsg({ msg: '✅ Sale Posted!', state: 'success' });
+            setMsg({ msg: '✅ Sale Posted Successfully!', state: 'success' });
         } catch (error: any) {
-            console.log(error.message);
-            setMsg({ msg: error.message || '❌ Could not add product.', state: 'error' });
+            setMsg({ msg: error.message || '❌ Sale failed.', state: 'error' });
         }
     };
 
-    const handleAddToCart = async (product: ProductItem) => {
-        const qty = parseInt(quantities[product.id]) || 0;
-        const customPrice = parseFloat(sellingPrices[product.id]) || product.price;
-
-        if (qty <= 0) {
-            setMsg({ msg: 'Please enter a valid quantity.!', state: 'error' });
-            return;
-        }
-
-        if (qty > product.quantity) {
-            setQuantities((prev) => ({ ...prev, [product.id]: "" }));
-            setMsg({ msg: 'Quantity exceeds available stock.!', state: 'error' });
-            return;
-        }
-
-        setCart((prevCart: any) => {
-            const existing = prevCart.find((item: any) => item.id === product.id);
-            if (existing) {
-                return prevCart.map((item: any) =>
-                    item.id === product.id
-                        ? {
-                            ...item,
-                            quantity: item.quantity + qty,
-                            price: customPrice,
-                        }
-                        : item
-                );
-            } else {
-                return [...prevCart, { ...product, quantity: qty, price: customPrice }];
-            }
-        });
-
-        setBatchVisible((prev) => ({ ...prev, [product.id]: false }));
-        setQuantities((prev) => ({ ...prev, [product.id]: '' }));
-        setSellingPrices((prev) => ({ ...prev, [product.id]: '' }));
-        setState((prev) => ({ ...prev, [product.id]: true }));
-    };
-
-    useEffect(() => {
-        if (msg.msg) {
-            const timer = setTimeout(() => {
-                setMsg({ msg: "", state: "" });
-            }, 2000);
-            return () => clearTimeout(timer);
-        }
-    }, [msg.msg]);
-
-    useEffect(() => {
-
-        fetchProfits()
-    }, []);
     const total = cart.reduce((sum, item: any) => sum + item.quantity * item.price, 0);
 
     const renderItem = ({ item }: { item: ProductItem }) => (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View className="bg-white mx-4 my-2 p-4 rounded-2xl shadow-md">
-                <View className="flex-row justify-between items-center mb-2">
-                    <TouchableOpacity
-                        onPress={() => {
-                            const currentQty = parseInt(quantities[item.id] || '0', 10);
-                            setQuantities((prev) => ({ ...prev, [item.id]: (currentQty + 1).toString() }));
-                            setState((prev) => ({ ...prev, [item.id]: false }));
-                        }}
-                        className="px-2 h-12 flex items-center justify-center mx-1 rounded-sm"
-                    >
-                        <Text className="text-lg font-bold text-gray-900">{item.product_name}</Text>
-                    </TouchableOpacity>
-                    <Text className="text-sm text-gray-500">{item.quantity} {item.quantity !== 1 ? 'pcs' : 'pc'} in stock</Text>
+            <View className={`${theme.card} mx-4 my-2 p-4 rounded-3xl shadow-sm border ${theme.border}`}>
+                <View className="flex-row justify-between items-center mb-1">
+                    <Text className={`text-lg font-bold ${theme.text}`}>{item.product_name}</Text>
+                    <Text className={`text-xs px-2 py-1 rounded-full ${item.quantity > 5 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                        {item.quantity} in stock
+                    </Text>
                 </View>
 
-                {item.description ? (
-                    <Text className="text-sm text-gray-500 mb-3">{item.description}</Text>
-                ) : null}
+                {item.barcode ? <Text className="text-xs text-blue-500 mb-2 font-mono">{item.barcode}</Text> : null}
 
-                <View className="flex-row items-center justify-between mb-3">
-                    <View className="flex-row items-center space-x-2">
+                <View className="flex-row items-center justify-between mb-4 mt-2">
+                    <View className="flex-row items-center bg-slate-100 dark:bg-slate-700 rounded-xl p-1">
                         <TouchableOpacity
                             onPress={() => {
-                                const currentQty = parseInt(quantities[item.id] || '0', 10);
-                                if (currentQty > 0) {
-                                    setQuantities((prev) => ({ ...prev, [item.id]: (currentQty - 1).toString() }));
-                                    setState((prev) => ({ ...prev, [item.id]: false }));
-                                }
+                                const current = parseInt(quantities[item.id] || '0');
+                                if (current > 0) setQuantities(prev => ({ ...prev, [item.id]: (current - 1).toString() }));
+                                setState(prev => ({ ...prev, [item.id]: false }));
                             }}
-                            className="bg-gray-200 px-2 h-12 flex items-center justify-center mx-1 w-12 rounded-sm"
+                            className="w-10 h-10 items-center justify-center"
                         >
-                            <Text className="text-xl font-bold text-gray-600">−</Text>
+                            <Icon name="minus" size={12} color={isDarkMode ? "#fff" : "#000"} />
                         </TouchableOpacity>
-
                         <TextInput
-                            className="w-12 text-center text-base font-semibold border border-gray-300 rounded-md px-1"
+                            className={`w-12 text-center font-bold ${theme.text}`}
                             keyboardType="numeric"
                             value={quantities[item.id] || '0'}
-                            onChangeText={(text) => setQuantities((prev) => ({ ...prev, [item.id]: text }))}
+                            onChangeText={(text) => {
+                                setQuantities((prev) => ({ ...prev, [item.id]: text }));
+                                setState(prev => ({ ...prev, [item.id]: false }));
+                            }}
                         />
-
                         <TouchableOpacity
                             onPress={() => {
-                                const currentQty = parseInt(quantities[item.id] || '0', 10);
-                                setQuantities((prev) => ({ ...prev, [item.id]: (currentQty + 1).toString() }));
-                                setState((prev) => ({ ...prev, [item.id]: false }));
+                                const current = parseInt(quantities[item.id] || '0');
+                                setQuantities(prev => ({ ...prev, [item.id]: (current + 1).toString() }));
+                                setState(prev => ({ ...prev, [item.id]: false }));
                             }}
-                            className="bg-gray-200 px-2 h-12 flex items-center justify-center mx-1 w-12 rounded-sm"
+                            className="w-10 h-10 items-center justify-center"
                         >
-                            <Text className="text-xl font-bold text-gray-600">+</Text>
+                            <Icon name="plus" size={12} color={isDarkMode ? "#fff" : "#000"} />
                         </TouchableOpacity>
                     </View>
 
-                    <View className="flex-row items-center space-x-2">
-                        <Text className="text-sm text-gray-600">Price:</Text>
+                    <View className="flex-row items-center bg-slate-100 dark:bg-slate-700 rounded-xl px-3 h-12">
+                        <Text className={theme.subText}>Ksh </Text>
                         <TextInput
-                            className="w-24 text-center text-base border border-gray-300 rounded-md px-2"
+                            className={`w-20 font-bold ${theme.text}`}
                             keyboardType="numeric"
-                            placeholder="Selling Price"
                             value={sellingPrices[item.id] !== undefined ? sellingPrices[item.id] : item.price.toString()}
                             onChangeText={(text) => setSellingPrices((prev) => ({ ...prev, [item.id]: text }))}
                         />
@@ -198,16 +199,14 @@ const SalesScreen = () => {
                 </View>
 
                 <View className="flex-row justify-between items-center">
-                    <Text className="text-green-700 font-bold text-base">Default: Ksh {item.price.toFixed(2)}</Text>
-
+                    <Text className="text-green-600 font-bold">Base: {item.price.toFixed(2)}</Text>
                     {state[item.id] ? (
-                        <Icon name="cart-arrow-down" color="#16a34a" size={22} />
+                        <View className="bg-green-100 p-2 rounded-full">
+                            <Icon name="check-circle" color="#16a34a" size={24} />
+                        </View>
                     ) : (
-                        <TouchableOpacity
-                            onPress={() => handleAddToCart(item)}
-                            className="bg-green-600 px-5 py-3 rounded-md"
-                        >
-                            <Text className="text-white font-bold text-base">Add to Cart</Text>
+                        <TouchableOpacity onPress={() => handleAddToCart(item)} className="bg-blue-600 px-6 py-3 rounded-2xl shadow-blue-500/50 shadow-lg">
+                            <Text className="text-white font-bold">Add to Cart</Text>
                         </TouchableOpacity>
                     )}
                 </View>
@@ -216,34 +215,48 @@ const SalesScreen = () => {
     );
 
     const filtered = products.filter((item) =>
-        item.product_name.toLowerCase().includes(query.toLowerCase())
+        item.product_name.toLowerCase().includes(query.toLowerCase()) ||
+        (item.barcode && item.barcode.includes(query))
     );
 
     return (
-        <KeyboardAvoidingView
-            className="flex-1 bg-slate-900"
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
-        >
+        <KeyboardAvoidingView className={`flex-1 ${theme.bg}`} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+
+            <Modal visible={isScannerOpen} animationType="slide">
+                <View className="flex-1 bg-black">
+                    <Camera
+                        style={{ flex: 1 }}
+                        scanBarcode={true}
+                        onReadCode={handleBarcodeScanned}
+                        showFrame={true}
+                        laserColor="#22c55e"
+                    />
+                    <TouchableOpacity onPress={() => setIsScannerOpen(false)} style={styles.closeScanner}>
+                        <Icon name="times" size={24} color="white" />
+                    </TouchableOpacity>
+                </View>
+            </Modal>
+
             <PageHeader component={() =>
                 <View className='flex items-center flex-row justify-between'>
-                    <View className='w-3/4'>
-                        <SearchBar white placeholder="search for a Product" />
+                    <View className='w-3/5'>
+                        <SearchBar white placeholder="Search inventory..." />
                     </View>
-                    <View className='w-1/4 flex items-center justify-center '>
-                        <Text className='font-bold text-white'>{datasales?.total_sales_revenue?.toFixed(2)}/-</Text>
+                    <TouchableOpacity onPress={() => setIsScannerOpen(true)} className="bg-white/20 p-3 rounded-xl">
+                        <Icon name="barcode" size={20} color="white" />
+                    </TouchableOpacity>
+                    <View className='w-1/4 items-end'>
+                        <Text className='font-bold text-white text-xs opacity-70'>TODAY</Text>
+                        <Text className='font-bold text-white'>{datasales?.total_sales_revenue?.toFixed(0)}/-</Text>
                     </View>
-
                 </View>
-
             } />
 
-            {loading ? (
-                <SkeletonList />
-            ) : (
+            {loading ? <SkeletonList /> : (
                 <FlatList
                     data={filtered}
                     renderItem={renderItem}
-                    contentContainerStyle={{ paddingBottom: cart.length > 0 ? 120 : 20 }}
+                    contentContainerStyle={{ paddingBottom: cart.length > 0 ? 150 : 30 }}
                     keyExtractor={(item) => item.id.toString()}
                     keyboardShouldPersistTaps="handled"
                 />
@@ -252,22 +265,14 @@ const SalesScreen = () => {
             {msg.msg && <Toast msg={msg.msg} state={msg.state} />}
 
             {cart.length > 0 && (
-                <View className="absolute bottom-0 left-0 right-10 dark:bg-transparent w-full bg-slate-800 p-4 border-t border-gray-200 dark:border-slate-700 shadow-md">
+                <View className="absolute bottom-6 left-4 right-4 bg-slate-800 p-5 rounded-3xl shadow-2xl border border-slate-700">
                     <View className="flex-row justify-between items-center">
-                        <View className="flex-row items-center">
-                            <Text className="text-lg font-bold dark:text-slate-900 text-white">
-                                Cart Total: Ksh {total.toFixed(2)}
-                            </Text>
-                            <View className="bg-green-600 rounded-full w-6 h-6 items-center justify-center ml-2">
-                                <Text className="text-white text-xs font-bold">{cart.length}</Text>
-                            </View>
+                        <View>
+                            <Text className="text-slate-400 text-xs uppercase font-bold tracking-widest">Total Amount</Text>
+                            <Text className="text-2xl font-black text-white">Ksh {total.toLocaleString()}</Text>
                         </View>
-
-                        <TouchableOpacity
-                            onPress={() => setModalVisible(true)}
-                            className="mt-2 bg-slate-500 rounded p-3 flex-row justify-center items-center"
-                        >
-                            <Text className="text-center text-black font-bold text-lg">Checkout</Text>
+                        <TouchableOpacity onPress={() => setModalVisible(true)} className="bg-green-500 px-8 py-4 rounded-2xl">
+                            <Text className="text-slate-900 font-black text-lg">CHECKOUT ({cart.length})</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -280,9 +285,23 @@ const SalesScreen = () => {
                 PostLocally={PostSale}
                 modalVisible={modalVisible}
                 setModalVisible={setModalVisible}
+                isDarkMode={isDarkMode}
             />
         </KeyboardAvoidingView>
     );
 };
+
+const styles = StyleSheet.create({
+    closeScanner: {
+        position: 'absolute',
+        bottom: 50,
+        alignSelf: 'center',
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        padding: 20,
+        borderRadius: 40,
+        borderWidth: 1,
+        borderColor: 'white'
+    }
+});
 
 export default SalesScreen;

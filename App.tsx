@@ -12,6 +12,7 @@ import { useAuthContext } from './src/context/authContext';
 import PrintTest from './src/screens/printTest';
 import { requestBluetoothPermissions } from './src/utils/permsions';
 import { initPrinter } from './src/services/printerService';
+import { SettingsProvider } from './src/context/SettingsContext';
 function App(): React.JSX.Element {
   const [loading, setLoading] = useState(true)
   const AppWithAuth = () => {
@@ -35,9 +36,11 @@ function App(): React.JSX.Element {
     <View className="flex-1 dark bg-[#1e293b]">
       <StatusBar animated={true} backgroundColor="#000000" />
       <Provider store={store}>
+        <SettingsProvider>
         <PersistGate loading={null} persistor={persistor}>
           <AppWithAuth />
         </PersistGate>
+        </SettingsProvider>
       </Provider>
     </View>
   );

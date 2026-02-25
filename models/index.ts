@@ -6,7 +6,9 @@ export type ToDoItem = {
 export type ProductItem = {
     _id?: string;
     id?: string | any
+    barcode?: string;
     product_name: string;
+    category_id?: string;
     expiryDate?: any
     price: string;
     soldprice?:number;
@@ -14,6 +16,18 @@ export type ProductItem = {
     quantity: number
     createdBy?: string | any,
     Bprice?: number
+    description: string,
+    updatedAt?: string
+    synced?: boolean
+};
+export type CategoryItem = {
+    _id?: string;
+    id?: string | any
+    category_name: string;
+    expiryDate?: any
+  category_id?: string;
+    createdBy?: string | any,
+   
     description: string,
     updatedAt?: string
     synced?: boolean
@@ -35,10 +49,15 @@ export type authStackParamList = {
     Home: any
     dashboard: any
     products: undefined
+    categories: undefined
+    settings: undefined
     inventory: undefined
     sales: undefined
     salesreport: undefined
     inventory_Dashboard: undefined
+    categories_Dashboard: undefined
+    
+ 
     inventory_Details: {
         product: any;
     } | undefined | any;
@@ -57,6 +76,7 @@ export type InputProps = {
     keyboardType?: string | any;
     editable?: boolean;
     multiline?: boolean;
+    isDarkMode?:boolean;
     value: string | any;
     onChangeText: (text: string) => void;
     placeholder: string;

@@ -4,6 +4,7 @@ import Icon from 'react-native-vector-icons/Entypo'
 
 import { useColorScheme } from 'react-native';
 import { InputProps } from '../../models';
+import { Theme } from '../utils/theme';
 
 
 
@@ -50,63 +51,73 @@ export const Input: React.FC<InputProps> = ({
 
 
 
-export const InputContainer: React.FC<InputProps> = ({
+
+export const InputContainer: React.FC<any> = ({
     value,
     keyboardType,
     latlng,
     onChangeText,
-    editable = true,
+    disabled,
+    editable,
     multiline = false,
+    isDarkMode, // Prop from parent
     placeholder,
     hide,
-    setHide
 }) => {
-    const theme = useColorScheme(); // 'dark' or 'light'
-    const isDark = theme === 'dark';
+    // 1. Priority: Use isDarkMode prop if provided, otherwise fallback to system theme
+    const systemTheme = useColorScheme() === 'dark';
+    const isDark = isDarkMode !== undefined ? isDarkMode : systemTheme;
 
+    // 2. Dynamic Background Logic
     const containerBg = latlng === 'yes' && !editable
-        ? 'bg-slate-300 dark:bg-slate-700'
-        : isDark
-            ? 'bg-gray-800'
-            : 'bg-primary-50';
+        ? (isDark ? 'bg-slate-700' : 'bg-slate-300')
+        : (isDark ? 'bg-slate-800' : 'bg-slate-100');
+
+    // 3. Dynamic Text Logic
+    const textColor = isDark ? 'text-white' : 'text-slate-900';
+    const placeholderColor = isDark ? '#94a3b8' : '#64748b';
 
     return (
-        <View className={`flex w-full h-14 mb-4 bg-green-100  rounded-lg justify-center ${containerBg}`} >
+        <View
+            className={`flex w-full h-14 mb-4 rounded-lg justify-center border ${isDark ? 'border-slate-700' : 'border-slate-200'
+                } ${containerBg}`}
+        >
             <View>
-                {/* {value && <View className='px-4'>
-                    <Text className={` ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
-                        {placeholder}
-                    </Text>
-                </View>} */}
-                <TextInput className={`px-4 py-1 text-lg font-bold text-base rounded-lg ${isDark ? 'text-secondary-600' : 'text-gray-900'}`}
+                <TextInput
+                    className={`px-4 py-1 text-lg font-semibold ${textColor}`}
                     placeholder={placeholder}
-                    placeholderTextColor={isDark ? '#aaa' : '#666'}
-                    value={value}
+                    placeholderTextColor={placeholderColor}
+                    value={value?.toString()} // Ensure value is a string
                     onChangeText={onChangeText}
                     secureTextEntry={hide}
-                    editable={editable}
+                    editable={disabled ? false : editable}
                     keyboardType={keyboardType}
                     multiline={multiline}
-                    textAlignVertical="top"
+                    textAlignVertical="center"
+                    // On some versions of RN, cursor color needs manual setting for dark mode
+                    cursorColor={isDark ? '#3b82f6' : '#1e293b'}
                 />
             </View>
-
         </View>
     );
 };
 
-export const TextArea = ({ value, onChangeText, placeholder }: { placeholder?: string, value: string | any, onChangeText: any, }) => {
+export const TextArea = ({ value, isDarkMode, theme, onChangeText, placeholder }: { theme: any, isDarkMode: boolean, placeholder?: string, value: string | any, onChangeText: any, }) => {
+
+
     return (
 
         <TextInput
-            className="min-h-[10%] border font-bold text-lg mt-2 mb-5 text-secodary-500  bg-green-100 rounded-xl p-4 "
+            className={`min-h-[100px] border font-semibold text-lg mt-2 mb-5 rounded-xl p-4 ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-100 border-slate-200 text-slate-900'}`}
             placeholder={placeholder}
-            placeholderTextColor={"gray"}
+            placeholderTextColor={theme.placeholder}
             multiline
-            numberOfLines={2}
+            numberOfLines={4}
             textAlignVertical="top"
-            value={value}
+            value={value?.toString()}
             onChangeText={onChangeText}
+            // Sync cursor color with primary brand or text
+            cursorColor={isDarkMode ? '#3b82f6' : '#1e293b'}
         />
 
     )

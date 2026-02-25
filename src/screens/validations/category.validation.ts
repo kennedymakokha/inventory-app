@@ -1,16 +1,13 @@
 type Item = {
-    product_name?: string;
-    category_id?: string;
-    price?: number | string;
+    category_name?: string;
+  
     description?: string;
 };
 
 type SetMsgFn = (msg: { msg: string; state: "error" | "success" }) => void;
 
 const requiredFields: { key: keyof Item; label: string; type?: "number" | "string" }[] = [
-    { key: "product_name", label: "Product Name", type: "string" },
-      { key: "category_id", label: "Category", type: "string" },
-    { key: "price", label: "Price", type: "number" },
+    { key: "category_name", label: "Category Name", type: "string" },
     { key: "description", label: "Description", type: "string" },
 ];
 

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Dimensions, useColorScheme } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { getDBConnection } from '../services/db-service';
 import { fetchGroupedProfit } from '../services/sales.service';
 import { createSyncTable } from '../services/product.service';
 import { Pressable } from 'react-native';
+import { useSettings } from '../context/SettingsContext';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -14,7 +15,7 @@ const screenWidth = Dimensions.get('window').width;
 const Dashboard = () => {
   const [weeklySales, setWeeklySales] = useState<number[]>(Array(7).fill(0));
   const [weeklyProfit, setWeeklyProfit] = useState<number[]>(Array(7).fill(0));
-  const [labels] = useState(['Mon','Tue','Wed','Thu','Fri','Sat','Sun']);
+  const [labels] = useState(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
   const [best, setBest] = useState({ product: "", value: "" });
   const [worst, setWorst] = useState({ product: "", value: "" });
   const [profit, setProfit] = useState("");
@@ -22,7 +23,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [lastSync, setLastSync] = useState('Never');
-
+const { isDarkMode } = useSettings();
   const getLastSync = async () => {
     const db = await getDBConnection();
     await createSyncTable(db);
@@ -33,14 +34,14 @@ const Dashboard = () => {
   const fetchDashboardData = async () => {
     setLoading(true);
     const db = await getDBConnection();
-    const groupedTypes = ["non-profit","best","worst","profit","low-stock"];
+    const groupedTypes = ["non-profit", "best", "worst", "profit", "low-stock"];
     const results: any = {};
 
     for (const type of groupedTypes) {
       await fetchGroupedProfit(db, type, (data: any) => { results[type] = data; });
     }
 
-    const weekdayMap: Record<string, number> = { '0':6,'1':0,'2':1,'3':2,'4':3,'5':4,'6':5 };
+    const weekdayMap: Record<string, number> = { '0': 6, '1': 0, '2': 1, '3': 2, '4': 3, '5': 4, '6': 5 };
     const salesArray = Array(7).fill(0);
     const profitArray = Array(7).fill(0);
     (results["non-profit"] || []).forEach((row: any) => {
@@ -65,9 +66,9 @@ const Dashboard = () => {
     getLastSync();
     fetchDashboardData();
   }, []);
- 
+
   return (
-   <ScrollView className="flex-1 bg-gray-100 p-4">
+    <ScrollView contentContainerStyle={{ flex: 1, padding:16, backgroundColor: isDarkMode ? '#0f172a' : '#f8fafc', paddingTop: 16 }}>
       {/* Top Stats Section */}
       <View className="flex-row flex-wrap justify-between mb-4">
         <View className="w-[48%] bg-white rounded-lg p-4 shadow">
