@@ -7,11 +7,12 @@ export type ProductItem = {
     _id?: string;
     id?: string | any
     barcode?: string;
+    business_id?:string
     product_name: string;
     category_id?: string;
     expiryDate?: any
     price: string;
-    soldprice?:number;
+    soldprice?: number;
     initial_stock: string,
     quantity: number
     createdBy?: string | any,
@@ -24,10 +25,11 @@ export type CategoryItem = {
     _id?: string;
     id?: string | any
     category_name: string;
+    business_id?: string
     expiryDate?: any
-  category_id?: string;
+    category_id?: string;
     createdBy?: string | any,
-   
+
     description: string,
     updatedAt?: string
     synced?: boolean
@@ -36,7 +38,7 @@ export type InventoryItem = {
     _id?: string;
     id?: string | any
     product_id: string;
-    soldprice?:number;
+    soldprice?: number;
     expiryDate?: any
     quantity: string
     updatedAt?: string
@@ -56,8 +58,8 @@ export type authStackParamList = {
     salesreport: undefined
     inventory_Dashboard: undefined
     categories_Dashboard: undefined
-    
- 
+
+
     inventory_Details: {
         product: any;
     } | undefined | any;
@@ -76,7 +78,7 @@ export type InputProps = {
     keyboardType?: string | any;
     editable?: boolean;
     multiline?: boolean;
-    isDarkMode?:boolean;
+    isDarkMode?: boolean;
     value: string | any;
     onChangeText: (text: string) => void;
     placeholder: string;
@@ -92,8 +94,7 @@ export type CartItem = {
     quantity: number;
 };
 
- export interface DataSales {
-        total_sales_revenue: number;
-        // Add other properties if needed
-    }
-    
+export interface DataSales {
+    total_sales_revenue: number;
+    // Add other properties if needed
+}

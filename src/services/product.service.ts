@@ -20,6 +20,7 @@ export const createProductTable = async (db: SQLiteDatabase) => {
     const query = `CREATE TABLE IF NOT EXISTS products (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         product_id TEXT UNIQUE, 
+        business_id TEXT,
         product_name TEXT,
         barcode TEXT, -- Added Barcode Column
         price REAL,
@@ -81,13 +82,14 @@ export const pullUpdatedProducts = async (db: SQLiteDatabase, lastSyncTime: stri
 
         const insertOrUpdate = `
             INSERT INTO products (
-                product_id, barcode, product_name, category_id, price, Bprice, soldprice, description,
+                product_id, barcode, business_id, product_name, category_id, price, Bprice, soldprice, description,
                 quantity, synced, expiryDate, createdAt, updatedAt, createdBy
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(product_id) DO UPDATE SET
                 product_name=excluded.product_name,
                 barcode=excluded.barcode,
+                business_id=excluded.business_id
                 price=excluded.price,
                 Bprice=excluded.Bprice,
                 soldprice=excluded.soldprice,
@@ -104,6 +106,7 @@ export const pullUpdatedProducts = async (db: SQLiteDatabase, lastSyncTime: stri
             await db.executeSql(insertOrUpdate, [
                 item.product_id,
                 item.barcode || '', // Handle barcode
+                item.business_id || '',
                 item.product_name,
                 item.category_id,
                 item.price,
@@ -157,6 +160,7 @@ export const saveProductItems = async (
                     ...item,
                     product_id,
                     barcode, // Send to Mongo
+                    business_id:item.business_id,
                     product_name: trimmedName,
                     createdBy,
                     createdAt: now,
@@ -171,13 +175,14 @@ export const saveProductItems = async (
         // Insert into SQLite products table
         const insertProductQuery = `
             INSERT INTO products 
-            (product_id, product_name, barcode, price, Bprice, soldprice, category_id, createdBy, description, quantity, synced, expiryDate, createdAt, updatedAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (product_id, product_name, barcode,business_id, price, Bprice, soldprice, category_id, createdBy, description, quantity, synced, expiryDate, createdAt, updatedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)
         `;
         await db.executeSql(insertProductQuery, [
             product_id,
             trimmedName,
             barcode,
+            item.business_id || '',
             parseFloat(item.price),
             parseFloat(String(item.Bprice || '0')),
             parseFloat(String(item.soldprice || '0')),

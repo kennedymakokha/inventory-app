@@ -49,6 +49,7 @@ export const createCategoryTable = async (db: SQLiteDatabase) => {
      id INTEGER PRIMARY KEY AUTOINCREMENT,
       category_id TEXT UNIQUE, -- sync ID
       category_name TEXT,
+      business_id TEXT,
       description TEXT,
       synced INTEGER, -- 0 or 1
       expiryDate TEXT,
@@ -94,10 +95,10 @@ export const pullUpdatedCategories = async (db: SQLiteDatabase, lastSyncTime: st
         const createdBy = await AsyncStorage.getItem('userId');
         const insertOrUpdate = `
       INSERT INTO categories (
-        category_id, category_name, description,
+        category_id, category_name, description,business_id,
         quantity, synced, expiryDate, createdAt, updatedAt,createdBy
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?)
+      VALUES (?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?,?,?)
       ON CONFLICT(category_id) DO UPDATE SET
         category_name=excluded.category_name,
         description=excluded.description,
@@ -113,6 +114,7 @@ export const pullUpdatedCategories = async (db: SQLiteDatabase, lastSyncTime: st
                 item.category_id,
                 item.category_name,
                 item.description,
+                item.business_id,
                 item.quantity,
                 1,
                 item.expiryDate,
@@ -210,80 +212,6 @@ export const getUnsyncedCategories = async (db: SQLiteDatabase, offset: any): Pr
         });
     });
 };
-// export const saveProductItems = async (
-//     db: SQLiteDatabase,
-//     item: ProductItem
-// ): Promise<ProductItem[]> => {
-//     const futureDate = new Date();
-//     futureDate.setDate(futureDate.getDate() + 1000);
-
-//     try {
-
-//         const trimmedName = item.product_name.trim();
-//         const createdBy = await AsyncStorage.getItem('userId');
-//         const now = new Date().toISOString();
-//         const product_id = `B4-${createUniqueId()}`
-//         const initial_stock = item.initial_stock
-//         const synced = 0;
-//         const expiryDate = item.expiryDate === '' ? futureDate.toISOString() : item.expiryDate
-//         item = {
-//             ...item,
-//             product_name: trimmedName,
-//             quantity: 0,
-//             synced: false,
-//             createdBy: createdBy || '',
-//         };
-
-//         // 1. Check if product exists
-//         const checkQuery = `SELECT COUNT(*) as count FROM products WHERE LOWER(product_name) = LOWER(?)`;
-//         const checkResult = await db.executeSql(checkQuery, [trimmedName]);
-//         const count = checkResult[0].rows.item(0).count;
-
-//         if (count > 0) {
-//             throw new Error(`❗ Product "${trimmedName}" already exists.`);
-//         }
-
-//         // 2. Insert into products
-//         const insertProductQuery = `
-//         INSERT INTO products 
-//         (product_name, price, Bprice,soldprice,product_id, createdBy, description, quantity, synced,expiryDate, createdAt, updatedAt)
-//         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)
-//       `;
-//         await db.executeSql(insertProductQuery, [
-//             trimmedName,
-//             parseFloat(item.price),
-//             parseFloat(String(item.Bprice || '0')),
-//             parseFloat(String(item.soldprice || '0')),
-//             product_id,
-//             item.createdBy,
-//             item.description || '',
-//             initial_stock,
-//             synced,
-//             expiryDate,
-//             now,
-//             now,
-//         ]);
-
-//         // 3. Get product ID
-//         const productIdResult = await db.executeSql(`SELECT id FROM products WHERE LOWER(product_name) = LOWER(?)`, [trimmedName]);
-//         const productId = productIdResult[0].rows.item(0).id;
-
-//         // 4. Insert into inventory with initial stock
-//         const insertInventoryQuery = `
-//         INSERT INTO inventory 
-//         (product_id, quantity, synced,expiryDate, createdBy, created_at, updatedAt)
-//         VALUES (?, ?, ?, ?, ?, ?, ?)
-//       `;
-//         await db.executeSql(insertInventoryQuery, [productId, initial_stock, 0, expiryDate, item.createdBy, now, now]);
-
-//         // 5. Return updated products
-//         return await getProducts(db);
-
-//     } catch (error: any) {
-//         console.error('❌ Error saving product:', error.message || error);
-//         throw error;
-//     }
-// };
 
 
 export const saveCategoryItems = async (
@@ -329,6 +257,7 @@ export const saveCategoryItems = async (
                 await postCategoryToMongoDB({
                     ...item,
                     category_id,
+                    business_id:item.business_id,
                     expiryDate,
                     createdBy,
                     createdAt: now,
@@ -344,12 +273,13 @@ export const saveCategoryItems = async (
         // 4. Insert into categories
         const insertCategoryQuery = `
         INSERT INTO categories 
-        (category_name, category_id, createdBy, description,  synced, expiryDate, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        (category_name, category_id, business_id, createdBy, description,  synced, expiryDate, createdAt, updatedAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
         await db.executeSql(insertCategoryQuery, [
             trimmedName,
             category_id,
+            item.business_id || '',
             createdBy,
             item.description || '',
             synced,
@@ -395,48 +325,6 @@ export const markCategoryAsSynced = (id: number, db: SQLiteDatabase) => {
 
 
 
-// export const handleCSVUpload = async (db: SQLiteDatabase) => {
-//     try {
-//         const [res] = await pick({
-//             type: [types.plainText, types.csv], // Accept plain text and CSV files
-//         });
-
-//         const filePath = res.uri;
-
-//         // iOS may prefix with "file://", Android might use content://
-//         const fileContent = await RNFS.readFile(decodeURIComponent(filePath.replace('file://', '')), 'utf8');
-
-//         const results = Papa.parse(fileContent, {
-//             header: true,
-//             skipEmptyLines: true,
-//         });
-
-//         const rows = results.data as Array<Record<string, any>>;
-
-//         for (const row of rows) {
-//             const product = {
-//                 product_name: row.product_name,
-//                 price: row.price?.toString() || '0',
-//                 quantity: row.quantity?.toString() || '0',
-//                 Bprice: row.Bprice?.toString() || '0',
-//                 createdBy: row.createdBy?.toString() || '0',
-//                 description: row.description || '',
-//                 synced: false
-//             };
-//             await saveProductItems(db, product);
-//         }
-
-//         console.log("✅ CSV imported successfully.");
-//     } catch (err: any) {
-//         if (err.code === 'USER_CANCELLED') {
-//             console.log("⚠️ User cancelled the picker");
-//         } else {
-//             console.log(err)
-//             console.error("❌ Failed to import CSV:", err);
-//         }
-//     }
-// };
-
 
 export const insertInventory = (product: string, quantity: number, db: SQLiteDatabase,) => {
     return new Promise((resolve, reject) => {
@@ -450,32 +338,5 @@ export const insertInventory = (product: string, quantity: number, db: SQLiteDat
         });
     });
 };
-
-// export const getUnsyncedInventory = (db: SQLiteDatabase,): Promise<any[]> => {
-//     return new Promise((resolve, reject) => {
-//         db.transaction((tx: any) => {
-//             tx.executeSql(
-//                 'SELECT * FROM inventory WHERE synced = 0',
-//                 [],
-//                 (_: any, { rows }: any) => resolve(rows._array),
-//                 (_: any, error: any) => reject(error)
-//             );
-//         });
-//     });
-// };
-
-// export const markInventoryAsSynced = (id: number, db: SQLiteDatabase,) => {
-//     return new Promise((resolve, reject) => {
-//         db.transaction((tx: any) => {
-//             tx.executeSql(
-//                 'UPDATE inventory SET synced = 1 WHERE id = ?',
-//                 [id],
-//                 (_: any, result: any) => resolve(result),
-//                 (_: any, error: any) => reject(error)
-//             );
-//         });
-//     });
-// };
-
 
 

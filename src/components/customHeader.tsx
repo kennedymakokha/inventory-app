@@ -68,5 +68,4 @@ export function CustomHeaderWithSearch({ title, noSearch }: { title: string, noS
     );
 }
 
-
 export default CustomHeader

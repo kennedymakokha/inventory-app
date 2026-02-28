@@ -9,7 +9,8 @@ import {
     KeyboardAvoidingView,
     Platform,
     Keyboard,
-    StyleSheet
+    StyleSheet,
+    Pressable
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import { Camera, CameraType } from 'react-native-camera-kit';
@@ -24,13 +25,11 @@ import { useSettings } from '../../context/SettingsContext';
 import { SkeletonList } from './components/skeleton';
 import PageHeader from '../../components/pageHeader';
 import SearchBar from '../../components/searchBar';
-import { TouchableWithoutFeedback } from 'react-native-gesture-handler';
 import { Theme } from '../../utils/theme';
 
 const SalesScreen = () => {
     const { isScanToCartEnabled, isDarkMode } = useSettings();
     const { query } = useSearch();
-
     const [products, setProducts] = useState<ProductItem[]>([]);
     const [cart, setCart] = useState<ProductItem[]>([]);
     const [modalVisible, setModalVisible] = useState(false);
@@ -43,6 +42,7 @@ const SalesScreen = () => {
     const [datasales, setdataSales] = useState<DataSales | null>(null);
 
     const theme = isDarkMode ? Theme.dark : Theme.light;
+
     useEffect(() => {
         loadData();
     }, []);
@@ -143,8 +143,10 @@ const SalesScreen = () => {
     const total = cart.reduce((sum, item: any) => sum + item.quantity * item.price, 0);
 
     const renderItem = ({ item }: { item: ProductItem }) => (
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View className={`${theme.card} mx-4 my-2 p-4 rounded-3xl shadow-sm border ${theme.border}`}>
+        <Pressable onPress={Keyboard.dismiss}>
+            <View 
+            style={{ borderColor: theme.border,backgroundColor:theme.card}} 
+            className={` mx-4 my-2 p-4 rounded-md shadow-sm border border-[${theme.border}]`}>
                 <View className="flex-row justify-between items-center mb-1">
                     <Text className={`text-lg font-bold ${theme.text}`}>{item.product_name}</Text>
                     <Text className={`text-xs px-2 py-1 rounded-full ${item.quantity > 5 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
@@ -155,7 +157,9 @@ const SalesScreen = () => {
                 {item.barcode ? <Text className="text-xs text-blue-500 mb-2 font-mono">{item.barcode}</Text> : null}
 
                 <View className="flex-row items-center justify-between mb-4 mt-2">
-                    <View className="flex-row items-center bg-slate-100 dark:bg-slate-700 rounded-xl p-1">
+                    <View 
+                    style={{backgroundColor:theme.background}}
+                    className="flex-row items-center  rounded-xl p-1">
                         <TouchableOpacity
                             onPress={() => {
                                 const current = parseInt(quantities[item.id] || '0');
@@ -167,7 +171,7 @@ const SalesScreen = () => {
                             <Icon name="minus" size={12} color={isDarkMode ? "#fff" : "#000"} />
                         </TouchableOpacity>
                         <TextInput
-                            className={`w-12 text-center font-bold ${theme.text}`}
+                            className={`w-12 text-center font-bold text-[${theme.text}]`}
                             keyboardType="numeric"
                             value={quantities[item.id] || '0'}
                             onChangeText={(text) => {
@@ -187,10 +191,12 @@ const SalesScreen = () => {
                         </TouchableOpacity>
                     </View>
 
-                    <View className="flex-row items-center bg-slate-100 dark:bg-slate-700 rounded-xl px-3 h-12">
+                    <View
+                    style={{backgroundColor:theme.background}}
+                    className="flex-row items-center  rounded-xl px-3 h-12">
                         <Text className={theme.subText}>Ksh </Text>
                         <TextInput
-                            className={`w-20 font-bold ${theme.text}`}
+                            className={`w-20 font-bold text-[${theme.text}]`}
                             keyboardType="numeric"
                             value={sellingPrices[item.id] !== undefined ? sellingPrices[item.id] : item.price.toString()}
                             onChangeText={(text) => setSellingPrices((prev) => ({ ...prev, [item.id]: text }))}
@@ -199,7 +205,7 @@ const SalesScreen = () => {
                 </View>
 
                 <View className="flex-row justify-between items-center">
-                    <Text className="text-green-600 font-bold">Base: {item.price.toFixed(2)}</Text>
+                    <Text className="text-green-600 font-bold">Base: {item?.price?.toFixed(2)}</Text>
                     {state[item.id] ? (
                         <View className="bg-green-100 p-2 rounded-full">
                             <Icon name="check-circle" color="#16a34a" size={24} />
@@ -211,7 +217,7 @@ const SalesScreen = () => {
                     )}
                 </View>
             </View>
-        </TouchableWithoutFeedback>
+        </Pressable>
     );
 
     const filtered = products.filter((item) =>
@@ -220,10 +226,12 @@ const SalesScreen = () => {
     );
 
     return (
-        <KeyboardAvoidingView className={`flex-1 ${theme.bg}`} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <KeyboardAvoidingView 
+         style={{ flex: 1, backgroundColor: theme.background, paddingTop: 16 }}
+        className={`flex-1 ${theme.background}`} behavior={Platform.OS === "ios" ? "padding" : undefined}>
 
             <Modal visible={isScannerOpen} animationType="slide">
-                <View className="flex-1 bg-black">
+                <View className="flex-1" >
                     <Camera
                         style={{ flex: 1 }}
                         scanBarcode={true}
@@ -252,7 +260,7 @@ const SalesScreen = () => {
                 </View>
             } />
 
-            {loading ? <SkeletonList /> : (
+            {/* {loading ? <SkeletonList /> : ( */}
                 <FlatList
                     data={filtered}
                     renderItem={renderItem}
@@ -260,7 +268,7 @@ const SalesScreen = () => {
                     keyExtractor={(item) => item.id.toString()}
                     keyboardShouldPersistTaps="handled"
                 />
-            )}
+            {/* )} */}
 
             {msg.msg && <Toast msg={msg.msg} state={msg.state} />}
 

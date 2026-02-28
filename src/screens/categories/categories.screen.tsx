@@ -25,11 +25,13 @@ import { useSearch } from '../../context/searchContext';
 import RadialFab from '../../components/multiFab';
 import { useCreateCategoryMutation } from '../../services/categoryApi';
 import { useSettings } from '../../context/SettingsContext';
+import { useSelector } from 'react-redux';
 
 const CategoryScreen = () => {
     const { isDarkMode } = useSettings();
     const { query, setQuery } = useSearch();
-    const initialState = { category_name: "", description: "", category_id: "" };
+    const { user:{business} } = useSelector((state: any) => state.auth)
+    const initialState = { category_name: "", description: "", category_id: "",business_id: business._id || "" };
 
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState<CategoryItem[]>([]);

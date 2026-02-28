@@ -10,6 +10,7 @@ export const Theme = {
         inputBg: '#ffffff',
         placeholder: '#64748b',
         subText: '#64748b',
+        subBadge: 'bg-black/10',
 
     },
     dark: {
@@ -23,6 +24,7 @@ export const Theme = {
         chipTextInactive: '#cbd5e1',
         placeholder: '#9ca3af',
         subText: '#9ca3af',
+        subBadge: 'bg-white/10',
     },
     primary: '#3b82f6', // Brand color stays same
     danger: '#ef4444', // Error color stays same

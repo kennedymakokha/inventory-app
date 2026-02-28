@@ -1,10 +1,20 @@
-import React from 'react';
-import { View, Text, Modal, FlatList, Alert } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  Modal,
+  Alert,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+} from 'react-native';
 import { useSelector } from 'react-redux';
-import Button from '../../../components/Button';
-import { CartItem } from '../../../../models';
-import { printReceipt as printToPrinter } from '../../../services/printerService';
+import { Printer, PrinterConstants } from 'react-native-esc-pos-printer';
+
 import { getNextReceiptNumber, saveReceiptOffline } from '../../../utils/recieptNo';
+import { CartItem } from '../../../../models';
 
 interface CheckoutModalProps {
   modalVisible: boolean;
@@ -13,6 +23,9 @@ interface CheckoutModalProps {
   setModalVisible: (v: boolean) => void;
 }
 
+// 🔥 Direct MAC connection (skip discovery)
+const PRINTER_MAC = '02:38:7D:AB:B2:52';
+
 const CheckoutModal: React.FC<CheckoutModalProps> = ({
   modalVisible,
   cartItems,
@@ -20,112 +33,191 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   setModalVisible,
 }) => {
   const { user } = useSelector((state: any) => state.auth);
+  const { business } = user;
 
-  const calculateSubtotal = (item: CartItem) => item.price * item.quantity;
-  const grandTotal = cartItems.reduce((sum, item) => sum + calculateSubtotal(item), 0);
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'MPESA'>('CASH');
+  const [amountGiven, setAmountGiven] = useState('');
+  const [processing, setProcessing] = useState(false);
 
-  const buildReceiptText = ({ receiptNo, invoiceId, cartItems, user, paymentMethod, amountPaid }: any) => {
+  const grandTotal = cartItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+
+  const changeDue =
+    parseFloat(amountGiven || '0') > grandTotal
+      ? parseFloat(amountGiven) - grandTotal
+      : 0;
+
+  /* =========================
+     Build Receipt Text
+  ========================== */
+  const buildReceiptText = (
+    receiptNo: string,
+    invoiceId: string,
+    paidAmount: number,
+    method: string
+  ) => {
     const width = 32;
-    const line = "--------------------------------\n";
-    let text = `<C>CLIDE PHARMACEUTICALS</C>\n<C>P.O BOX 123 - NAIROBI</C>\n<C>Tel: 0712 345 678</C>\n<C>KRA PIN: P051234567X</C>\n${line}`;
-
+    const line = '--------------------------------\n';
     const now = new Date();
-    const date = now.toISOString().split("T")[0];
-    const time = now.toTimeString().split(" ")[0];
+    let text = '';
 
-    text += `Receipt No: ${receiptNo}\nInvoice ID: ${invoiceId}\nDate: ${date} ${time}\n${line}`;
-    text += `ITEMS\n`;
+    text += `<C><B>${business.business_name}</B></C>\n`;
+    text += `<C>${business.postal_address}</C>\n`;
+    text += `<C>Tel: ${business.phone_number}</C>\n`;
+    text += `<C>KRA PIN: ${business.kra_pin}</C>\n`;
+    text += line;
+
+    text += `Receipt: ${receiptNo}\n`;
+    text += `Invoice: ${invoiceId}\n`;
+    text += `Payment: ${method}\n`;
+    text += `Date: ${now.toLocaleString()}\n`;
+    text += line;
 
     let totalInclusive = 0;
-
-    cartItems.forEach((item:any) => {
-      const itemTotal = item.quantity * item.price;
+    cartItems.forEach((item) => {
+      const itemTotal = item.price * item.quantity;
       totalInclusive += itemTotal;
-      const name = item.product_name.length > width ? item.product_name.substring(0, width) : item.product_name;
-      text += `${name}\n`;
+      text += `${item.product_name}\n`;
       const left = `${item.quantity} x ${item.price.toFixed(2)}`;
       const right = itemTotal.toFixed(2);
-      text += left.padEnd(width - right.length) + right + "\n";
+      text += left.padEnd(width - right.length) + right + '\n';
     });
 
     text += line;
-
     const vat = totalInclusive * (16 / 116);
     const net = totalInclusive - vat;
 
-    text += `Net (Ex VAT)`.padEnd(width - net.toFixed(2).length) + net.toFixed(2) + "\n";
-    text += `VAT (16%)`.padEnd(width - vat.toFixed(2).length) + vat.toFixed(2) + "\n";
-    text += line;
-    text += `TOTAL`.padEnd(width - totalInclusive.toFixed(2).length) + totalInclusive.toFixed(2) + "\n";
+    text += `Net (Ex VAT)`.padEnd(width - net.toFixed(2).length) + net.toFixed(2) + '\n';
+    text += `VAT (16%)`.padEnd(width - vat.toFixed(2).length) + vat.toFixed(2) + '\n';
     text += line;
 
-    const change = amountPaid - totalInclusive;
-    text += `Payment: ${paymentMethod}\n`;
-    text += `Amount Paid`.padEnd(width - amountPaid.toFixed(2).length) + amountPaid.toFixed(2) + "\n";
-    text += `Change`.padEnd(width - change.toFixed(2).length) + change.toFixed(2) + "\n";
+    text += `TOTAL`.padEnd(width - grandTotal.toFixed(2).length) + grandTotal.toFixed(2) + '\n';
     text += line;
 
-    if (user?.name) text += `Served by: ${user.name}\n`;
-    text += `<C>MPESA TILL: 123456</C>\n<C>Prices VAT Inclusive</C>\n<C>Thank You & Get Well Soon!</C>\n\n`;
+    text += `Amount Paid`.padEnd(width - paidAmount.toFixed(2).length) + paidAmount.toFixed(2) + '\n';
+    text += `Change`.padEnd(width - changeDue.toFixed(2).length) + changeDue.toFixed(2) + '\n';
+    text += line;
+
+    text += `<C>MPESA TILL: 123456</C>\n`;
+    text += `<C>Prices VAT Inclusive</C>\n`;
+    text += `<C>Thank You & Get Well Soon!</C>\n\n`;
+
+    if (user?.username) {
+      text += `Served by: ${user.username}\n`;
+    }
+
+    text += '\n\n\n';
     return text;
   };
 
-  const printReceipt = async () => {
+  /* =========================
+     Print via Direct MAC
+  ========================== */
+  const printReceiptDirect = async (receiptText: string) => {
     try {
-      const receiptNo = await getNextReceiptNumber();
-      await printToPrinter(buildReceiptText({
-        receiptNo: `RCPT${receiptNo}`,
-        invoiceId: "INV123456",
-        cartItems,
-        user,
-        paymentMethod: "CASH",
-        amountPaid: grandTotal,
-      }));
-      await saveReceiptOffline({ ...cartItems, receiptNo });
-      PostLocally();
-      setModalVisible(false);
-    } catch (err) {
-      Alert.alert('Printer Error', 'Visit saved but receipt could not be printed');
+      const printer = new Printer({
+        target: PRINTER_MAC,
+        deviceName: 'p58E', // optional label
+      });
+
+      await printer.addQueueTask(async () => {
+        await Printer.tryToConnectUntil(
+          printer,
+          status => status.online.statusCode === PrinterConstants.TRUE
+        );
+
+        await printer.addText(receiptText);
+        await printer.addFeedLine();
+        await printer.addCut();
+
+        await printer.sendData();
+        await printer.disconnect();
+      });
+
+      console.log('✅ Print successful');
+    } catch (error) {
+      console.log('❌ Print failed', error);
+      Alert.alert(
+        'Print Error',
+        'Transaction completed but receipt failed to print.'
+      );
     }
   };
 
+  /* =========================
+     Finalize Checkout
+  ========================== */
+  const finalizeCheckout = async () => {
+    const paidAmount = paymentMethod === 'CASH' ? parseFloat(amountGiven || '0') : grandTotal;
+
+    if (paymentMethod === 'CASH' && paidAmount < grandTotal) {
+      Alert.alert('Insufficient Cash', 'Amount given is less than total.');
+      return;
+    }
+
+    try {
+      setProcessing(true);
+      const receiptNo = `RCPT${await getNextReceiptNumber()}`;
+      const invoiceId = `INV${Date.now().toString().slice(-6)}`;
+
+      const receiptText = buildReceiptText(receiptNo, invoiceId, paidAmount, paymentMethod);
+
+      // 🔥 Direct MAC print
+      await printReceiptDirect(receiptText);
+
+      await saveReceiptOffline({
+        cartItems,
+        receiptNo,
+        paymentMethod,
+      });
+
+      PostLocally();
+      setAmountGiven('');
+      setModalVisible(false);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  /* =========================
+     UI
+  ========================== */
   return (
-    <Modal
-      animationType="slide"
-      transparent={false}
-      visible={modalVisible}
-      onRequestClose={() => setModalVisible(false)}
-    >
-      <View className="flex-1 bg-gray-900 px-4 pt-8">
-        <View className="bg-gray-800 rounded-2xl p-4 flex-1 shadow-lg">
-          <Text className="text-2xl font-extrabold text-green-400 mb-4">🛒 Checkout</Text>
-
-          {/* Cart Items */}
-          <FlatList
-            data={cartItems}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <View className="flex-row justify-between py-2 border-b border-gray-700">
-                <Text className="text-gray-200">{item.product_name} x {item.quantity}</Text>
-                <Text className="text-gray-200 font-semibold">Ksh {calculateSubtotal(item).toFixed(2)}</Text>
-              </View>
-            )}
-          />
-
-          {/* Totals */}
-          <View className="mt-4 border-t border-gray-700 pt-3">
-            <Text className="text-right text-xl font-bold text-green-400">
-              Grand Total: Ksh {grandTotal.toFixed(2)}
+    <Modal animationType="fade" transparent={false} visible={modalVisible}>
+      <SafeAreaView className="flex-1 bg-slate-900 pt-20">
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          className="flex-1 px-6"
+        >
+          <View className="bg-slate-900 border border-slate-800 rounded-[32px] p-6 mb-6">
+            <Text className="text-green-400 text-4xl font-black">
+              Ksh {grandTotal.toLocaleString()}
             </Text>
           </View>
 
-          {/* Buttons */}
-          <View className="flex-row justify-between mt-6">
-            <Button handleclick={() => setModalVisible(false)} outline loading={false} title="Cancel" />
-            <Button handleclick={printReceipt} loading={false} title="Checkout" />
-          </View>
-        </View>
-      </View>
+          {paymentMethod === 'CASH' && (
+            <TextInput
+              placeholder="Amount Given"
+              keyboardType="numeric"
+              value={amountGiven}
+              onChangeText={setAmountGiven}
+              className="bg-slate-800 text-white p-4 rounded-xl mb-4"
+            />
+          )}
+
+          <TouchableOpacity
+            disabled={processing}
+            onPress={finalizeCheckout}
+            className="bg-green-600 py-5 rounded-3xl items-center"
+          >
+            <Text className="text-white font-bold text-lg">
+              {processing ? 'Processing...' : 'Confirm & Print'}
+            </Text>
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </Modal>
   );
 };
