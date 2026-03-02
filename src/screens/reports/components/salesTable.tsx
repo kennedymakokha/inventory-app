@@ -1,7 +1,12 @@
 import React from 'react';
 import { View, Text, ScrollView, Dimensions } from 'react-native';
 
+import { useSelector } from 'react-redux';
+import { useSettings } from '../../../context/SettingsContext';
+import { Theme } from '../../../utils/theme';
+
 const SCREEN_WIDTH = Dimensions.get('window').width;
+
 const TableContainer = ({
   headers,
   data
@@ -9,48 +14,74 @@ const TableContainer = ({
   headers: { label: string; key: string }[];
   data: Record<string, any>[];
 }) => {
+  const { isDarkMode } = useSettings();
+  const theme = isDarkMode ? Theme.dark : Theme.light;
   const columnWidth = 150;
   const tableWidth = columnWidth * headers.length;
+
+  // Pad data to always show 10 rows
   const paddedData = [...data];
   while (paddedData.length < 10) {
     paddedData.push({});
   }
+
   return (
-    <ScrollView className='bg-slate-900' style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
-      <ScrollView  horizontal>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: theme.background }}
+      contentContainerStyle={{ flexGrow: 1 }}
+    >
+      <ScrollView horizontal>
         <View style={{ minWidth: tableWidth }}>
           {/* Header */}
-          <View className="flex-row bg-gray-200">
+          <View style={{ flexDirection: 'row', backgroundColor: theme.elevated }}>
             {headers.map((header, index) => (
               <View
                 key={index}
-                style={{ width: columnWidth }}
-                className="p-3 border border-gray-300"
+                style={{
+                  width: columnWidth,
+                  padding: 12,
+                  borderWidth: 1,
+                  borderColor: theme.border,
+                }}
               >
-                <Text className="font-bold text-black">{header.label}</Text>
+                <Text style={{ fontWeight: 'bold', color: theme.text }}>
+                  {header.label}
+                </Text>
               </View>
             ))}
           </View>
 
           {/* Rows */}
-          {paddedData.map((row, rowIndex) => (
-            <View
-              key={rowIndex}
-              className={`flex-row ${rowIndex % 2 === 0 ? 'bg-white' : 'bg-green-50'}`}
-            >
-              {headers.map((header, cellIndex) => (
-                <View
-                  key={cellIndex}
-                  style={{ width: columnWidth }}
-                  className="p-3 border border-gray-200"
-                >
-                  <Text numberOfLines={1} ellipsizeMode="tail">
-                    {row[header.key]}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          ))}
+          {paddedData.map((row, rowIndex) => {
+            const rowBackground =
+              rowIndex % 2 === 0 ? theme.card : theme.elevated;
+            return (
+              <View
+                key={rowIndex}
+                style={{ flexDirection: 'row', backgroundColor: rowBackground }}
+              >
+                {headers.map((header, cellIndex) => (
+                  <View
+                    key={cellIndex}
+                    style={{
+                      width: columnWidth,
+                      padding: 12,
+                      borderWidth: 1,
+                      borderColor: theme.border,
+                    }}
+                  >
+                    <Text
+                      style={{ color: theme.text }}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                    >
+                      {row[header.key]}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            );
+          })}
         </View>
       </ScrollView>
     </ScrollView>

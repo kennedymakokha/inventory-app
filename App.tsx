@@ -1,5 +1,6 @@
 import React, { useEffect, useCallback } from 'react';
 import { StatusBar, View, PermissionsAndroid, Platform } from 'react-native';
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import "./global.css";
 
 import { Provider } from 'react-redux';
@@ -69,14 +70,15 @@ function App(): React.JSX.Element {
   return (
     <View className="flex-1 bg-[#1e293b]">
       <StatusBar animated backgroundColor="#000000" />
-
-      <Provider store={store}>
-        <SettingsProvider>
-          <PersistGate loading={null} persistor={persistor}>
-            <AppWithAuth />
-          </PersistGate>
-        </SettingsProvider>
-      </Provider>
+      <SafeAreaProvider>
+        <Provider store={store}>
+          <SettingsProvider>
+            <PersistGate loading={null} persistor={persistor}>
+              <AppWithAuth />
+            </PersistGate>
+          </SettingsProvider>
+        </Provider>
+        </SafeAreaProvider>
     </View>
   );
 }

@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
     Button,
-    SafeAreaView,
+ 
     ScrollView,
     StatusBar,
     StyleSheet,
@@ -17,6 +17,7 @@ import { getDBConnection, getTodoItems, saveTodoItems, createTable, deleteTodoIt
 import { ToDoItem } from '../../models';
 import { ToDoItemComponent } from '../components/ToDoItem';
 import { useSettings } from '../context/SettingsContext';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 const TodoScreen = () => {

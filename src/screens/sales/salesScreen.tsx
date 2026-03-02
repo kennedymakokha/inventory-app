@@ -46,6 +46,7 @@ const SalesScreen = () => {
 
     useEffect(() => {
         loadData();
+        
     }, []);
 
     const loadData = async () => {

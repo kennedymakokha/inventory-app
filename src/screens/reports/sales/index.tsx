@@ -1,68 +1,105 @@
-import { View, Text, TouchableOpacity } from 'react-native'
-import React, { useEffect, useState } from 'react'
+import { View, Text, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import SalesReportTable from '../components/salesTable';
 import PageHeader from '../../../components/pageHeader';
 import { getDBConnection } from '../../../services/db-service';
 import { fetchCumulativeProfit, fetchGroupedProfit } from '../../../services/sales.service';
-import { adminFilter, Adminheaders, getadminSalesReportData, getSalesReportData, salesFilter, salesheaders } from '../../../../utils/getsalesdata';
-import { useSelector } from 'react-redux';
+import {
+  adminFilter,
+  Adminheaders,
+  getadminSalesReportData,
+  getSalesReportData,
+  salesFilter,
+  salesheaders
+} from '../../../../utils/getsalesdata';
+
 import { DataSales } from '../../../../models';
+import { useSettings } from '../../../context/SettingsContext';
+import { Theme } from '../../../utils/theme';
+
 const SalesReport = () => {
+  const { user, themeMode } = useSelector((state: any) => state.auth); // themeMode: "light" | "dark"
+    const { isDarkMode } = useSettings();
+    const theme = isDarkMode ? Theme.dark : Theme.light;
 
-    const { user } = useSelector((state: any) => state.auth)
-   
-    const [datasales, setdataSales] = useState<DataSales | null>(null);
-    const [sales, setSales] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [state, setState] = useState<Record<string, boolean>>({});
-    const [filter, setFilter] = useState("All");
-    useEffect(() => {
-        const fetchProfits = async () => {
-            setLoading(true)
-            const db = await getDBConnection();
-            fetchCumulativeProfit(db, filter.toLocaleLowerCase(), (data: any) => {
-                setdataSales(data);
-                setLoading(false)
-            });
-            fetchGroupedProfit(db, filter.toLocaleLowerCase(), (data: any) => {
-                setSales(data);
-                setLoading(false)
-            });
-        }
-        fetchProfits()
-    }, [filter]);
-  
-    let filterData: any = user?.role === "superAdmin" ? adminFilter : salesFilter
-    return (
-        <View className="flex-1 bg-slate-900 ">
-            <PageHeader component={() => {
-                return (
-                    <View className="flex-row flex-wrap w-full  justify-around  gap-x-1 py-3 ">
-                        {filterData.map((tab: any) => (
-                            <TouchableOpacity key={tab.id} onPress={
-                                () => {
-                                    setState((prev) => ({
-                                        ...prev,
-                                        [tab.id]: true,
-                                    })); setFilter(tab.title)
-                                }
-                            } className={`flex h-full px-2 py-1 ${state[tab.id] && filter === tab.title ? "bg-transparent border-slate-100 border  text-white" : "bg-white"} shadow-2xl rounded-md`}>
-                                <Text key={tab.id} className={`${state[tab.id] && filter === tab.title ? "text-white" : "capitalize text-center"} font-semibold`}>{tab.title}</Text>
-                            </TouchableOpacity>
+  const [datasales, setdataSales] = useState<DataSales | null>(null);
+  const [sales, setSales] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [state, setState] = useState<Record<string, boolean>>({});
+  const [filter, setFilter] = useState('All');
 
-                        ))}
-                    </View>
-                )
-            }} />
-            <View className="flex items-center justify-between flex-row px-10">
-                <Text className="text-lg font-bold uppercase text-green-700 text-center my-2">{filter} Sales Report</Text>
-                <Text className="text-blue-500 font-bold tracking-widest">{datasales?.total_sales_revenue}/-</Text>
-            </View>
+  useEffect(() => {
+    const fetchProfits = async () => {
+      setLoading(true);
+      const db = await getDBConnection();
+      fetchCumulativeProfit(db, filter.toLowerCase(), (data: any) => {
+        setdataSales(data);
+        setLoading(false);
+      });
+      fetchGroupedProfit(db, filter.toLowerCase(), (data: any) => {
+        setSales(data);
+        setLoading(false);
+      });
+    };
+    fetchProfits();
+  }, [filter]);
 
+  const filterData: any = user?.role === 'superAdmin' ? adminFilter : salesFilter;
 
-            <SalesReportTable headers={user?.role === "superAdmin" ? Adminheaders : salesheaders} data={user?.role === "superAdmin" ? getadminSalesReportData(sales) : getSalesReportData(sales)} />
-        </View>
-    )
-}
+  return (
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <PageHeader
+        component={() => (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-around', gap: 4, paddingVertical: 12 }}>
+            {filterData.map((tab: any) => {
+              const isActive = state[tab.id] && filter === tab.title;
+              return (
+                <TouchableOpacity
+                  key={tab.id}
+                  onPress={() => {
+                    setState((prev) => ({ ...prev, [tab.id]: true }));
+                    setFilter(tab.title);
+                  }}
+                  style={{
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    borderRadius: 8,
+                    borderWidth: isActive ? 1 : 0,
+                    borderColor: theme.border,
+                    backgroundColor: isActive ? theme.elevated : theme.card,
+                  }}
+                >
+                  <Text style={{
+                    textAlign: 'center',
+                    fontWeight: '600',
+                    color: isActive ? theme.text : theme.subText,
+                    textTransform: 'capitalize',
+                  }}>
+                    {tab.title}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
+      />
 
-export default SalesReport
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginVertical: 8 }}>
+        <Text style={{ fontSize: 18, fontWeight: 'bold', textTransform: 'uppercase', color: Theme.success }}>
+          {filter} Sales Report
+        </Text>
+        <Text style={{ fontWeight: 'bold', color: Theme.primary, letterSpacing: 1 }}>
+          {datasales?.total_sales_revenue}/-
+        </Text>
+      </View>
+
+      <SalesReportTable
+        headers={user?.role === 'superAdmin' ? Adminheaders : salesheaders}
+        data={user?.role === 'superAdmin' ? getadminSalesReportData(sales) : getSalesReportData(sales)}
+      />
+    </View>
+  );
+};
+
+export default SalesReport;

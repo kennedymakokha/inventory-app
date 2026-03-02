@@ -43,9 +43,7 @@ import { validateItem } from '../validations/product.validation';
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
 
-if (Platform.OS === 'android') {
-    UIManager.setLayoutAnimationEnabledExperimental?.(true);
-}
+
 
 const ProductScreen = () => {
     const { isDarkMode } = useSettings();
@@ -54,7 +52,7 @@ const ProductScreen = () => {
     const initialState = {
         product_name: "",
         category_id: "",
-        price: "",
+        price: 0,
         expiryDate: "",
         initial_stock: "",
         description: "",
@@ -155,7 +153,7 @@ const ProductScreen = () => {
     };
     const handleDelete = async (prod: ProductItem) => {
         try {
-            console.log("Deleting product with id:", prod,selectedProduct);
+            console.log("Deleting product with id:", prod, selectedProduct);
             const db = await getDBConnection();
             await db.executeSql('DELETE FROM products WHERE id=?', [prod.id]);
             setCategories(prev => prev.filter(c => c.id !== prod.id));
@@ -251,57 +249,60 @@ const ProductScreen = () => {
 
     return (
         <View style={{ flex: 1, backgroundColor: theme.background, paddingTop: 16 }}>
-            <PageHeader />
-
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.filterContainer}
-                  style={{ flexGrow: 0 }}
-            >
-                <TouchableOpacity
-                    onPress={() => setSelectedCategoryId(null)}
-                    style={[
-                        styles.chip,
-                        {
-                            backgroundColor:
-                                selectedCategoryId === null
-                                    ? Theme.primary
-                                    : theme.chipInactive
-                        }
-                    ]}
-                >
-                    <Text style={{
-                        color: selectedCategoryId === null ? '#fff' : theme.chipTextInactive
-                    }}>
-                        All
-                    </Text>
-                </TouchableOpacity>
-
-                {categories.map(cat => (
-                    <TouchableOpacity
-                        key={cat.id}
-                        onPress={() => setSelectedCategoryId(cat.category_id)}
-                        style={[
-                            styles.chip,
-                            {
-                                backgroundColor:
-                                    selectedCategoryId === cat.category_id
-                                        ? Theme.primary
-                                        : theme.chipInactive
-                            }
-                        ]}
+            <PageHeader
+                component={() => (
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.filterContainer}
+                        style={{ flexGrow: 0 }}
                     >
-                        <Text style={{
-                            color: selectedCategoryId === cat.category_id
-                                ? '#fff'
-                                : theme.chipTextInactive
-                        }}>
-                            {cat.category_name}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </ScrollView>
+                        <TouchableOpacity
+                            onPress={() => setSelectedCategoryId(null)}
+                            style={[
+                                styles.chip,
+                                {
+                                    backgroundColor:
+                                        selectedCategoryId === null
+                                            ? Theme.primary
+                                            : theme.chipInactive
+                                }
+                            ]}
+                        >
+                            <Text style={{
+                                color: selectedCategoryId === null ? '#fff' : theme.chipTextInactive
+                            }}>
+                                All
+                            </Text>
+                        </TouchableOpacity>
+
+                        {categories.map((cat: any) => (
+                            <TouchableOpacity
+                                key={cat.id}
+                                onPress={() => setSelectedCategoryId(cat.category_id)}
+                                style={[
+                                    styles.chip,
+                                    {
+                                        backgroundColor:
+                                            selectedCategoryId === cat.category_id
+                                                ? Theme.primary
+                                                : theme.chipInactive
+                                    }
+                                ]}
+                            >
+                                <Text style={{
+                                    color: selectedCategoryId === cat.category_id
+                                        ? '#fff'
+                                        : theme.chipTextInactive
+                                }}>
+                                    {cat.category_name}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                )}
+            />
+
 
             <FlatList
                 data={filteredProducts}
@@ -389,15 +390,16 @@ const ProductScreen = () => {
 
 const styles = StyleSheet.create({
     filterContainer: {
-        paddingHorizontal: 16,
+        borderTopColor: theme.borderColor,
+        paddingHorizontal: 2,
         paddingVertical: 8,
-       
+
         alignItems: 'center'
     },
     chip: {
         paddingHorizontal: 16,
         paddingVertical: 4,
-        borderRadius: 5,
+        borderRadius: 2,
         marginRight: 10,
     },
     card: {

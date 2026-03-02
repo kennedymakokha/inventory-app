@@ -1,164 +1,221 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
-import { DrawerContentComponentProps } from '@react-navigation/drawer';
-import Icon from 'react-native-vector-icons/Ionicons';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
-import { useAuthContext } from '../context/authContext';
-import { getDBConnection } from '../services/db-service';
-import { createProductTable, getLastSyncTime, getUnsyncedProducts, markProductAsSynced, syncAllProducts } from '../services/product.service';
-import { pullServerUpdates, updateLocalProduct } from '../services/pull.service';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useBulksyncMutation, usePullProductsQuery, usePullupdatedsinceQuery, useSyncProductMutation } from '../services/productApi';
-import { getUnsyncedInventory } from '../services/inventory.service';
-import { handleSync } from '../../utils/syncFunctions';
-import { usePullinventoryQuery, useSyncInventoryMutation } from '../services/inventoryApi';
-import { getNow } from '../../utils';
-import { useSelector } from 'react-redux';
-import { usePullSalesQuery, useSyncSalesMutation } from '../services/salesApi';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+} from "react-native";
+import { DrawerContentComponentProps } from "@react-navigation/drawer";
+import Icon from "react-native-vector-icons/Ionicons";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSelector } from "react-redux";
+
+import { useAuthContext } from "../context/authContext";
 
 
+import { getDBConnection } from "../services/db-service";
 
+import { getUnsyncedInventory } from "../services/inventory.service";
+import { getNow } from "../../utils";
 
-const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => {
+import {
+  useBulksyncMutation,
+  usePullupdatedsinceQuery,
+} from "../services/productApi";
 
-    const { token, logout } = useAuthContext();
-    const [data, setData] = useState<any[]>([])
-    const [lastSync, setLastSync] = useState('2025-05-05T20:20:16.065Z')
-    const [message, setMessage] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [syncProduct] = useBulksyncMutation()
-    const [syncInventory] = useSyncInventoryMutation()
-    const [syncSales] = useSyncSalesMutation()
+import {
+  usePullinventoryQuery,
+  useSyncInventoryMutation,
+} from "../services/inventoryApi";
 
-    const { data: Products, error, refetch } = usePullupdatedsinceQuery(lastSync)
-    const { data: inventories, refetch: refetchinentory } = usePullinventoryQuery(lastSync)
-    const { data: sales, refetch: refetchSales } = usePullSalesQuery(lastSync)
-    const { user } = useSelector((state: any) => state.auth)
+import {
+  usePullSalesQuery,
+  useSyncSalesMutation,
+} from "../services/salesApi";
+import { useSettings } from "../context/SettingsContext";
+import { Theme } from "../utils/theme";
 
-    const logoutUser = async () => {
-        await logout()
-        await AsyncStorage.clear()
+const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
+  navigation,
+}) => {
+  const { logout } = useAuthContext();
+  const { user } = useSelector((state: any) => state.auth);
+
+  const { isDarkMode } = useSettings();
+  const theme = isDarkMode ? Theme.dark : Theme.light;
+
+  const [lastSync, setLastSync] = useState<string>("");
+  const [message, setMessage] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const [syncProduct] = useBulksyncMutation();
+  const [syncInventory] = useSyncInventoryMutation();
+  const [syncSales] = useSyncSalesMutation();
+
+  const { refetch: refetchProducts } = usePullupdatedsinceQuery(lastSync, {
+    skip: !lastSync,
+  });
+
+  const { refetch: refetchInventory } = usePullinventoryQuery(lastSync, {
+    skip: !lastSync,
+  });
+
+  const { refetch: refetchSales } = usePullSalesQuery(lastSync, {
+    skip: !lastSync,
+  });
+
+  useEffect(() => {
+    const loadLastSync = async () => {
+      const stored = await AsyncStorage.getItem("lastSync");
+      if (stored) {
+        setLastSync(stored);
+      } else {
+        const initial = new Date(0).toISOString();
+        setLastSync(initial);
+      }
+    };
+    loadLastSync();
+  }, []);
+
+  const logoutUser = async () => {
+    await logout();
+    await AsyncStorage.clear();
+  };
+
+  const handleFullSync = async () => {
+    try {
+      setLoading(true);
+      setMessage("Starting sync...");
+
+      const db = await getDBConnection();
+
+      const productRes = await refetchProducts();
+      const inventoryRes = await refetchInventory();
+      const salesRes = await refetchSales();
+
+      const productsFromServer = productRes?.data || [];
+      const inventoryFromServer = inventoryRes?.data || [];
+      const salesFromServer = salesRes?.data || [];
+
+    //   await syncAllProducts(db, productsFromServer, syncProduct);
+
+      const unsyncedInventory = await getUnsyncedInventory(db,0);
+      if (unsyncedInventory?.length) {
+        await syncInventory(unsyncedInventory).unwrap();
+      }
+
+      if (salesFromServer?.length) {
+        await syncSales(salesFromServer).unwrap();
+      }
+
+      const now = getNow();
+      await AsyncStorage.setItem("lastSync", now);
+      setLastSync(now);
+
+      setMessage("Sync completed successfully ✅");
+    } catch (error) {
+      console.log("SYNC ERROR:", error);
+      setMessage("Sync failed ❌");
+    } finally {
+      setLoading(false);
     }
+  };
 
-    // const handleSyncs = async () => {
-    //     await refetch()
-    //     await refetchSales()
-    //     await refetchinentory()
-    //     getLastSync()
-    //     handleSync({ syncProduct,syncSales, sales, syncInventory, setMessage, products: Products, inventories, setLoading })
-    // }
-    // useEffect(() => {
+  const menuItem = (
+    label: string,
+    icon: string,
+    screen: string
+  ) => (
+    <TouchableOpacity
+      className="flex-row items-center my-4"
+      onPress={() => navigation.navigate("Home", { screen })}
+    >
+      <Icon name={icon} size={20} color={theme.text} />
+      <Text
+        style={{ color: theme.text }}
+        className="tracking-widest uppercase text-base ml-3"
+      >
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
 
-    //     getLastSync()
-    // }, [inventories])const sync = 
+  return (
+    <View
+      style={{ backgroundColor: theme.background }}
+      className="flex-1 pt-16 px-5"
+    >
+      {/* Header */}
+      <View
+        style={{ borderBottomColor: theme.border }}
+        className="items-center mb-10 border-b"
+      >
+        <Image
+          source={require("../assets/logo.png")}
+          className="size-40 rounded-full mb-2"
+        />
+        <Text style={{ color: theme.text }} className="text-lg">
+          Welcome! {user?.name}
+        </Text>
+      </View>
 
+      {!!message && (
+        <Text
+          style={{ color: theme.text }}
+          className="text-center mt-2"
+        >
+          {message}
+        </Text>
+      )}
 
-    const syncLocalProduct = async () => {
-        try {
-            await refetch()
-            setLoading(true)
-            const db = await getDBConnection();
-            await syncAllProducts(db, Products, syncProduct)
-            setLoading(false)
-        } catch (error) {
-            setLoading(false)
-            console.log(error)
-        }
+      {/* Navigation */}
+      {menuItem("Home", "home-outline", "dashboard")}
+      {menuItem("Products", "swap-horizontal-outline", "products")}
+      {menuItem("Categories", "grid-outline", "categories")}
+      {menuItem("Inventory", "cube-outline", "inventory")}
+      {menuItem("Sales", "cart-outline", "sales")}
+      {menuItem("Sales Report", "book-outline", "salesreport")}
+      {menuItem("Settings", "settings-outline", "settings")}
 
-    }
-    return (
-        <View className="flex-1 bg-secondary-900 pt-16 px-5">
-            {/* Header */}
-            <View className="items-center mb-10 border-b border-primary-500">
-                <Image
-                    source={require('../assets/logo.png')}
-                    className="size-40 rounded-full mb-2"
-                />
-                <Text className="text-white text-lg">Welcome! {user?.name}</Text>
-            </View>
-            {!!message && (
-                <Text className="text-center mt-2 text-white">{message}</Text>
-            )}
-            {/* Links */}
-            <TouchableOpacity
-                className="flex-row items-center my-4"
-                onPress={() => navigation.navigate('Home', { screen: `dashboard` })}
-            >
-                <Icon name="home-outline" size={20} color="#fff" />
-                <Text className="tracking-widest uppercase text-center text-white text-base ml-3">Home</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-                className="flex-row items-center my-4"
-                onPress={() =>
-                    navigation.navigate('Home', { screen: `products` })
-                    // navigation.navigate('products')
-                }
-            >
-                <Icon name="swap-horizontal-outline" size={20} color="#fff" />
-                <Text className="tracking-widest uppercase text-center text-white text-base ml-3">Products</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-                className="flex-row items-center my-4"
-                onPress={() =>
-                    navigation.navigate('Home', { screen: `categories` })
-                    // navigation.navigate('products')
-                }
-            >
-                <Icon name="swap-horizontal-outline" size={20} color="#fff" />
-                <Text className="tracking-widest uppercase text-center text-white text-base ml-3">Categories</Text>
-            </TouchableOpacity>
+      {/* Sync Button */}
+      {loading ? (
+        <ActivityIndicator size="large" color={theme.subText} />
+      ) : (
+        <TouchableOpacity
+          disabled={loading}
+          style={{ backgroundColor: theme.background }}
+          className="flex-row py-4 rounded-md justify-center items-center my-4"
+          onPress={handleFullSync}
+        >
+          <MaterialCommunityIcons
+            name="cloud-sync"
+            size={26}
+            color="#fff"
+          />
+          <Text className="text-white text-lg ml-3 font-bold">
+            Sync
+          </Text>
+        </TouchableOpacity>
+      )}
 
-            <TouchableOpacity
-                className="flex-row items-center my-4"
-                onPress={() => navigation.navigate('Home', { screen: `inventory` })
-                    // navigation.navigate('inventory')
-                }
-            >
-                <Icon name="cog" size={20} color="#fff" />
-                <Text className="tracking-widest uppercase text-center text-white text-base ml-3">Inventory</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-                className="flex-row items-center my-4"
-                onPress={() => navigation.navigate('Home', { screen: `sales` })
-                    // navigation.navigate('inventory')
-                }
-            >
-                <Icon name="swap-horizontal-outline" size={20} color="#fff" />
-                <Text className="tracking-widest uppercase text-center text-white text-base ml-3">sales</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-                className="flex-row items-center my-4"
-                onPress={() => navigation.navigate('Home', { screen: `salesreport` })
-                    // navigation.navigate('inventory')
-                }
-            >
-                <Icon name="book" size={20} color="#fff" />
-                <Text className="tracking-widest uppercase text-center text-white text-base ml-3">Sales Report</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-                className="flex-row items-center my-4"
-                onPress={() => navigation.navigate('Home', { screen: `settings` })}
-            >
-                <Icon name="cog" size={20} color="#fff" />
-                <Text className="tracking-widest uppercase text-center text-white text-base ml-3">Settings</Text>
-            </TouchableOpacity>            {loading ? (
-                <ActivityIndicator size="large" color="#007AFF" />
-            ) : <TouchableOpacity
-                className="flex-row bg-red-500 py-4 rounded-md justify-center animate-pulse items-center my-4"
-                onPress={() => syncLocalProduct()}
-            >
-                <MaterialCommunityIcons name="cloud-sync" size={30} color="#fff" />
-                <Text className="text-white text-base text-bold text-xl ml-3">Sync</Text>
-            </TouchableOpacity>}
-            {/* Footer */}
-            <View className="mt-auto mb-20 border-t border-gray-700 pt-5">
-                <TouchableOpacity onPress={logoutUser}>
-                    <Text className="text-primary-500 text-center text-[24px] text-base">Logout</Text>
-                </TouchableOpacity>
-            </View>
-        </View>
-    );
+      {/* Footer */}
+      <View
+        style={{ borderTopColor: theme.border }}
+        className="mt-auto mb-20 border-t pt-5"
+      >
+        <TouchableOpacity onPress={logoutUser}>
+          <Text
+            style={{ color: theme.text }}
+            className="text-center text-2xl font-bold"
+          >
+            Logout
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 };
 
 export default CustomDrawer;

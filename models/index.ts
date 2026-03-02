@@ -11,7 +11,7 @@ export type ProductItem = {
     product_name: string;
     category_id?: string;
     expiryDate?: any
-    price: string;
+    price: number;
     soldprice?: number;
     initial_stock: string,
     quantity: number
@@ -96,5 +96,7 @@ export type CartItem = {
 
 export interface DataSales {
     total_sales_revenue: number;
+    pending_orders: number;
+    total_profit: number;
     // Add other properties if needed
 }

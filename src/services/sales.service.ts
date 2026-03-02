@@ -20,6 +20,7 @@ export const createSalesTable = async (db: SQLiteDatabase) => {
     )`;
 
     await db.executeSql(query);
+
 };
 
 export const fetchSales = async (db: SQLiteDatabase): Promise<any[]> => {
@@ -468,69 +469,69 @@ export const updateItemSale = (db: SQLiteDatabase, id: number, incomingQuantity:
 
 
 export const finalizeSale = async (
-    db: SQLiteDatabase,
-    cartItems: CartItem[],
-    postSale: any
+  db: SQLiteDatabase,
+  cartItems: CartItem[],
+  postSale: any
 ): Promise<void> => {
-    const now = new Date().toISOString();
-    const createdBy = await AsyncStorage.getItem('userId') ?? "dgdfgdd";
-    const isConnected = await NetInfo.fetch().then(state => state.isConnected);
+  const now = new Date().toISOString();
+  const createdBy = (await AsyncStorage.getItem('userId')) ?? "dgdfgdd";
+  const isConnected = await NetInfo.fetch().then(state => state.isConnected);
 
-    db.transaction(
-        (tx) => {
-            cartItems.forEach(async (item) => {
-                let synced = 0;
+  // First, attempt to sync sales to server if online
+  const syncResults: Record<number, boolean> = {}; // track which items synced
+  if (isConnected) {
+    for (const item of cartItems) {
+      try {
+        await postSale({
+          product_id: item.id,
+          quantity: item.quantity,
+          soldprice: item.price,
+        });
+        syncResults[item.id] = true;
+        console.log(`🌐 Synced sale for item ID: ${item.id}`);
+      } catch (err) {
+        syncResults[item.id] = false;
+        console.warn(`⚠️ Sync failed for item ID: ${item.id}. Will save locally.`, err);
+      }
+    }
+  } else {
+    // mark all as unsynced
+    cartItems.forEach(item => (syncResults[item.id] = false));
+  }
 
-                if (isConnected) {
-                    try {
-                        await postSale({
-                            product_id: item.id,
-                            quantity: item.quantity,
-                            soldprice: item.price,
-                          
-                        });
-                        synced = 1;
-                        console.log(`🌐 Synced sale for item ID: ${item.id}`);
-                    } catch (err) {
-                        console.warn(`⚠️ Sync failed for item ID: ${item.id}. Saving locally.`, err);
-                    }
-                }
+  // Now, insert sales locally and update stock in a single transaction
+  db.transaction(
+    (tx) => {
+      for (const item of cartItems) {
+        const synced = syncResults[item.id] ? 1 : 0;
 
-                // Insert into local sales table
-                let r = tx.executeSql(
-                    `INSERT INTO sales (product_id, quantity, soldprice, synced, createdBy, created_at, updatedAt)
+        // Insert into sales table
+        tx.executeSql(
+          `INSERT INTO sales (product_id, quantity, soldprice, synced, createdBy, created_at, updatedAt)
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                    [item.id, item.quantity, item.price, synced, createdBy, now, now],
-                    (_, res) => {
-                        console.log(`✅ Inserted sale for item ID: ${item.id}`);
-                    },
-                    (_, error) => {
-                        console.error(`❌ Failed to insert sale for item ID: ${item.id}`, error);
-                        return false;
-                    }
-                );
-                console.log(r)
-                // Update product quantity locally
-                tx.executeSql(
-                    `UPDATE products SET quantity = quantity - ? WHERE id = ?`,
-                    [item.quantity, item.id],
-                    (_, res) => {
-                        console.log(`✅ Updated stock for item ID: ${item.id}`);
-                    },
-                    (_, error) => {
-                        console.error(`❌ Failed to update stock for item ID: ${item.id}`, error);
-                        return false;
-                    }
-                );
-            });
-        },
-        (error) => {
-            console.error('❌ Transaction failed:', error);
-        },
-        () => {
-            console.log('✅ Transaction completed successfully');
-        }
-    );
+          [item.id, item.quantity, item.price, synced, createdBy, now, now],
+          (_, res) => console.log(`✅ Inserted sale for item ID: ${item.id}`),
+          (_, error) => {
+            console.error(`❌ Failed to insert sale for item ID: ${item.id}`, error);
+            return false;
+          }
+        );
+
+        // Update product stock
+        tx.executeSql(
+          `UPDATE products SET quantity = quantity - ? WHERE id = ?`,
+          [item.quantity, item.id],
+          (_, res) => console.log(`✅ Updated stock for item ID: ${item.id}`),
+          (_, error) => {
+            console.error(`❌ Failed to update stock for item ID: ${item.id}`, error);
+            return false;
+          }
+        );
+      }
+    },
+    (error) => console.error('❌ Transaction failed:', error),
+    () => console.log('✅ Transaction completed successfully')
+  );
 };
 
 export const updateItemQuantity = (db: SQLiteDatabase, id: number, incomingQuantity: number) => {

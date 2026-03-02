@@ -3,10 +3,6 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 
-if (Platform.OS === 'android') {
-    UIManager.setLayoutAnimationEnabledExperimental?.(true);
-}
-
 interface SwipeableCardProps {
     children: React.ReactNode;
     onEdit: () => void;
