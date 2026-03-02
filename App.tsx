@@ -10,13 +10,11 @@ import { store, persistor } from './store';
 import { SettingsProvider } from './src/context/SettingsContext';
 import { useAuthContext } from './src/context/authContext';
 import { useTokenExpiryWatcher } from './src/hooks/useTokenExpiryWatcher';
-import { AuthStack } from './src/navigations/rootStack';
+
 import { RootDrawer } from './src/navigations/rootDrawer';
 
-import {
-  Printer,
-  PrinterConstants,
-} from 'react-native-esc-pos-printer';
+
+import { AuthStack } from './src/navigations/auth/stack';
 
 /* 🔥 CHANGE THIS TO YOUR PRINTER MAC */
 

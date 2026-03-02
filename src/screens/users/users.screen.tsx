@@ -28,9 +28,11 @@ import { useSettings } from '../../context/SettingsContext';
 import { useSelector } from 'react-redux';
 import EntityModal from '../../components/EntityModal';
 import SwipeableCard from '../../components/SwipeableCard';
+import { Theme } from '../../utils/theme';
 
 const CategoryScreen = () => {
-    const { isDarkMode } = useSettings();
+      const { isDarkMode } = useSettings();
+      const theme = isDarkMode ? Theme.dark : Theme.light;
     const { query, setQuery } = useSearch();
     const { user:{business} } = useSelector((state: any) => state.auth)
     const initialState = { category_name: "", description: "", category_id: "",business_id: business._id || "" };
@@ -133,34 +135,9 @@ const renderCategoryCard = ({ item }: { item: CategoryItem }) => (
     initialData={item}
     fields={categoryFields}
 />
-    // const renderCategoryCard = ({ item }: { item: CategoryItem }) => {
-    //     // threshold for low stock
-    //     return (
-    //         <View style={{
-    //             backgroundColor: '#1e293b',
-    //             padding: 16,
-    //             borderRadius: 12,
-    //             marginBottom: 12,
-    //             shadowColor: "#000",
-    //             shadowOffset: { width: 0, height: 2 },
-    //             shadowOpacity: 0.25,
-    //             shadowRadius: 4,
-    //             elevation: 5
-    //         }}>
-    //             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-    //                 <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{item.category_name}</Text>
-
-    //             </View>
-    //             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}>
-
-    //                 <Text style={{ color: '#9ca3af', fontSize: 12 }}>{item.description ? ` ${item.description}` : ''}</Text>
-    //             </View>
-    //         </View>
-    //     );
-    // };
-
+ 
     return (
-        <View style={{ flex: 1, backgroundColor: isDarkMode ? '#0f172a' : '#f8fafc', paddingTop: 16 }}>
+        <View style={{ flex: 1, backgroundColor:theme.background, paddingTop: 16 }}>
             {/* Page Header */}
             <PageHeader />
 
@@ -185,6 +162,7 @@ const renderCategoryCard = ({ item }: { item: CategoryItem }) => (
             <AddCategoryModal
                 setMsg={setMsg}
                 isDarkMode={isDarkMode}
+                theme={theme}
                 msg={msg}
                 PostLocally={AddCategory}
                 modalVisible={modalVisible}
@@ -196,6 +174,8 @@ const renderCategoryCard = ({ item }: { item: CategoryItem }) => (
             <UploadProductsModal
                 setMsg={setMsg}
                 msg={msg}
+                isDarkMode={isDarkMode}
+                theme={theme}
                 PostLocally={AddCategory}
                 modalVisible={uploadModalVisible}
                 setItem={setItem}

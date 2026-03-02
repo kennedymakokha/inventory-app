@@ -390,7 +390,7 @@ const ProductScreen = () => {
 
 const styles = StyleSheet.create({
     filterContainer: {
-        borderTopColor: theme.borderColor,
+    
         paddingHorizontal: 2,
         paddingVertical: 8,
 

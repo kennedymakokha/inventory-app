@@ -15,7 +15,7 @@ import { CategoryItem, ProductItem } from '../../../models';
 import { createCategoryTable, getCategories, getSyncedCategories, getUnsyncedCategories, saveCategoryItems } from '../../services/category.service';
 
 import AddCategoryModal from './components/addCategoryModal';
-import UploadProductsModal from './components/uploadProduct.modal';
+import UploadProductsModal from './components/upload.modal';
 import { validateItem } from '../validations/category.validation';
 import PageHeader from '../../components/pageHeader';
 import { createInventoryTable } from '../../services/inventory.service';
@@ -28,9 +28,11 @@ import { useSettings } from '../../context/SettingsContext';
 import { useSelector } from 'react-redux';
 import EntityModal from '../../components/EntityModal';
 import SwipeableCard from '../../components/SwipeableCard';
+import { Theme } from '../../utils/theme';
 
 const CategoryScreen = () => {
     const { isDarkMode } = useSettings();
+    const theme = isDarkMode ? Theme.dark : Theme.light;
     const { query, setQuery } = useSearch();
     const { user:{business} } = useSelector((state: any) => state.auth)
     const initialState = { category_name: "", description: "", category_id: "",business_id: business._id || "" };
@@ -195,6 +197,8 @@ const renderCategoryCard = ({ item }: { item: CategoryItem }) => (
             />
             <UploadProductsModal
                 setMsg={setMsg}
+                theme={theme}
+                isDarkMode={isDarkMode}
                 msg={msg}
                 PostLocally={AddCategory}
                 modalVisible={uploadModalVisible}
