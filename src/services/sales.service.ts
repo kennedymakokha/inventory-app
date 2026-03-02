@@ -3,6 +3,8 @@ import { CartItem } from "../../models";
 import NetInfo from '@react-native-community/netinfo';
 import axios from 'axios';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_URL } from "@env";
+import { useCreateSaleMutation } from "./salesApi";
 
 export const createSalesTable = async (db: SQLiteDatabase) => {
     // create table if not exists
@@ -467,10 +469,11 @@ export const updateItemSale = (db: SQLiteDatabase, id: number, incomingQuantity:
 
 export const finalizeSale = async (
     db: SQLiteDatabase,
-    cartItems: CartItem[]
+    cartItems: CartItem[],
+    postSale: any
 ): Promise<void> => {
     const now = new Date().toISOString();
-    const createdBy = await AsyncStorage.getItem('userId');
+    const createdBy = await AsyncStorage.getItem('userId') ?? "dgdfgdd";
     const isConnected = await NetInfo.fetch().then(state => state.isConnected);
 
     db.transaction(
@@ -480,13 +483,11 @@ export const finalizeSale = async (
 
                 if (isConnected) {
                     try {
-                        await axios.post('https://your-api.com/sales', {
+                        await postSale({
                             product_id: item.id,
                             quantity: item.quantity,
                             soldprice: item.price,
-                            createdBy,
-                            createdAt: now,
-                            updatedAt: now
+                          
                         });
                         synced = 1;
                         console.log(`🌐 Synced sale for item ID: ${item.id}`);
@@ -496,7 +497,7 @@ export const finalizeSale = async (
                 }
 
                 // Insert into local sales table
-                tx.executeSql(
+                let r = tx.executeSql(
                     `INSERT INTO sales (product_id, quantity, soldprice, synced, createdBy, created_at, updatedAt)
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
                     [item.id, item.quantity, item.price, synced, createdBy, now, now],
@@ -508,7 +509,7 @@ export const finalizeSale = async (
                         return false;
                     }
                 );
-
+                console.log(r)
                 // Update product quantity locally
                 tx.executeSql(
                     `UPDATE products SET quantity = quantity - ? WHERE id = ?`,

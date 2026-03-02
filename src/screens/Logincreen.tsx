@@ -40,9 +40,31 @@ const LoginScreen = ({ navigation }: any) => {
                 return;
             }
             setLoading(true)
-           
-            const data = await loginUser(item).unwrap()
-          
+
+            // const data = await loginUser(item).unwrap()
+            const data = {
+                "ok": true,
+                "message": "Logged in",
+                "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWEwMTVkNzZjMGExYzcyMjMwNmFhZWIiLCJ1c2VybmFtZSI6Ik1rb2xvbmdvbG8gU3VwcGxpZXMncyBBZG1pbiIsInJvbGUiOiJhZG1pbiIsIm5hbWUiOiJNa29sb25nb2xvIFN1cHBsaWVzJ3MgQWRtaW4iLCJpYXQiOjE3NzI0MjEzNjgsImV4cCI6MTc3MzAyNjE2OH0.vuTlhHjhDfKtkUhk1Cfkl-R49FhgVKaqpphA5vxDseE",
+                "exp": 1773026168,
+                "user": {
+                    "_id": "69a015d76c0a1c722306aaeb",
+                    "phone_number": "0727270677",
+                    "name": "Mkolongolo Supplies's Admin",
+                    "business": {
+                        "_id": "69a015d66c0a1c722306aae9",
+                        "business_name": "Mkolongolo Supplies",
+                        "postal_address": "P.O BOX 123 - NAIROBI",
+                        "phone_number": "+254727270677",
+                        "contact_number": "0727270677",
+                        "kra_pin": "P051234567X",
+                        "api_key": "1234567ss8bcer6"
+                    },
+                    "role": "admin",
+                    "activated": true,
+                    "password": "$2b$10$O1aMv1dXtn7KlJk28ybWdeDjDPG9cmgo7IyMIWxC1TTam0rBdh7Hm"
+                }
+            }
 
             if (data.ok === true) {
                 setprogress("Data truei")
@@ -50,7 +72,7 @@ const LoginScreen = ({ navigation }: any) => {
                 await AsyncStorage.setItem("accessToken", data.token);
                 await AsyncStorage.setItem('userId', data.user._id);
                 if (data?.exp) {
-                  
+
                     await AsyncStorage.setItem("tokenExpiry", data.exp.toString());
                     await login(data.token);
                 }

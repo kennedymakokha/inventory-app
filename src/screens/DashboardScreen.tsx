@@ -37,9 +37,9 @@ const { isDarkMode } = useSettings();
     const groupedTypes = ["non-profit", "best", "worst", "profit", "low-stock"];
     const results: any = {};
 
-    // for (const type of groupedTypes) {
-    //   await fetchGroupedProfit(db, type, (data: any) => { results[type] = data; });
-    // }
+    for (const type of groupedTypes) {
+      await fetchGroupedProfit(db, type, (data: any) => { results[type] = data; });
+    }
 
     const weekdayMap: Record<string, number> = { '0': 6, '1': 0, '2': 1, '3': 2, '4': 3, '5': 4, '6': 5 };
     const salesArray = Array(7).fill(0);

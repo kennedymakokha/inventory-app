@@ -3,6 +3,13 @@ import { api } from './index';
 
 export const injectEndpoints = api.injectEndpoints({
     endpoints: builder => ({
+          createSale: builder.mutation({
+            query: (body) => ({
+                url: '/sales',
+                method: 'POST',
+                body,
+            }),
+        }),
         syncSales: builder.mutation({
             query: (body) => ({
                 url: '/sales/sync',
@@ -18,5 +25,6 @@ export const injectEndpoints = api.injectEndpoints({
 
 export const {
     usePullSalesQuery,
-    useSyncSalesMutation
+    useSyncSalesMutation,
+    useCreateSaleMutation,
 } = injectEndpoints;

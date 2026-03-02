@@ -44,19 +44,21 @@ export const Unsyncsync = async (db: SQLiteDatabase) => {
     await db.executeSql(`DELETE FROM sync_status`);
 };
 export const createCategoryTable = async (db: SQLiteDatabase) => {
-    // create table if not exists
-    const query = `CREATE TABLE IF NOT EXISTS categories (
-     id INTEGER PRIMARY KEY AUTOINCREMENT,
-      category_id TEXT UNIQUE, -- sync ID
-      category_name TEXT,
-      business_id TEXT,
-      description TEXT,
-      synced INTEGER, -- 0 or 1
-      expiryDate TEXT,
-      createdAt TEXT,
-      createdBy TEXT,
-      updatedAt TEXT
-    )`;
+    const query = `
+      CREATE TABLE IF NOT EXISTS categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        category_name TEXT COLLATE NOCASE,
+        category_id TEXT,
+        business_id TEXT,
+        createdBy TEXT,
+        description TEXT,
+        synced INTEGER,
+        expiryDate TEXT,
+        createdAt TEXT,
+        updatedAt TEXT,
+        UNIQUE (category_name, business_id)
+      );
+    `;
 
     await db.executeSql(query);
 };

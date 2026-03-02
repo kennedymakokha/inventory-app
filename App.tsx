@@ -16,7 +16,6 @@ import {
   Printer,
   PrinterConstants,
 } from 'react-native-esc-pos-printer';
-import { printReceipt } from './src/services/printerService';
 
 /* 🔥 CHANGE THIS TO YOUR PRINTER MAC */
 
@@ -53,12 +52,6 @@ function App(): React.JSX.Element {
     }
   };
 
-  /* ---------------- TEST PRINT ---------------- */
-
-
-
-  /* ---------------- INIT ---------------- */
-
   useEffect(() => {
     const setup = async () => {
       const granted = await requestBluetoothPermissions();
@@ -66,13 +59,10 @@ function App(): React.JSX.Element {
         console.log('Bluetooth permission denied');
         return;
       }
-
-      // 🔥 Make sure printer is already paired in Android settings
-      await printReceipt('Test Print from Inventory App\n');
     };
 
     setup();
-  }, [printReceipt]);
+  }, []);
 
   /* ---------------- UI ---------------- */
 

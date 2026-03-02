@@ -16,9 +16,9 @@ import Icon from 'react-native-vector-icons/FontAwesome5';
 import { Camera, CameraType } from 'react-native-camera-kit';
 import { getProducts } from '../../services/product.service';
 import { getDBConnection } from '../../services/db-service';
-import { DataSales, ProductItem } from '../../../models';
+import { CartItem, DataSales, ProductItem } from '../../../models';
 import CheckoutModal from './components/checkout';
-import { createSalesTable, fetchCumulativeProfit, finalizeSale } from '../../services/sales.service';
+import { createSalesTable, fetchCumulativeProfit, fetchSales, finalizeSale } from '../../services/sales.service';
 import Toast from '../../components/Toast';
 import { useSearch } from '../../context/searchContext';
 import { useSettings } from '../../context/SettingsContext';
@@ -26,12 +26,13 @@ import { SkeletonList } from './components/skeleton';
 import PageHeader from '../../components/pageHeader';
 import SearchBar from '../../components/searchBar';
 import { Theme } from '../../utils/theme';
+import { useCreateSaleMutation } from '../../services/salesApi';
 
 const SalesScreen = () => {
     const { isScanToCartEnabled, isDarkMode } = useSettings();
     const { query } = useSearch();
     const [products, setProducts] = useState<ProductItem[]>([]);
-    const [cart, setCart] = useState<ProductItem[]>([]);
+    const [cart, setCart] = useState<CartItem[]>([]);
     const [modalVisible, setModalVisible] = useState(false);
     const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -40,7 +41,7 @@ const SalesScreen = () => {
     const [sellingPrices, setSellingPrices] = useState<Record<string, string>>({});
     const [state, setState] = useState<Record<string, boolean>>({});
     const [datasales, setdataSales] = useState<DataSales | null>(null);
-
+    const [postSale] = useCreateSaleMutation()
     const theme = isDarkMode ? Theme.dark : Theme.light;
 
     useEffect(() => {
@@ -127,7 +128,7 @@ const SalesScreen = () => {
         try {
             const db = await getDBConnection();
             await createSalesTable(db);
-            await finalizeSale(db, cart);
+            await finalizeSale(db, cart, postSale);
             await loadData();
             setModalVisible(false);
             setQuantities({});
@@ -144,75 +145,139 @@ const SalesScreen = () => {
 
     const renderItem = ({ item }: { item: ProductItem }) => (
         <Pressable onPress={Keyboard.dismiss}>
-            <View 
-            style={{ borderColor: theme.border,backgroundColor:theme.card}} 
-            className={` mx-4 my-2 p-4 rounded-md shadow-sm border border-[${theme.border}]`}>
+            <View
+                style={{
+                    backgroundColor: theme.card,
+                    borderColor: theme.border,
+                }}
+                className="mx-4 my-2 p-4 rounded-xl border"
+            >
+                {/* Header */}
                 <View className="flex-row justify-between items-center mb-1">
-                    <Text className={`text-lg font-bold ${theme.text}`}>{item.product_name}</Text>
-                    <Text className={`text-xs px-2 py-1 rounded-full ${item.quantity > 5 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                        {item.quantity} in stock
+                    <Text
+                        className="text-lg font-bold"
+                        style={{ color: theme.text }}
+                    >
+                        {item.product_name}
                     </Text>
+
+                    <View
+                        style={{
+                            backgroundColor:
+                                item.quantity > 5 ? '#064e3b' : '#7f1d1d',
+                        }}
+                        className="px-2 py-1 rounded-full"
+                    >
+                        <Text style={{ color: '#fff', fontSize: 12 }}>
+                            {item.quantity} in stock
+                        </Text>
+                    </View>
                 </View>
 
-                {item.barcode ? <Text className="text-xs text-blue-500 mb-2 font-mono">{item.barcode}</Text> : null}
+                {/* Barcode */}
+                {item.barcode ? (
+                    <Text
+                        className="text-xs mb-2 font-mono"
+                        style={{ color: theme.subText }}
+                    >
+                        {item.barcode}
+                    </Text>
+                ) : null}
 
+                {/* Controls */}
                 <View className="flex-row items-center justify-between mb-4 mt-2">
-                    <View 
-                    style={{backgroundColor:theme.background}}
-                    className="flex-row items-center  rounded-xl p-1">
+                    {/* Quantity */}
+                    <View
+                        style={{ backgroundColor: theme.inputBg }}
+                        className="flex-row items-center rounded-xl p-1"
+                    >
                         <TouchableOpacity
                             onPress={() => {
                                 const current = parseInt(quantities[item.id] || '0');
-                                if (current > 0) setQuantities(prev => ({ ...prev, [item.id]: (current - 1).toString() }));
+                                if (current > 0)
+                                    setQuantities(prev => ({
+                                        ...prev,
+                                        [item.id]: (current - 1).toString(),
+                                    }));
                                 setState(prev => ({ ...prev, [item.id]: false }));
                             }}
                             className="w-10 h-10 items-center justify-center"
                         >
-                            <Icon name="minus" size={12} color={isDarkMode ? "#fff" : "#000"} />
+                            <Icon name="minus" size={12} color={theme.text} />
                         </TouchableOpacity>
+
                         <TextInput
-                            className={`w-12 text-center font-bold text-[${theme.text}]`}
+                            className="w-12 text-center font-bold"
+                            style={{ color: theme.text }}
                             keyboardType="numeric"
                             value={quantities[item.id] || '0'}
                             onChangeText={(text) => {
-                                setQuantities((prev) => ({ ...prev, [item.id]: text }));
+                                setQuantities(prev => ({ ...prev, [item.id]: text }));
                                 setState(prev => ({ ...prev, [item.id]: false }));
                             }}
                         />
+
                         <TouchableOpacity
                             onPress={() => {
                                 const current = parseInt(quantities[item.id] || '0');
-                                setQuantities(prev => ({ ...prev, [item.id]: (current + 1).toString() }));
+                                setQuantities(prev => ({
+                                    ...prev,
+                                    [item.id]: (current + 1).toString(),
+                                }));
                                 setState(prev => ({ ...prev, [item.id]: false }));
                             }}
                             className="w-10 h-10 items-center justify-center"
                         >
-                            <Icon name="plus" size={12} color={isDarkMode ? "#fff" : "#000"} />
+                            <Icon name="plus" size={12} color={theme.text} />
                         </TouchableOpacity>
                     </View>
 
+                    {/* Price */}
                     <View
-                    style={{backgroundColor:theme.background}}
-                    className="flex-row items-center  rounded-xl px-3 h-12">
-                        <Text className={theme.subText}>Ksh </Text>
+                        style={{ backgroundColor: theme.inputBg }}
+                        className="flex-row items-center rounded-xl px-3 h-12"
+                    >
+                        <Text style={{ color: theme.subText }}>Ksh </Text>
                         <TextInput
-                            className={`w-20 font-bold text-[${theme.text}]`}
+                            className="w-20 font-bold"
+                            style={{ color: theme.text }}
                             keyboardType="numeric"
-                            value={sellingPrices[item.id] !== undefined ? sellingPrices[item.id] : item.price.toString()}
-                            onChangeText={(text) => setSellingPrices((prev) => ({ ...prev, [item.id]: text }))}
+                            value={
+                                sellingPrices[item.id] !== undefined
+                                    ? sellingPrices[item.id]
+                                    : item.price.toString()
+                            }
+                            onChangeText={(text) =>
+                                setSellingPrices(prev => ({
+                                    ...prev,
+                                    [item.id]: text,
+                                }))
+                            }
                         />
                     </View>
                 </View>
 
+                {/* Footer */}
                 <View className="flex-row justify-between items-center">
-                    <Text className="text-green-600 font-bold">Base: {item?.price?.toFixed(2)}</Text>
+                    <Text
+                        className="font-bold"
+                        style={{ color: '#16a34a' }}
+                    >
+                        Base: {item?.price?.toFixed(2)}
+                    </Text>
+
                     {state[item.id] ? (
                         <View className="bg-green-100 p-2 rounded-full">
                             <Icon name="check-circle" color="#16a34a" size={24} />
                         </View>
                     ) : (
-                        <TouchableOpacity onPress={() => handleAddToCart(item)} className="bg-blue-600 px-6 py-3 rounded-2xl shadow-blue-500/50 shadow-lg">
-                            <Text className="text-white font-bold">Add to Cart</Text>
+                        <TouchableOpacity
+                            onPress={() => handleAddToCart(item)}
+                            className="bg-blue-600 px-6 py-3 rounded-2xl"
+                        >
+                            <Text className="text-white font-bold">
+                                Add to Cart
+                            </Text>
                         </TouchableOpacity>
                     )}
                 </View>
@@ -224,11 +289,24 @@ const SalesScreen = () => {
         item.product_name.toLowerCase().includes(query.toLowerCase()) ||
         (item.barcode && item.barcode.includes(query))
     );
+    const fetch = async () => {
+        const db = await getDBConnection();
+        fetchSales(db).then((data) => {
+            // setdataSales(data)
+            console.log(data)
+        }).catch((err) => {
+            console.log(err)
+        }
+        )
+    }
+    useEffect(() => {
+        fetch();
+    }, [])
 
     return (
-        <KeyboardAvoidingView 
-         style={{ flex: 1, backgroundColor: theme.background, paddingTop: 16 }}
-        className={`flex-1 ${theme.background}`} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <KeyboardAvoidingView
+            style={{ flex: 1, backgroundColor: theme.background, paddingTop: 16 }}
+            className={`flex-1 ${theme.background}`} behavior={Platform.OS === "ios" ? "padding" : undefined}>
 
             <Modal visible={isScannerOpen} animationType="slide">
                 <View className="flex-1" >
@@ -261,31 +339,52 @@ const SalesScreen = () => {
             } />
 
             {/* {loading ? <SkeletonList /> : ( */}
-                <FlatList
-                    data={filtered}
-                    renderItem={renderItem}
-                    contentContainerStyle={{ paddingBottom: cart.length > 0 ? 150 : 30 }}
-                    keyExtractor={(item) => item.id.toString()}
-                    keyboardShouldPersistTaps="handled"
-                />
+            <FlatList
+                data={filtered}
+                renderItem={renderItem}
+                contentContainerStyle={{ paddingBottom: cart.length > 0 ? 150 : 30 }}
+                keyExtractor={(item) => item.id.toString()}
+                keyboardShouldPersistTaps="handled"
+            />
             {/* )} */}
 
             {msg.msg && <Toast msg={msg.msg} state={msg.state} />}
 
             {cart.length > 0 && (
-                <View className="absolute bottom-6 left-4 right-4 bg-slate-800 p-5 rounded-3xl shadow-2xl border border-slate-700">
+                <View
+                    className="absolute bottom-6 left-4 right-4 p-5 rounded-3xl border"
+                    style={{
+                        backgroundColor: theme.elevated,
+                        borderColor: theme.border,
+                    }}
+                >
                     <View className="flex-row justify-between items-center">
                         <View>
-                            <Text className="text-slate-400 text-xs uppercase font-bold tracking-widest">Total Amount</Text>
-                            <Text className="text-2xl font-black text-white">Ksh {total.toLocaleString()}</Text>
+                            <Text
+                                className="text-xs uppercase font-bold tracking-widest"
+                                style={{ color: theme.subText }}
+                            >
+                                Total Amount
+                            </Text>
+                            <Text
+                                className="text-2xl font-black"
+                                style={{ color: theme.text }}
+                            >
+                                Ksh {total.toLocaleString()}
+                            </Text>
                         </View>
-                        <TouchableOpacity onPress={() => setModalVisible(true)} className="bg-green-500 px-8 py-4 rounded-2xl">
-                            <Text className="text-slate-900 font-black text-lg">CHECKOUT ({cart.length})</Text>
+
+                        <TouchableOpacity
+                            onPress={() => setModalVisible(true)}
+                            className="bg-green-500 px-8 py-4 rounded-2xl"
+                        >
+                            <Text className="text-slate-900 font-black text-lg">
+                                CHECKOUT ({cart.length})
+                            </Text>
                         </TouchableOpacity>
                     </View>
                 </View>
             )}
-
             <CheckoutModal
                 setMsg={setMsg}
                 msg={msg}

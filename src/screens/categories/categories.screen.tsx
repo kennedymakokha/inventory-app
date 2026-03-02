@@ -26,6 +26,8 @@ import RadialFab from '../../components/multiFab';
 import { useCreateCategoryMutation } from '../../services/categoryApi';
 import { useSettings } from '../../context/SettingsContext';
 import { useSelector } from 'react-redux';
+import EntityModal from '../../components/EntityModal';
+import SwipeableCard from '../../components/SwipeableCard';
 
 const CategoryScreen = () => {
     const { isDarkMode } = useSettings();
@@ -91,31 +93,71 @@ const CategoryScreen = () => {
     }, [loadDataCallback, offset]);
 
 
-    const renderCategoryCard = ({ item }: { item: CategoryItem }) => {
-        // threshold for low stock
-        return (
-            <View style={{
-                backgroundColor: '#1e293b',
-                padding: 16,
-                borderRadius: 12,
-                marginBottom: 12,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.25,
-                shadowRadius: 4,
-                elevation: 5
-            }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{item.category_name}</Text>
-
-                </View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}>
-
-                    <Text style={{ color: '#9ca3af', fontSize: 12 }}>{item.description ? ` ${item.description}` : ''}</Text>
-                </View>
-            </View>
-        );
+// Inside CategoryScreen
+const categoryFields = [
+    { key: 'category_name', label: 'Name', placeholder: 'Category Name' },
+    { key: 'description', label: 'Description', placeholder: 'Description' },
+];
+ const handleDelete = async (cat: CategoryItem) => {
+        const db = await getDBConnection();
+        await db.executeSql('DELETE FROM categories WHERE category_id=?', [cat.category_id]);
+        setCategories(prev => prev.filter(c => c.category_id !== cat.category_id));
     };
+const renderCategoryCard = ({ item }: { item: CategoryItem }) => (
+    <SwipeableCard
+        onEdit={() => { setItem(item); setModalVisible(true); }}
+        onDelete={() => handleDelete(item)}
+    >
+        <View style={{
+            backgroundColor: '#1e293b',
+            padding: 16,
+            borderRadius: 12,
+            marginBottom: 12,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            elevation: 5
+        }}>
+            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{item.category_name}</Text>
+            <Text style={{ color: '#9ca3af', fontSize: 12, marginTop: 6 }}>{item.description || ''}</Text>
+        </View>
+    </SwipeableCard>
+);
+
+// Reusable modal for add/edit
+<EntityModal
+    visible={modalVisible}
+    onClose={() => setModalVisible(false)}
+    onSave={AddCategory} // works for both add & edit
+    initialData={item}
+    fields={categoryFields}
+/>
+    // const renderCategoryCard = ({ item }: { item: CategoryItem }) => {
+    //     // threshold for low stock
+    //     return (
+    //         <View style={{
+    //             backgroundColor: '#1e293b',
+    //             padding: 16,
+    //             borderRadius: 12,
+    //             marginBottom: 12,
+    //             shadowColor: "#000",
+    //             shadowOffset: { width: 0, height: 2 },
+    //             shadowOpacity: 0.25,
+    //             shadowRadius: 4,
+    //             elevation: 5
+    //         }}>
+    //             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    //                 <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{item.category_name}</Text>
+
+    //             </View>
+    //             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}>
+
+    //                 <Text style={{ color: '#9ca3af', fontSize: 12 }}>{item.description ? ` ${item.description}` : ''}</Text>
+    //             </View>
+    //         </View>
+    //     );
+    // };
 
     return (
         <View style={{ flex: 1, backgroundColor: isDarkMode ? '#0f172a' : '#f8fafc', paddingTop: 16 }}>

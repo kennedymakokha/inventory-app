@@ -6,7 +6,7 @@ import SearchBar from './searchBar';
 const POSHeader = ({ component }: { component?: () => React.ReactNode }) => {
   const { user } = useSelector((state: any) => state.auth);
   const [dateTime, setDateTime] = useState('');
-
+  const { business } = user
   useEffect(() => {
     const updateTime = () => setDateTime(new Date().toLocaleString());
     updateTime();
@@ -18,7 +18,7 @@ const POSHeader = ({ component }: { component?: () => React.ReactNode }) => {
     <View className="bg-slate-900 px-5 pt-6 pb-4 shadow-lg">
       {/* Business Name */}
       <Text className="text-white text-2xl text-center font-extrabold tracking-wide">
-        CLIDE PHARMACEUTICALS POS
+       {business.business_name}
       </Text>
 
       {/* User + Terminal Info */}

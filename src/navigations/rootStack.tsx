@@ -100,7 +100,7 @@ export function RootStack() {
           title: "",
           header: () => <CustomHeaderWithSearch noSearch title="Products" />
         }}
-        component={ProductsTabs} />
+        component={ProductScreen} />
       <Stack.Screen name="inventory" options={{
         headerShown: false
       }} component={InventoryStack} />
