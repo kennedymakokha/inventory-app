@@ -41,7 +41,7 @@ const handleInventorySync = async (syncInventory: any, setMessage: any, inventor
         setLoading(true);
         const db = await getDBConnection();
         await createSyncTable(db)
-        await createProductTable(db);
+        await createProductTable();
         const unsyncedProducts = await getUnsyncedInventory(db, 1000);
         for (const product of unsyncedProducts) {
             const response = await syncInventory(product).unwrap()

@@ -29,7 +29,6 @@ export type CategoryItem = {
     expiryDate?: any
     category_id?: string;
     createdBy?: string | any,
-
     description: string,
     updatedAt?: string
     synced?: boolean

@@ -6,6 +6,7 @@ import DashboardScreen from "../../screens/DashboardScreen";
 import CustomHeader from "../../components/customHeader";
 import ProductScreen from "../../screens/products/product.screen";
 import { CategoriesStack } from "../categories/stack";
+import { UsersStack } from "../users/stack";
 
 const Tab = createBottomTabNavigator();
 export function DashboardTabs() {
@@ -56,7 +57,7 @@ export function DashboardTabs() {
             />
             <Tab.Screen
                 name="users"
-                component={ProductScreen}
+                component={UsersStack}
                 initialParams={{ filter: "users" }}
                 options={{ header: () => <CustomHeader title="Users" /> }}
             />

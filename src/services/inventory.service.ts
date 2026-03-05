@@ -7,9 +7,10 @@ export const createInventoryTable = async (db: SQLiteDatabase) => {
     // create table if not exists
     const query = `CREATE TABLE IF NOT EXISTS inventory (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inventory_id TEXT UNIQUE,
         product_id INTEGER NOT NULL,
         quantity INTEGER NOT NULL,
-         createdBy TEXT NOT NULL ,
+        createdBy TEXT NOT NULL ,
       synced INTEGER NOT NULL,
       expiryDate DATETIME DEFAULT CURRENT_TIMESTAMP,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

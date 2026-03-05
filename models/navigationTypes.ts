@@ -21,6 +21,9 @@ export type InventoryStackParamList = {
 export type CategoriesStackParamList = {
   categories_Dashboard: undefined;
 };
+export type UsersStackParamList = {
+  Users_Dashboard: undefined;
+};
 
 export type ReportStackParamList = {
   salesReport: undefined;

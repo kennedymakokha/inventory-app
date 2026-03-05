@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useSelector } from 'react-redux';
 import { useSettings } from '../context/SettingsContext';
 import { Theme } from '../utils/theme';
@@ -7,41 +7,73 @@ import { DataSales } from '../../models';
 import { getDBConnection } from '../services/db-service';
 import { fetchCumulativeProfit, fetchGroupedProfit } from '../services/sales.service';
 import { adminFilter, Adminheaders, getadminSalesReportData, getSalesReportData, salesFilter, salesheaders } from '../../utils/getsalesdata';
-
 import PageHeader from '../components/pageHeader';
 import TableContainer from './reports/components/salesTable';
 
 
 const Dashboard = () => {
   const { user } = useSelector((state: any) => state.auth);
-
   const { isDarkMode } = useSettings();
   const theme = isDarkMode ? Theme.dark : Theme.light;
+
+  const [db, setDb] = useState<any>(null);
+  const [dbReady, setDbReady] = useState(false);
   const [datasales, setdataSales] = useState<DataSales | null>(null);
-  const [sales, setSales] = useState([]);
+  const [sales, setSales] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState('All');
   const [activeTab, setActiveTab] = useState('All');
 
-  // Fetch sales summary and grouped data
+  const filterData = user?.role === 'superAdmin' ? adminFilter : salesFilter;
+
+  // ---------------- INIT DB ----------------
   useEffect(() => {
+    const initDB = async () => {
+      try {
+        const connection = await getDBConnection();
+
+
+        setDb(connection);
+        setDbReady(true);
+      } catch (err) {
+        console.error('❌ Failed to initialize DB:', err);
+      }
+    };
+
+    initDB();
+  }, []);
+
+  // ---------------- FETCH SALES DATA ----------------
+  useEffect(() => {
+    if (!dbReady) return;
+
     const fetchProfits = async () => {
       setLoading(true);
-      const db = await getDBConnection();
 
-      fetchCumulativeProfit(db, filter.toLowerCase(), (data: any) => {
-        setdataSales(data);
+      try {
+        const cumulativeData = await fetchCumulativeProfit(db, filter.toLowerCase());
+        setdataSales(cumulativeData);
+
+        const groupedData = await fetchGroupedProfit(db, filter.toLowerCase());
+        setSales(groupedData);
+      } catch (err) {
+        console.error('❌ Fetch profits failed:', err);
+      } finally {
         setLoading(false);
-      });
-      fetchGroupedProfit(db, filter.toLowerCase(), (data: any) => {
-        setSales(data);
-        setLoading(false);
-      });
+      }
     };
-    fetchProfits();
-  }, [filter]);
 
-  const filterData = user?.role === 'superAdmin' ? adminFilter : salesFilter;
+    fetchProfits();
+  }, [dbReady, filter]);
+
+  if (!dbReady) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={Theme.primary} />
+        <Text style={{ marginTop: 10, color: theme.text }}>Loading dashboard...</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: theme.background }}>
@@ -83,14 +115,14 @@ const Dashboard = () => {
           <View style={{ backgroundColor: theme.elevated, padding: 16, borderRadius: 12, minWidth: 140 }}>
             <Text style={{ color: theme.subText }}>Total Sales</Text>
             <Text style={{ color: Theme.primary, fontSize: 18, fontWeight: 'bold' }}>
-              {datasales?.total_sales_revenue}/-
+              {datasales?.total_sales_revenue || 0}/-
             </Text>
           </View>
 
           <View style={{ backgroundColor: theme.elevated, padding: 16, borderRadius: 12, minWidth: 140 }}>
             <Text style={{ color: theme.subText }}>Total Profit</Text>
             <Text style={{ color: Theme.success, fontSize: 18, fontWeight: 'bold' }}>
-              {datasales?.total_profit}/-
+              {datasales?.total_profit || 0}/-
             </Text>
           </View>
 

@@ -10,16 +10,20 @@ import SalesScreen from "../screens/sales/salesScreen";
 import { ReportStack } from "./report/stack";
 import SettingsScreen from "../screens/settingsScreen";
 import { useSettings } from "../context/SettingsContext";
+import { useSelector } from "react-redux";
+import Dashboard from "../screens/DashboardScreen";
 
 export function RootStack() {
   const { isDarkMode } = useSettings();
-const RootStackNav = createNativeStackNavigator<RootStackParamList>();
+  const RootStackNav = createNativeStackNavigator<RootStackParamList>();
+  const { user } = useSelector((state: any) => state.auth);
+
 
   return (
     <RootStackNav.Navigator screenOptions={defaultHeaderOptions(isDarkMode)}>
       <RootStackNav.Screen
         name="dashboard"
-        component={DashboardTabs}
+        component={user.role === "admin" ? DashboardTabs : Dashboard}
         options={{ header: () => <CustomHeader title="Dashboard" /> }}
       />
       <RootStackNav.Screen

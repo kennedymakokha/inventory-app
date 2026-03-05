@@ -21,8 +21,8 @@ import { getUnsyncedInventory } from "../services/inventory.service";
 import { getNow } from "../../utils";
 
 import {
-  useBulksyncMutation,
-  usePullupdatedsinceQuery,
+  useBulksyncProductsMutation,
+  usePullupdatedProductsinceQuery,
 } from "../services/productApi";
 
 import {
@@ -50,11 +50,11 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
   const [message, setMessage] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
 
-  const [syncProduct] = useBulksyncMutation();
+  const [syncProduct] = useBulksyncProductsMutation();
   const [syncInventory] = useSyncInventoryMutation();
   const [syncSales] = useSyncSalesMutation();
 
-  const { refetch: refetchProducts } = usePullupdatedsinceQuery(lastSync, {
+  const { refetch: refetchProducts } = usePullupdatedProductsinceQuery(lastSync, {
     skip: !lastSync,
   });
 

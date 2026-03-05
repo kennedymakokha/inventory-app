@@ -135,27 +135,3 @@ export const pullServerUpdates = async (productRes: any) => {
         console.error('❌ Pull failed:', err);
     }
 };
-// export const pullServerUpdates = async () => {
-//     try {
-//         // Pull Products
-//         const productRes = await authorizedFetch(`${API_URL}/products/updates?since=${lastSync}`);
-//         for (const p of productRes.data) {
-//             updateLocalProduct(p);
-//         }
-
-//         // Pull Inventory
-//         const inventoryRes = await authorizedFetch(`${API_URL}/inventory/updates?since=${lastSync}`);
-//         for (const i of inventoryRes.data) {
-//             updateLocalInventory(i);
-//         }
-
-//         lastSync = getNow(); // Update lastSync timestamp
-//         console.log('✅ Pulled server updates');
-//     } catch (err) {
-//         console.error('❌ Pull failed:', err);
-//     }
-// };
-
-// Usage:
-// import { pullServerUpdates } from './pullService';
-// <Button title="Pull Server Updates" onPress={pullServerUpdates} />

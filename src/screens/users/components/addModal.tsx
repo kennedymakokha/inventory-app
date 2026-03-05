@@ -8,7 +8,7 @@ import { CategoryItem, ProductItem } from '../../../../models';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Theme } from '../../../utils/theme';
 
-const AddProductModal = ({ modalVisible,isDarkMode, msg, setMsg, setItem, PostLocally, fetchProducts, item, setModalVisible }: any) => {
+const AddUserModal = ({ modalVisible,isDarkMode, msg, setMsg, setItem, PostLocally, fetchProducts, item, setModalVisible }: any) => {
     const [showPicker, setShowPicker] = useState(false);
       const theme = isDarkMode ? Theme.dark : Theme.light;
     const handleChange = (key: keyof CategoryItem, value: string) => {
@@ -70,4 +70,4 @@ const AddProductModal = ({ modalVisible,isDarkMode, msg, setMsg, setItem, PostLo
     )
 }
 
-export default AddProductModal
+export default AddUserModal

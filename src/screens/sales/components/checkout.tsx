@@ -24,6 +24,9 @@ import { Theme } from '../../../utils/theme';
 
 interface CheckoutModalProps {
   modalVisible: boolean;
+  isDarkMode?:any
+  setMsg?:any
+  msg?:any;
   cartItems: CartItem[];
   PostLocally: () => void;
   setModalVisible: (v: boolean) => void;
@@ -32,7 +35,9 @@ interface CheckoutModalProps {
 const CheckoutModal: React.FC<CheckoutModalProps> = ({
   modalVisible,
   cartItems,
+  msg,
   PostLocally,
+  setMsg,
   setModalVisible,
 }) => {
   const { user } = useSelector((state: any) => state.auth);
@@ -361,28 +366,15 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
       {/* PRINTER LINK */}
 
+    
       <TouchableOpacity
-      
-        className="flex-row py-4 rounded-md justify-center items-center my-4"
-        onPress={()=>{}}
-      >
-        {/* <MaterialCommunityIcons
-          name="cloud-sync"
-          size={26}
-          color="#fff"
-        /> */}
-        <Text className="text-white text-lg ml-3 font-bold">
-          Sync
-        </Text>
-      </TouchableOpacity>
-      {/* <TouchableOpacity
         onPress={() => setShowPrinterModal(true)}
         className="p-2 bg-slate-700 rounded flex-row items-center"
       >
         <Text className="text-white">
           🖨 {selectedPrinterMac ? 'Printer Linked' : 'No Printer Linked'}
         </Text>
-      </TouchableOpacity> */}
+      </TouchableOpacity>
 
       <PrinterSelectionModal
         visible={showPrinterModal}

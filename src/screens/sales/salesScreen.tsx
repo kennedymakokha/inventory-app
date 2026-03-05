@@ -60,9 +60,8 @@ const SalesScreen = () => {
 
     const fetchProfits = async () => {
         const db = await getDBConnection();
-        fetchCumulativeProfit(db, "today", (data: any) => {
-            setdataSales(data);
-        });
+        const data = await fetchCumulativeProfit(db, "today");
+        setdataSales(data);
     };
 
     const handleBarcodeScanned = (event: any) => {
@@ -128,8 +127,8 @@ const SalesScreen = () => {
     const PostSale = async () => {
         try {
             const db = await getDBConnection();
-            await createSalesTable(db);
-            await finalizeSale(db, cart, postSale);
+    
+            await finalizeSale(db, cart);
             await loadData();
             setModalVisible(false);
             setQuantities({});
@@ -287,7 +286,7 @@ const SalesScreen = () => {
     );
 
     const filtered = products.filter((item) =>
-        item.product_name.toLowerCase().includes(query.toLowerCase()) ||
+        item?.product_name?.toLowerCase().includes(query?.toLowerCase()) ||
         (item.barcode && item.barcode.includes(query))
     );
     const fetch = async () => {

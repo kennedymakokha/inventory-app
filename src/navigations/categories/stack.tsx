@@ -2,8 +2,9 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useSettings } from "../../context/SettingsContext";
 import { defaultHeaderOptions } from "../navigationOptions";
 import { CategoriesStackParamList } from "../../../models/navigationTypes";
-import CategoryScreen from "../../screens/categories copy/categories.screen";
+
 import { CustomHeaderWithSearch } from "../../components/customHeader";
+import CategoryScreen from "../../screens/categories/categories.screen";
 
 export function CategoriesStack() {
   const { isDarkMode } = useSettings();

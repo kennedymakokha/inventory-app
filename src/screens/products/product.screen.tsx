@@ -21,9 +21,9 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { getDBConnection } from '../../services/db-service';
 import { CategoryItem, ProductItem } from '../../../models';
 import {
-    createProductTable,
+   
     getProducts,
-    saveProductItems,
+    createProduct,
 } from '../../services/product.service';
 
 import AddProductModal from './components/addProductModal';
@@ -75,14 +75,15 @@ const ProductScreen = () => {
     const [hasMore, setHasMore] = useState(true);
 
     const [postProductToMongoDB] = useCreateProductMutation();
+    const PAGE_SIZE = 20;
     const loadData = useCallback(async () => {
         try {
             setLoading(true);
             const db = await getDBConnection();
-            await createProductTable(db);
-            await createInventoryTable(db);
-            const stored = await getProducts(db, 0);
+          
+            const stored = await getProducts(db);
             const cats = await getCategories(db);
+
             setProducts(stored);
             setCategories(cats);
         } catch (e) {
@@ -91,6 +92,31 @@ const ProductScreen = () => {
             setLoading(false);
         }
     }, []);
+
+    const loadProducts = async () => {
+        if (loading || !hasMore) return;
+
+        setLoading(true);
+
+        try {
+            const db = await getDBConnection();
+
+            const newProducts = await getProducts(db, PAGE_SIZE, offset);
+
+            if (newProducts.length < PAGE_SIZE) {
+                setHasMore(false);
+            }
+
+            setProducts(prev => [...prev, ...newProducts]);
+            setOffset(prev => prev + PAGE_SIZE);
+
+        } catch (err) {
+            console.log("❌ loadProducts error:", err);
+        }
+
+        setLoading(false);
+    };
+
 
     useEffect(() => {
         loadData();
@@ -116,7 +142,7 @@ const ProductScreen = () => {
         if (!validateItem(item, setMsg)) return;
         try {
             const db = await getDBConnection();
-            await saveProductItems(db, item, postProductToMongoDB);
+            await createProduct(db, item, postProductToMongoDB);
 
             // Reset and reload
             setItem(initialState);
@@ -129,11 +155,11 @@ const ProductScreen = () => {
     };
 
     const filteredProducts = products.filter(p => {
-        const matchesSearch = p.product_name.toLowerCase().includes(query.toLowerCase());
+        const matchesSearch = p?.product_name?.toLowerCase().includes(query?.toLowerCase());
         const matchesCategory = selectedCategoryId ? p.category_id === selectedCategoryId : true;
         return matchesSearch && matchesCategory;
     });
-
+    console.log(products)
     const handleRestock = async () => {
         if (!selectedProduct || !restockQty) return;
         const qty = parseInt(restockQty);
@@ -174,7 +200,9 @@ const ProductScreen = () => {
             </TouchableOpacity>
         </View>
     );
-
+    useEffect(() => {
+        loadProducts();
+    }, []);
     const renderProductCard = ({ item }: { item: ProductItem }) => {
         const lowStock = item.quantity <= 5;
         const sales = (item as any)?.total_sales || 0;
@@ -304,16 +332,16 @@ const ProductScreen = () => {
             />
 
 
+
             <FlatList
-                data={filteredProducts}
-                numColumns={2}
+                data={products}
                 keyExtractor={(item, index) => String(item.id || index)}
                 renderItem={renderProductCard}
+                numColumns={2}
                 columnWrapperStyle={{ justifyContent: 'space-between', paddingHorizontal: 16 }}
                 contentContainerStyle={{ paddingBottom: 120, paddingTop: 12 }}
-                refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Theme.primary} />
-                }
+                onEndReached={loadProducts}
+                onEndReachedThreshold={0.5}
                 ListFooterComponent={
                     loading ? <ActivityIndicator color={Theme.primary} /> : null
                 }
@@ -390,7 +418,7 @@ const ProductScreen = () => {
 
 const styles = StyleSheet.create({
     filterContainer: {
-    
+
         paddingHorizontal: 2,
         paddingVertical: 8,
 

@@ -17,14 +17,14 @@ export const injectEndpoints = api.injectEndpoints({
                 body,
             }),
         }),
-        bulksync: builder.mutation({
+        bulksyncProducts: builder.mutation({
             query: (body) => ({
                 url: '/products/bulk',
                 method: 'POST',
                 body,
             }),
         }),
-        pullupdatedsince: builder.query({
+        pullupdatedProductsince: builder.query({
             query: (lastSync) => ({ url: `/products/updated-since?since=${lastSync}` }),
         }),
         pullProducts: builder.query({
@@ -35,8 +35,8 @@ export const injectEndpoints = api.injectEndpoints({
 
 export const {
     useSyncProductMutation,
-    useBulksyncMutation,
-    usePullupdatedsinceQuery,
+    useBulksyncProductsMutation,
+    usePullupdatedProductsinceQuery,
     usePullProductsQuery,
     useCreateProductMutation
 } = injectEndpoints;

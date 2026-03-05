@@ -57,8 +57,8 @@ const CategoryScreen = () => {
 
             let storedItems: CategoryItem[] = [];
             if (filter === 'all') storedItems = await getCategories(db);
-            if (filter === 'synced') storedItems = await getSyncedCategories(db, offset);
-            if (filter === 'unsynced') storedItems = await getUnsyncedCategories(db, offset);
+            if (filter === 'synced') storedItems = await getSyncedCategories(db);
+            if (filter === 'unsynced') storedItems = await getUnsyncedCategories(db);
 
             setCategories(storedItems);
         } catch (error) {
@@ -105,7 +105,7 @@ const categoryFields = [
         await db.executeSql('DELETE FROM categories WHERE category_id=?', [cat.category_id]);
         setCategories(prev => prev.filter(c => c.category_id !== cat.category_id));
     };
-const renderCategoryCard = ({ item }: { item: CategoryItem }) => (
+const renderCategoryCard = ({ item }: { item: any }) => (
     <SwipeableCard
         onEdit={() => { setItem(item); setModalVisible(true); }}
         onDelete={() => handleDelete(item)}
@@ -173,7 +173,7 @@ const renderCategoryCard = ({ item }: { item: CategoryItem }) => (
         ) : ( */}
                 <FlatList
                     contentContainerStyle={{ paddingBottom: 120 }}
-                    data={categories.filter(p => p.category_name.toLowerCase().includes(query.toLowerCase()))}
+                    data={categories.filter(p => p?.category_name?.toLowerCase().includes(query?.toLowerCase()))}
                     keyExtractor={(item, index) => String(item.id || item.category_name || index)}
                     renderItem={renderCategoryCard}
                     onEndReached={() => setOffset(prev => prev + 10)}

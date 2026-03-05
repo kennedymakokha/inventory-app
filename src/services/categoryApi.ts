@@ -17,14 +17,14 @@ export const injectEndpoints = api.injectEndpoints({
                 body,
             }),
         }),
-        bulksync: builder.mutation({
+        bulksyncCategory: builder.mutation({
             query: (body) => ({
                 url: '/categories/bulk',
                 method: 'POST',
                 body,
             }),
         }),
-        pullupdatedsince: builder.query({
+        pullupdatedCategorysince: builder.query({
             query: (lastSync) => ({ url: `/categories/updated-since?since=${lastSync}` }),
         }),
         pullcategories: builder.query({
@@ -35,8 +35,8 @@ export const injectEndpoints = api.injectEndpoints({
 
 export const {
     useSyncCategoryMutation,
-    useBulksyncMutation,
-    usePullupdatedsinceQuery,
+    useBulksyncCategoryMutation,
+    usePullupdatedCategorysinceQuery,
     usePullcategoriesQuery,
     useCreateCategoryMutation
 } = injectEndpoints;

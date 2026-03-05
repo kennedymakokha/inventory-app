@@ -14,8 +14,6 @@ import { getDBConnection } from '../../services/db-service';
 import { CategoryItem, ProductItem } from '../../../models';
 import { createCategoryTable, getCategories, getSyncedCategories, getUnsyncedCategories, saveCategoryItems } from '../../services/category.service';
 
-import AddCategoryModal from './components/addCategoryModal';
-import UploadProductsModal from './components/uploadProduct.modal';
 import { validateItem } from '../validations/category.validation';
 import PageHeader from '../../components/pageHeader';
 import { createInventoryTable } from '../../services/inventory.service';
@@ -29,8 +27,10 @@ import { useSelector } from 'react-redux';
 import EntityModal from '../../components/EntityModal';
 import SwipeableCard from '../../components/SwipeableCard';
 import { Theme } from '../../utils/theme';
+import AddUserModal from './components/addModal';
+import CSVUploadModal from './components/upload.modal';
 
-const CategoryScreen = () => {
+const UsersScreen = () => {
       const { isDarkMode } = useSettings();
       const theme = isDarkMode ? Theme.dark : Theme.light;
     const { query, setQuery } = useSearch();
@@ -95,7 +95,7 @@ const CategoryScreen = () => {
     }, [loadDataCallback, offset]);
 
 
-// Inside CategoryScreen
+// Inside UsersScreen
 const categoryFields = [
     { key: 'category_name', label: 'Name', placeholder: 'Category Name' },
     { key: 'description', label: 'Description', placeholder: 'Description' },
@@ -159,7 +159,7 @@ const renderCategoryCard = ({ item }: { item: CategoryItem }) => (
             </View>
 
             {/* Modals */}
-            <AddCategoryModal
+            <AddUserModal
                 setMsg={setMsg}
                 isDarkMode={isDarkMode}
                 theme={theme}
@@ -171,7 +171,7 @@ const renderCategoryCard = ({ item }: { item: CategoryItem }) => (
                 item={item}
                 setModalVisible={setModalVisible}
             />
-            <UploadProductsModal
+            <CSVUploadModal
                 setMsg={setMsg}
                 msg={msg}
                 isDarkMode={isDarkMode}
@@ -201,4 +201,4 @@ const renderCategoryCard = ({ item }: { item: CategoryItem }) => (
     );
 };
 
-export default CategoryScreen;
+export default UsersScreen;
