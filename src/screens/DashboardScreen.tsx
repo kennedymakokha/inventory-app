@@ -140,8 +140,8 @@ const Dashboard = () => {
       {/* Sales Table */}
       <View style={{ marginHorizontal: 10, marginBottom: 20 }}>
         <TableContainer
-          headers={user?.role === 'superAdmin' ? Adminheaders : salesheaders}
-          data={user?.role === 'superAdmin' ? getadminSalesReportData(sales) : getSalesReportData(sales)}
+          headers={user?.role === 'admin' ? Adminheaders : salesheaders}
+          data={user?.role === 'admin' ? getadminSalesReportData(sales) : getSalesReportData(sales)}
         />
       </View>
     </ScrollView>

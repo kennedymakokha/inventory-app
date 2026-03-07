@@ -7,7 +7,7 @@ export type ProductItem = {
     _id?: string;
     id?: string | any
     barcode?: string;
-    business_id?:string
+    business_id?: string
     product_name: string;
     category_id?: string;
     expiryDate?: any
@@ -87,8 +87,9 @@ export type InputProps = {
 };
 
 export type CartItem = {
-    id: string;
+    id: string | any;
     product_name: string;
+    product_id: string;
     price: number;
     quantity: number;
 };

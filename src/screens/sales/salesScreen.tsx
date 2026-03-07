@@ -169,7 +169,7 @@ const SalesScreen = () => {
                         className="px-2 py-1 rounded-full"
                     >
                         <Text style={{ color: '#fff', fontSize: 12 }}>
-                            {item.quantity} in stock
+                            {item.quantity} in stock 
                         </Text>
                     </View>
                 </View>

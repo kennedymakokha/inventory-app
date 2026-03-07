@@ -5,7 +5,7 @@ interface Sale {
     day: string;
     product_name: string;
     product_Bprice: number;
-    product_price: number;
+    price: number;
     current_stock: number;
     total_units_sold: number;
     total_profit: number | null | any;
@@ -27,7 +27,7 @@ export const getadminSalesReportData = (sales: Sale[]) => {
             day,
             product_name,
             product_Bprice,
-            product_price,
+            price,
             current_stock,
             total_units_sold,
             total_profit,
@@ -38,7 +38,7 @@ export const getadminSalesReportData = (sales: Sale[]) => {
             return {
                 day,
                 product_name,
-                product_price,
+                price,
                 product_Bprice,
                 current_stock,
                 total_units_sold,
@@ -63,7 +63,7 @@ export const salesheaders =
 
     [{ key: 'day', label: 'period' },
     { key: 'product_name', label: 'product' },
-    { key: 'product_price', label: 'Selling Price' },
+    { key: 'price', label: 'Selling Price' },
     { key: 'current_stock', label: 'Current Stock' },
     { key: 'total_units_sold', label: 'sold' },
 
@@ -73,7 +73,7 @@ export const getSalesReportData = (sales: Sale[]) => {
         ({
             day,
             product_name,
-            product_price,
+            price,
             current_stock,
             total_units_sold,
         }) => {
@@ -82,7 +82,7 @@ export const getSalesReportData = (sales: Sale[]) => {
             return {
                 day,
                 product_name,
-                product_price,
+                price,
                 current_stock,
                 total_units_sold,
 

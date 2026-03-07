@@ -7,6 +7,7 @@ import { authorizedFetch } from "../middleware/auth.middleware";
 import NetInfo from "@react-native-community/netinfo";
 import { getDBConnection } from "./db-service";
 import { createTableIfNotExists } from "../utils/tableExists";
+import { generateId } from "./product.service";
 
 /* -------------------------- */
 /* CREATE TABLES */
@@ -33,8 +34,8 @@ export const createCategoryTable = async () => {
       `CREATE TABLE Category (
        id INTEGER PRIMARY KEY AUTOINCREMENT,
           category_name TEXT COLLATE NOCASE,
-          category_id TEXT UNIQUE,
-          business_id TEXT,
+          _id TEXT UNIQUE,
+          business TEXT,
           createdBy TEXT,
           description TEXT,
           synced INTEGER DEFAULT 0,
@@ -42,7 +43,7 @@ export const createCategoryTable = async () => {
           createdAt TEXT,
           updatedAt TEXT,
           deleted_at TEXT,
-          UNIQUE (category_name, business_id)
+          UNIQUE (category_name, business)
       );`
     );
   } catch (err) {
@@ -78,14 +79,6 @@ export const saveLastSyncTime = async (timestamp: string) => {
 /* UTILITIES */
 /* -------------------------- */
 
-function createUniqueId() {
-  let date = new Date().getTime();
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
-    const r = (date + Math.random() * 16) % 16 | 0;
-    date = Math.floor(date / 16);
-    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
-  });
-}
 
 /* -------------------------- */
 /* PUSH LOCAL → SERVER */
@@ -141,7 +134,7 @@ export const pullUpdatedCategories = async (
         category_id,
         category_name,
         description,
-        business_id,
+        business,
         synced,
         expiryDate,
         createdAt,
@@ -240,7 +233,7 @@ export const saveCategoryItems = async (
   const createdBy = await AsyncStorage.getItem("userId");
   const now = new Date().toISOString();
 
-  const category_id = `B4-${createUniqueId()}`;
+  const category_id = generateId('CAT');
   const expiryDate =
     item.expiryDate === "" ? futureDate.toISOString() : item.expiryDate;
 
@@ -257,30 +250,30 @@ export const saveCategoryItems = async (
   const state = await NetInfo.fetch();
   let synced = 0;
 
-  if (state.isConnected) {
-    try {
-      await postCategoryToMongoDB({
-        ...item,
-        category_id,
-        business_id: item.business_id,
-        expiryDate,
-        createdBy,
-        createdAt: now,
-        updatedAt: now,
-      });
+  // if (state.isConnected) {
+  //   try {
+  //     await postCategoryToMongoDB({
+  //       ...item,
+  //       category_id,
+  //       business: item.business_id,
+  //       expiryDate,
+  //       createdBy,
+  //       createdAt: now,
+  //       updatedAt: now,
+  //     });
 
-      synced = 1;
-    } catch (err) {
-      console.warn("Mongo sync failed, saving locally only");
-    }
-  }
+  //     synced = 1;
+  //   } catch (err) {
+  //     console.warn("Mongo sync failed, saving locally only");
+  //   }
+  // }
 
   const insertQuery = `
     INSERT INTO Category
     (
       category_name,
-      category_id,
-      business_id,
+      _id,
+      business,
       createdBy,
       description,
       synced,

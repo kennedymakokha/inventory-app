@@ -4,6 +4,7 @@ import NetInfo from "@react-native-community/netinfo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getDBConnection } from "./db-service";
 import { createTableIfNotExists } from "../utils/tableExists";
+import { generateId } from "./product.service";
 
 
 // -------------------------------
@@ -49,7 +50,53 @@ const generateSaleId = (userId: string, productId: number) => {
   return `${userId}-${Date.now()}-${productId}`;
 };
 
+export const createRefundsTable = async () => {
+  try {
+    const db = await getDBConnection();
+    await createTableIfNotExists(
+      db,
+      'Refunds',
+      `CREATE TABLE IF NOT EXISTS Refunds (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          refund_id TEXT UNIQUE,
+          sale_id TEXT,
+          receipt_number TEXT,
+          total_refund REAL,
+          cashier_id TEXT,
+          reason TEXT,
+          created_at TEXT,
+          synced INTEGER DEFAULT 0
+        );
+      );`
+    );
+  } catch (err) {
+    console.error('❌ createSalesTable failed:', err);
+    throw err;
+  }
+};
 
+export const createRefundItemsTable = async () => {
+  try {
+    const db = await getDBConnection();
+    await createTableIfNotExists(
+      db,
+      'RefundItems',
+      `CREATE TABLE IF NOT EXISTS RefundItems (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          refund_id TEXT,
+          product_id TEXT,
+          product_name TEXT,
+          quantity INTEGER,
+          price REAL,
+          total REAL
+        );
+      );`
+    );
+  } catch (err) {
+    console.error('❌ createSalesTable failed:', err);
+    throw err;
+  }
+};
 // -------------------------------
 // FINALIZE SALE (OFFLINE FIRST)
 // -------------------------------
@@ -68,7 +115,7 @@ export const finalizeSale = async (
 
         for (const item of cartItems) {
 
-          const saleId = generateSaleId(createdBy, item.id);
+          const saleId = generateId("SLE");
 
           // Insert sale locally
           tx.executeSql(
@@ -77,7 +124,7 @@ export const finalizeSale = async (
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               saleId,
-              item.id,
+              item.product_id,
               item.quantity,
               item.price,
               createdBy,
@@ -118,6 +165,56 @@ export const finalizeSale = async (
 };
 
 
+export const createRefund = async (
+  db: SQLiteDatabase,
+  saleId: string,
+  items: any[],
+  cashierId: string,
+  reason: string
+) => {
+
+  const refundId = `refund_${Date.now()}`;
+
+  let totalRefund = 0;
+
+  items.forEach(i => {
+    totalRefund += i.price * i.quantity;
+  });
+
+  await db.executeSql(
+    `INSERT INTO Refunds
+    (refund_id, sale_id, total_refund, cashier_id, reason, created_at)
+    VALUES (?, ?, ?, ?, ?, datetime('now'))`,
+    [
+      refundId,
+      saleId,
+      totalRefund,
+      cashierId,
+      reason
+    ]
+  );
+
+  for (const item of items) {
+
+    await db.executeSql(
+      `INSERT INTO RefundItems
+      (refund_id, product_id, product_name, quantity, price, total)
+      VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        refundId,
+        item.product_id,
+        item.product_name,
+        item.quantity,
+        item.price,
+        item.price * item.quantity
+      ]
+    );
+
+  }
+
+  return refundId;
+
+};
 // -------------------------------
 // GET UNSYNCED SALES
 // -------------------------------

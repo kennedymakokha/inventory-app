@@ -16,12 +16,13 @@ import { AuthStack } from './src/navigations/auth/stack';
 import { startGlobalAutoSync } from './src/sync/netinfo';
 import { syncTables } from './src/sync/tables';
 import { getDBConnection } from './src/services/db-service';
-import { createSalesTable } from './src/services/sales.service';
+import { createRefundItemsTable, createRefundsTable, createSalesTable } from './src/services/sales.service';
 import { createCategoryTable } from './src/services/category.service';
-import { createProductTable } from './src/services/product.service';
+import { createInventorylogTable, createProductTable } from './src/services/product.service';
 import { createTableIfNotExists } from './src/utils/tableExists';
 import "./global.css";
 import { globalSync } from './src/sync';
+import { createInventoryTable } from './src/services/inventory.service';
 /* 🔹 Global flag to ensure tables are created only once */
 let tablesInitialized = false;
 
@@ -88,13 +89,20 @@ function App(): React.JSX.Element {
 
     const setupDB = async () => {
       try {
+
         const db = await getDBConnection();
+        //  await db.executeSql(`DROP TABLE IF EXISTS Product;`);
+        //  await db.executeSql(`ALTER TABLE Product ADD COLUMN stock INTEGER DEFAULT 0;`);
+        //  await db.executeSql(`CREATE INDEX idx_product_id ON Product(product_id);`);
+
         await createProductTable();
         await createCategoryTable();
-         await db.executeSql(`DROP TABLE IF EXISTS Sale;`);
-        await createSalesTable();
-        // await createSalesTable()
 
+        await createSalesTable();
+        await createInventoryTable()
+        await createInventorylogTable()
+        await createRefundsTable()
+        await createRefundItemsTable()
         const state = await NetInfo.fetch();
 
         if (state.isConnected) {
@@ -114,6 +122,16 @@ function App(): React.JSX.Element {
     return () => {
       if (unsubscribe) unsubscribe();
     };
+  }, []);
+
+  useEffect(() => {
+
+    const interval = setInterval(() => {
+      globalSync(syncTables);
+    }, 15000);
+
+    return () => clearInterval(interval);
+
   }, []);
   /* ---------------- UI ---------------- */
   return (

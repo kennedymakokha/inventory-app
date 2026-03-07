@@ -50,13 +50,13 @@ export const updateLocalSale = (product: any, db: SQLiteDatabase) => {
   
     db.transaction((tx: any) => {
       tx.executeSql(
-        'SELECT * FROM sales WHERE product_id = ?',
+        'SELECT * FROM Sale WHERE product_id = ?',
         [product._id],
         (_: any, { rows }: any) => {
           if (rows.length > 0) {
             // Product exists — update it
             tx.executeSql(
-              'UPDATE sales SET quantity = ?, updatedAt = ?, synced = 1 WHERE product_id = ?',
+              'UPDATE Sale SET quantity = ?, updatedAt = ?, synced = 1 WHERE product_id = ?',
               [product.quantity, updated_at, product._id],
               () => console.log('Update success'),
               (_: any, error: any) => {
@@ -65,9 +65,9 @@ export const updateLocalSale = (product: any, db: SQLiteDatabase) => {
               }
             );
           } else {
-            // Product doesn't exist — insert into sales (not products!)
+            // Product doesn't exist — insert into Sale (not products!)
             tx.executeSql(
-              `INSERT INTO sales 
+              `INSERT INTO Sale 
                 (quantity, product_id, synced, created_at, updatedAt, createdBy)
                 VALUES (?, ?, ?, ?, ?, ?)`,
               [

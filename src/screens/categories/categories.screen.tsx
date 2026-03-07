@@ -52,8 +52,8 @@ const CategoryScreen = () => {
         try {
             setLoading(true);
             const db = await getDBConnection();
-            await createCategoryTable(db);
-            await createInventoryTable(db);
+            await createCategoryTable();
+            await createInventoryTable();
 
             let storedItems: CategoryItem[] = [];
             if (filter === 'all') storedItems = await getCategories(db);
@@ -78,7 +78,7 @@ const CategoryScreen = () => {
         if (!validateItem(item, setMsg)) return;
         try {
             const db = await getDBConnection();
-            await createCategoryTable(db);
+            await createCategoryTable();
             const storedItems = await saveCategoryItems(db, item, postCategoryToMongoDB);
             setCategories(storedItems);
 
@@ -121,7 +121,7 @@ const renderCategoryCard = ({ item }: { item: any }) => (
             shadowRadius: 4,
             elevation: 5
         }}>
-            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{item.category_name}</Text>
+            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{item.category_name} </Text>
             <Text style={{ color: '#9ca3af', fontSize: 12, marginTop: 6 }}>{item.description || ''}</Text>
         </View>
     </SwipeableCard>
@@ -135,31 +135,7 @@ const renderCategoryCard = ({ item }: { item: any }) => (
     initialData={item}
     fields={categoryFields}
 />
-    // const renderCategoryCard = ({ item }: { item: CategoryItem }) => {
-    //     // threshold for low stock
-    //     return (
-    //         <View style={{
-    //             backgroundColor: '#1e293b',
-    //             padding: 16,
-    //             borderRadius: 12,
-    //             marginBottom: 12,
-    //             shadowColor: "#000",
-    //             shadowOffset: { width: 0, height: 2 },
-    //             shadowOpacity: 0.25,
-    //             shadowRadius: 4,
-    //             elevation: 5
-    //         }}>
-    //             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-    //                 <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{item.category_name}</Text>
-
-    //             </View>
-    //             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}>
-
-    //                 <Text style={{ color: '#9ca3af', fontSize: 12 }}>{item.description ? ` ${item.description}` : ''}</Text>
-    //             </View>
-    //         </View>
-    //     );
-    // };
+  
 
     return (
         <View style={{ flex: 1, backgroundColor: isDarkMode ? '#0f172a' : '#f8fafc', paddingTop: 16 }}>

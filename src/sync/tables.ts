@@ -16,7 +16,7 @@ export const syncTables = [
         payloadKey: "products",
     },
     {
-        tableName: "sales",
+        tableName: "Sale",
         primaryKey: "sale_id",
         bulkEndpoint: "/api/sales/bulk",
         updatedSinceEndpoint: "/api/sales/updated-since",

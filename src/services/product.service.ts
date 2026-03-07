@@ -11,8 +11,6 @@ import { ProductItem } from "../../models";
    TABLE CREATION
 ========================================================= */
 
-
-
 export const createProductTable = async () => {
   try {
     const db = await getDBConnection();
@@ -20,10 +18,11 @@ export const createProductTable = async () => {
       db,
       'Product',
       `CREATE TABLE Product (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       product_id TEXT UNIQUE,
-      business_id TEXT,
+      business TEXT,
       product_name TEXT,
+      stock INTEGER DEFAULT 0,
       barcode TEXT,
       price REAL,
       Bprice REAL,
@@ -44,11 +43,35 @@ export const createProductTable = async () => {
   }
 };
 
+export const createInventorylogTable = async () => {
+  try {
+    const db = await getDBConnection();
+    await createTableIfNotExists(
+      db,
+      'Inventory_log',
+      `CREATE TABLE Inventory_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_id TEXT UNIQUE,
+        type TEXT,
+        business TEXT,
+        quantity INTEGER DEFAULT 0,
+        synced INTEGER DEFAULT 0,
+        note TEXT,
+        createdAt TEXT,
+        createdBy TEXT,
+        updatedAt TEXT
+      );`
+    );
+  } catch (err) {
+    console.error('❌ createProductTable failed:', err);
+    throw err;
+  }
+};
 /* =========================================================
    UTILITY
 ========================================================= */
 
-function generateId(prefix: string) {
+export function generateId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
 }
 
@@ -62,7 +85,7 @@ export const createProduct = async (
   product: any,
   postProduct: any
 ) => {
-
+  console.log(product)
   const now = new Date().toISOString();
   const createdBy = await AsyncStorage.getItem("userId");
 
@@ -71,31 +94,31 @@ export const createProduct = async (
   const state = await NetInfo.fetch();
   let synced = 0;
 
-  if (state.isConnected) {
+  // if (state.isConnected) {
 
-    try {
+  //   try {
 
-      await postProduct({
-        ...product,
-        product_id: productId,
-        createdAt: now,
-        updatedAt: now,
-        createdBy
-      });
+  //     await postProduct({
+  //       ...product,
+  //       product_id: productId,
+  //       createdAt: now,
+  //       updatedAt: now,
+  //       createdBy
+  //     });
 
-      synced = 1;
+  //     synced = 1;
 
-    } catch (error) {
+  //   } catch (error) {
 
-      console.warn("⚠️ Server sync failed. Saved locally.");
+  //     console.warn("⚠️ Server sync failed. Saved locally.");
 
-    }
+  //   }
 
-  }
+  // }
 
   await db.executeSql(`
     INSERT INTO Product
-    (product_id, product_name, barcode, business_id,
+    (product_id, product_name, barcode, business,
      price, Bprice, soldprice, category_id,
      description, quantity, synced,
      expiryDate, createdAt, createdBy, updatedAt)
@@ -123,7 +146,7 @@ export const createProduct = async (
   /* INVENTORY LEDGER ENTRY */
 
   await db.executeSql(`
-    INSERT INTO inventory_log
+    INSERT INTO Inventory_log
     (product_id, type, quantity, note, createdBy, synced, createdAt)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `, [
@@ -187,7 +210,7 @@ export const createSale = async (
       /* INSERT SALE */
 
       tx.executeSql(`
-        INSERT INTO sales
+        INSERT INTO Sale
         (sale_id, product_id, quantity, soldprice, createdBy, synced, createdAt, updatedAt)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `, [
@@ -218,7 +241,7 @@ export const createSale = async (
       /* INVENTORY LEDGER ENTRY */
 
       tx.executeSql(`
-        INSERT INTO inventory_log
+        INSERT INTO Inventory_log
         (product_id, type, quantity, note, createdBy, synced, createdAt)
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `, [
@@ -300,7 +323,7 @@ export const syncUnsyncedSales = async (
 ) => {
 
   const result = await db.executeSql(
-    `SELECT * FROM sales WHERE synced = 0`
+    `SELECT * FROM Sale WHERE synced = 0`
   );
 
   const rows = result[0].rows;
@@ -393,13 +416,43 @@ export const getProducts = async (
 export const getSales = async (db: SQLiteDatabase) => {
 
   const result = await db.executeSql(`
-    SELECT sales.*, Product.product_name
-    FROM sales
-    JOIN Product ON sales.product_id = Product.product_id
-    ORDER BY sales.createdAt DESC
+    SELECT Sale.*, Product.product_name
+    FROM Sale
+    JOIN Product ON Sale.product_id = Product.product_id
+    ORDER BY Sale.createdAt DESC
     LIMIT 50
   `);
 
   return result[0].rows.raw();
 
+};
+
+
+
+export const reduceStock = async (
+  db: SQLiteDatabase,
+  productId: string,
+  quantity: number
+): Promise<boolean> => {
+  try {
+
+    const [result] = await db.executeSql(
+      `UPDATE Product
+       SET stock = stock - ?
+       WHERE product_id = ?
+       AND stock >= ?`,
+      [quantity, productId, quantity]
+    );
+
+    if (result.rowsAffected === 0) {
+      console.log("❌ Not enough stock");
+      return false;
+    }
+
+    return true;
+
+  } catch (error) {
+    console.log("Stock update error:", error);
+    return false;
+  }
 };

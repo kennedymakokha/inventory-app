@@ -21,7 +21,7 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { getDBConnection } from '../../services/db-service';
 import { CategoryItem, ProductItem } from '../../../models';
 import {
-   
+
     getProducts,
     createProduct,
 } from '../../services/product.service';
@@ -39,6 +39,7 @@ import { useSettings } from '../../context/SettingsContext';
 import RestockModal from './components/restockModal';
 import { useCreateProductMutation } from '../../services/productApi';
 import { validateItem } from '../validations/product.validation';
+import { useSelector } from 'react-redux';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
@@ -49,9 +50,12 @@ const ProductScreen = () => {
     const { isDarkMode } = useSettings();
     const theme = isDarkMode ? Theme.dark : Theme.light;
     const { query } = useSearch();
+    const { user } = useSelector((state: any) => state.auth);
+    const { business } = user;
     const initialState = {
         product_name: "",
         category_id: "",
+        business_id: business._id,
         price: 0,
         expiryDate: "",
         initial_stock: "",
@@ -59,6 +63,8 @@ const ProductScreen = () => {
         quantity: 0,
         Bprice: 0
     };
+
+
     const [products, setProducts] = useState<ProductItem[]>([]);
     const [categories, setCategories] = useState<CategoryItem[]>([]);
     const [refreshing, setRefreshing] = useState(false);
@@ -80,7 +86,7 @@ const ProductScreen = () => {
         try {
             setLoading(true);
             const db = await getDBConnection();
-          
+
             const stored = await getProducts(db);
             const cats = await getCategories(db);
 
@@ -142,6 +148,7 @@ const ProductScreen = () => {
         if (!validateItem(item, setMsg)) return;
         try {
             const db = await getDBConnection();
+            console.log("Item", item)
             await createProduct(db, item, postProductToMongoDB);
 
             // Reset and reload
@@ -159,7 +166,7 @@ const ProductScreen = () => {
         const matchesCategory = selectedCategoryId ? p.category_id === selectedCategoryId : true;
         return matchesSearch && matchesCategory;
     });
-    console.log(products)
+
     const handleRestock = async () => {
         if (!selectedProduct || !restockQty) return;
         const qty = parseInt(restockQty);
@@ -232,7 +239,7 @@ const ProductScreen = () => {
                         </Text>
 
                         <Text style={[styles.priceText, { color: theme.text }]}>
-                            Ksh {item.price}
+                            Ksh {item.price} 
                         </Text>
                     </View>
 

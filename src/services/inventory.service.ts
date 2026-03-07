@@ -2,10 +2,16 @@ import { SQLiteDatabase } from "react-native-sqlite-storage";
 import { InventoryItem } from "../../models";
 import { getDBConnection } from "./db-service";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createTableIfNotExists } from "../utils/tableExists";
 
-export const createInventoryTable = async (db: SQLiteDatabase) => {
-    // create table if not exists
-    const query = `CREATE TABLE IF NOT EXISTS inventory (
+
+export const createInventoryTable = async () => {
+  try {
+    const db = await getDBConnection();
+    await createTableIfNotExists(
+      db,
+      'Inventory',
+      `CREATE TABLE Inventory (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         inventory_id TEXT UNIQUE,
         product_id INTEGER NOT NULL,
@@ -15,9 +21,12 @@ export const createInventoryTable = async (db: SQLiteDatabase) => {
       expiryDate DATETIME DEFAULT CURRENT_TIMESTAMP,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`;
-
-    await db.executeSql(query);
+      );`
+    );
+  } catch (err) {
+    console.error('❌ createInventoryTable failed:', err);
+    throw err;
+  }
 };
 
 export const getinventories = async (db: SQLiteDatabase): Promise<any[]> => {
@@ -25,16 +34,16 @@ export const getinventories = async (db: SQLiteDatabase): Promise<any[]> => {
         db.transaction((tx) => {
             tx.executeSql(
                 `SELECT 
-              inventory.id AS inventory_id,
-              inventory.product_id,
+              Inventory.id AS inventory_id,
+              Inventory.product_id,
               products.product_name,
               products.quantity AS product_quantity,
               products.price AS product_price,
-              inventory.created_at,
-              inventory.updatedAt
-           FROM inventory
-           JOIN products ON inventory.product_id = products.id
-           ORDER BY inventory.updatedAt DESC
+              Inventory.created_at,
+              Inventory.updatedAt
+           FROM Inventory
+           JOIN products ON Inventory.product_id = products.id
+           ORDER BY Inventory.updatedAt DESC
            LIMIT 10;`,
                 [],
                 (_: any, { rows }: any) => {
@@ -56,7 +65,7 @@ export const getSychedinventories = async (db: SQLiteDatabase, offset: any): Pro
         db.transaction((tx: any) => {
 
             tx.executeSql(
-                `SELECT * FROM inventory WHERE synced = 1 `,
+                `SELECT * FROM Inventory WHERE synced = 1 `,
                 [],
                 (_: any, { rows }: any) => {
                     const allinventory = rows.raw(); // Already a usable array
@@ -77,7 +86,7 @@ export const getUnsyncedInventory = async (db: SQLiteDatabase, offset: any): Pro
         db.transaction((tx: any) => {
 
             tx.executeSql(
-                `SELECT * FROM inventory WHERE synced = 0 `,
+                `SELECT * FROM Inventory WHERE synced = 0 `,
                 [],
                 (_: any, { rows }: any) => {
                     const allinventory = rows.raw(); // Already a usable array
@@ -128,7 +137,7 @@ export const saveInventoryItem = async (
         await db.transaction(async tx => {
             // 1. Insert into inventory
             await tx.executeSql(
-                `INSERT OR REPLACE INTO inventory 
+                `INSERT OR REPLACE INTO Inventory 
            (product_id, quantity, synced,expiryDate,createdBy, created_at, updatedAt)
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
                 [
@@ -162,7 +171,7 @@ export const getInventoriesByProductId = (
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
             tx.executeSql(
-                'SELECT * FROM inventory WHERE product_id = ?  ORDER BY inventory.updatedAt DESC'
+                'SELECT * FROM Inventory WHERE product_id = ?  ORDER BY Inventory.updatedAt DESC'
                 ,
                 [product_id],
                 (_, results) => {
@@ -184,111 +193,4 @@ export const softDeleteProduct = async (db: SQLiteDatabase, id: number) => {
         [id]
     );
 };
-
-
-// export const markProductAsSynced = (id: number, db: SQLiteDatabase) => {
-//     console.log(id)
-//     return new Promise((resolve, reject) => {
-//         db.transaction((tx: any) => {
-//             tx.executeSql(
-//                 'UPDATE products SET synced = 1 WHERE id = ?',
-//                 [id],
-//                 (_: any, result: any) => resolve(result),
-//                 (_: any, error: any) => reject(error)
-//             );
-//         });
-//     });
-// };
-// export const fullSync = async () => {
-//     try {
-//         console.log('🔄 Starting full sync...');
-//         await syncData();           // Push unsynced local changes
-//         await pullServerUpdates();  // Pull latest server changes
-//         console.log('✅ Full sync complete.');
-//     } catch (err) {
-//         console.error('❌ Full sync failed:', err);
-//     }
-// };
-
-
-// export const handleCSVUpload = async (db: SQLiteDatabase) => {
-//     try {
-//         const [res] = await pick({
-//             type: [types.plainText, types.csv], // Accept plain text and CSV files
-//         });
-
-//         const filePath = res.uri;
-
-//         // iOS may prefix with "file://", Android might use content://
-//         const fileContent = await RNFS.readFile(decodeURIComponent(filePath.replace('file://', '')), 'utf8');
-
-//         const results = Papa.parse(fileContent, {
-//             header: true,
-//             skipEmptyLines: true,
-//         });
-
-//         const rows = results.data as Array<Record<string, any>>;
-
-//         for (const row of rows) {
-//             const product = {
-//                 product_name: row.product_name,
-//                 price: row.price?.toString() || '0',
-//                 description: row.description || '',
-//                 synced: false
-//             };
-//             await saveProductItems(db, product);
-//         }
-
-//         console.log("✅ CSV imported successfully.");
-//     } catch (err: any) {
-//         if (err.code === 'USER_CANCELLED') {
-//             console.log("⚠️ User cancelled the picker");
-//         } else {
-//             console.log(err)
-//             console.error("❌ Failed to import CSV:", err);
-//         }
-//     }
-// };
-
-
-// export const insertInventory = (product: string, quantity: number, db: SQLiteDatabase,) => {
-//     return new Promise((resolve, reject) => {
-//         db.transaction((tx: any) => {
-//             tx.executeSql(
-//                 'INSERT INTO inventory (product, quantity, synced, updatedAt) VALUES (?, ?, 0, ?)',
-//                 [product, quantity, getNow()],
-//                 (_: any, result: any) => resolve(result),
-//                 (_: any, error: any) => reject(error)
-//             );
-//         });
-//     });
-// };
-
-// export const getUnsyncedInventory = (db: SQLiteDatabase,): Promise<any[]> => {
-//     return new Promise((resolve, reject) => {
-//         db.transaction((tx: any) => {
-//             tx.executeSql(
-//                 'SELECT * FROM inventory WHERE synced = 0',
-//                 [],
-//                 (_: any, { rows }: any) => resolve(rows._array),
-//                 (_: any, error: any) => reject(error)
-//             );
-//         });
-//     });
-// };
-
-// export const markInventoryAsSynced = (id: number, db: SQLiteDatabase,) => {
-//     return new Promise((resolve, reject) => {
-//         db.transaction((tx: any) => {
-//             tx.executeSql(
-//                 'UPDATE inventory SET synced = 1 WHERE id = ?',
-//                 [id],
-//                 (_: any, result: any) => resolve(result),
-//                 (_: any, error: any) => reject(error)
-//             );
-//         });
-//     });
-// };
-
-
 

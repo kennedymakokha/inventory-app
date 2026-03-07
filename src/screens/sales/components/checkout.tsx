@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PrinterSelectionModal } from '../../printerSelection';
 import { useSettings } from '../../../context/SettingsContext';
 import { Theme } from '../../../utils/theme';
+import { Animated } from 'react-native';
 
 interface CheckoutModalProps {
   modalVisible: boolean;
@@ -189,7 +190,28 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
       setProcessing(false);
     }
   };
+const pulseAnim = useRef(new Animated.Value(1)).current;
 
+useEffect(() => {
+  if (!selectedPrinterMac) {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  } else {
+    pulseAnim.setValue(1);
+  }
+}, [selectedPrinterMac]);
   return (
     <Modal animationType="fade" transparent={false} visible={modalVisible}>
       <SafeAreaView className="flex-1 bg-slate-900 pt-20">
@@ -367,14 +389,20 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
       {/* PRINTER LINK */}
 
     
-      <TouchableOpacity
-        onPress={() => setShowPrinterModal(true)}
-        className="p-2 bg-slate-700 rounded flex-row items-center"
-      >
-        <Text className="text-white">
-          🖨 {selectedPrinterMac ? 'Printer Linked' : 'No Printer Linked'}
-        </Text>
-      </TouchableOpacity>
+    <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+  <TouchableOpacity
+    onPress={() => setShowPrinterModal(true)}
+    className={`p-2 rounded flex-row items-center ${
+      selectedPrinterMac ? "bg-slate-700" : "bg-red-600"
+    }`}
+  >
+    <Text className="text-white">
+      🖨 {selectedPrinterMac ? "Printer Linked" : "No Printer Linked"}
+    </Text>
+  </TouchableOpacity>
+</Animated.View>
+
+
 
       <PrinterSelectionModal
         visible={showPrinterModal}
