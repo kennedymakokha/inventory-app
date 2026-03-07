@@ -12,7 +12,7 @@ interface EntityModalProps {
 
 const EntityModal = ({ visible, onClose, onSave, initialData = {}, fields }: EntityModalProps) => {
     const [data, setData] = useState(initialData);
-    console.log(initialData)
+    
     useEffect(() => setData(initialData), [initialData]);
 
     const handleChange = (key: string, value: string) => setData((prev: any) => ({ ...prev, [key]: value }));

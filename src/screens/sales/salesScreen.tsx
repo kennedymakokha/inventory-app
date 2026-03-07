@@ -348,7 +348,7 @@ const SalesScreen = () => {
             />
             {/* )} */}
 
-            {msg.msg && <Toast msg={msg.msg} state={msg.state} />}
+           {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
 
             {cart.length > 0 && (
                 <View

@@ -46,20 +46,13 @@ const CategoryScreen = () => {
     const [msg, setMsg] = useState({ msg: "", state: "" });
     const [offset, setOffset] = useState(10);
 
-    const [postCategoryToMongoDB] = useCreateCategoryMutation();
 
     const loadDataCallback = useCallback(async (offset = 0, filter = 'all') => {
         try {
             setLoading(true);
             const db = await getDBConnection();
-            await createCategoryTable();
-            await createInventoryTable();
-
             let storedItems: CategoryItem[] = [];
-            if (filter === 'all') storedItems = await getCategories(db);
-            if (filter === 'synced') storedItems = await getSyncedCategories(db);
-            if (filter === 'unsynced') storedItems = await getUnsyncedCategories(db);
-
+            storedItems = await getCategories(db);
             setCategories(storedItems);
         } catch (error) {
             console.error('❌ Error loading categories:', error);
@@ -107,7 +100,7 @@ const CategoryScreen = () => {
 
     const renderCategoryCard = ({ item }: { item: any }) => (
         <SwipeableCard
-            onEdit={() => { setItem(item); setModalVisible(true); setMsg({ msg: "", state: "" }) }}
+            onEdit={() => { setItem(item); setModalVisible(true) }}
             onDelete={async () => { await softDeleteCategory(item.category_id); setCategories(prev => prev.filter(c => c.category_id !== item.category_id)); }}
         >
             <View style={{
@@ -121,7 +114,7 @@ const CategoryScreen = () => {
                 shadowRadius: 4,
                 elevation: 5
             }}>
-                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{item.category_name} {item._id}</Text>
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{item.category_name}</Text>
                 <Text style={{ color: '#9ca3af', fontSize: 12, marginTop: 6 }}>{item.description || ''}</Text>
             </View>
         </SwipeableCard>

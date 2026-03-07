@@ -24,6 +24,8 @@ import {
 
     getProducts,
     createProduct,
+    softDeleteProduct,
+    updateProduct,
 } from '../../services/product.service';
 
 import AddProductModal from './components/addProductModal';
@@ -40,6 +42,7 @@ import RestockModal from './components/restockModal';
 import { useCreateProductMutation } from '../../services/productApi';
 import { validateItem } from '../validations/product.validation';
 import { useSelector } from 'react-redux';
+import Toast from '../../components/Toast';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
@@ -61,7 +64,8 @@ const ProductScreen = () => {
         initial_stock: "",
         description: "",
         quantity: 0,
-        Bprice: 0
+        Bprice: 0,
+        product_id: ""
     };
 
 
@@ -80,25 +84,7 @@ const ProductScreen = () => {
     const [offset, setOffset] = useState(0);
     const [hasMore, setHasMore] = useState(true);
 
-    const [postProductToMongoDB] = useCreateProductMutation();
     const PAGE_SIZE = 20;
-    const loadData = useCallback(async () => {
-        try {
-            setLoading(true);
-            const db = await getDBConnection();
-
-            const stored = await getProducts(db);
-            const cats = await getCategories(db);
-
-            setProducts(stored);
-            setCategories(cats);
-        } catch (e) {
-            console.log(e);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
     const loadProducts = async () => {
         if (loading || !hasMore) return;
 
@@ -115,6 +101,8 @@ const ProductScreen = () => {
 
             setProducts(prev => [...prev, ...newProducts]);
             setOffset(prev => prev + PAGE_SIZE);
+            const cats = await getCategories(db);
+            setCategories(cats);
 
         } catch (err) {
             console.log("❌ loadProducts error:", err);
@@ -124,40 +112,41 @@ const ProductScreen = () => {
     };
 
 
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    // const onRefresh = async () => {
-    //     setRefreshing(true);
-    //     await loadData();
-    //     setRefreshing(false);
-    // };
-
     const onRefresh = async () => {
         setRefreshing(true);
-        setHasMore(true);
+
         setOffset(0);
+        setHasMore(true);
+
         const db = await getDBConnection();
-        const storedItems = await getProducts(db, 0);
+
+        const storedItems = await getProducts(db, PAGE_SIZE, 0);
+
         setProducts(storedItems);
+        setOffset(PAGE_SIZE);
+
         setRefreshing(false);
     };
 
     const handleAddProduct = async () => {
         if (!validateItem(item, setMsg)) return;
-        try {
-            const db = await getDBConnection();
-            console.log("Item", item)
-            await createProduct(db, item, postProductToMongoDB);
 
-            // Reset and reload
+        try {
+
+            if (item.product_id) {
+                await updateProduct(item);
+                setMsg({ msg: "Product updated!", state: "success" });
+            } else {
+                await createProduct(item);
+                setMsg({ msg: "Product added!", state: "success" });
+            }
+
             setItem(initialState);
             setModalVisible(false);
-            setMsg({ msg: '✅ Product added!', state: 'success' });
-            onRefresh();
+            await onRefresh();
+
         } catch (error: any) {
-            setMsg({ msg: error.message || '❌ Error adding product.', state: 'error' });
+            setMsg({ msg: error.message || "❌ Error saving product.", state: "error" });
         }
     };
 
@@ -186,22 +175,32 @@ const ProductScreen = () => {
     };
     const handleDelete = async (prod: ProductItem) => {
         try {
-            console.log("Deleting product with id:", prod, selectedProduct);
-            const db = await getDBConnection();
-            await db.executeSql('DELETE FROM products WHERE id=?', [prod.id]);
-            setCategories(prev => prev.filter(c => c.id !== prod.id));
+            await softDeleteProduct(prod.product_id)
+            await onRefresh();
         } catch (error) {
             console.log(error)
         }
     };
-    const renderRightActions = () => (
-
+    const renderRightActions = (prod: any) => (
         <View style={styles.swipeContainer}>
-            <TouchableOpacity onPress={() => { setItem(item); setModalVisible(true); }} style={[styles.swipeBtn, { backgroundColor: Theme.primary }]}>
-                <Icon name="edit" size={20} color="#fff" style={styles.swipeText} />
+            <TouchableOpacity
+                onPress={() => {
+                    setItem({
+                        ...initialState,
+                        ...prod
+                    });   // set the selected product
+                    setModalVisible(true);
+                }}
+                style={[styles.swipeBtn, { backgroundColor: Theme.primary }]}
+            >
+                <Icon name="edit" size={20} color="#fff" />
                 <Text style={styles.swipeText}>Edit</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleDelete(item)} style={[styles.swipeBtn, { backgroundColor: Theme.danger }]}>
+
+            <TouchableOpacity
+                onPress={() => handleDelete(prod)}
+                style={[styles.swipeBtn, { backgroundColor: Theme.danger }]}
+            >
                 <Icon name="trash" size={20} color="#fff" />
                 <Text style={styles.swipeText}>Delete</Text>
             </TouchableOpacity>
@@ -215,7 +214,7 @@ const ProductScreen = () => {
         const sales = (item as any)?.total_sales || 0;
 
         return (
-            <Swipeable renderRightActions={renderRightActions}>
+            <Swipeable renderRightActions={() => renderRightActions(item)}>
                 <TouchableOpacity
                     activeOpacity={0.9}
                     onLongPress={() => {
@@ -239,7 +238,7 @@ const ProductScreen = () => {
                         </Text>
 
                         <Text style={[styles.priceText, { color: theme.text }]}>
-                            Ksh {item.price} 
+                            Ksh {item.price}
                         </Text>
                     </View>
 
@@ -341,7 +340,7 @@ const ProductScreen = () => {
 
 
             <FlatList
-                data={products}
+                data={filteredProducts}
                 keyExtractor={(item, index) => String(item.id || index)}
                 renderItem={renderProductCard}
                 numColumns={2}
@@ -353,7 +352,7 @@ const ProductScreen = () => {
                     loading ? <ActivityIndicator color={Theme.primary} /> : null
                 }
             />
-
+            {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
             {/* RESTOCK MODAL */}
             <Modal visible={restockModalVisible} transparent animationType="fade">
                 <View style={styles.modalOverlay}>
@@ -392,7 +391,7 @@ const ProductScreen = () => {
                 modalVisible={modalVisible}
                 setItem={setItem}
                 fetchProducts={onRefresh}
-                item={item}
+                initialData={item}
                 setModalVisible={setModalVisible}
             />
 
@@ -405,7 +404,7 @@ const ProductScreen = () => {
                 modalVisible={uploadModalVisible}
                 setItem={setItem}
                 fetchProducts={onRefresh}
-                item={item}
+                initialData={item}
                 setModalVisible={setUploadModalVisible}
             />
             <RadialFab

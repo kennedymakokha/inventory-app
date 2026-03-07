@@ -90,8 +90,9 @@ export const InputContainer: React.FC<any> = ({
                     value={value?.toString()} // Ensure value is a string
                     onChangeText={onChangeText}
                     secureTextEntry={hide}
+                    textContentType="none"  // avoid autofill issue
                     editable={disabled ? false : editable}
-                    keyboardType={keyboardType}
+                    // keyboardType={keyboardType}
                     multiline={multiline}
                     textAlignVertical="center"
                     // On some versions of RN, cursor color needs manual setting for dark mode

@@ -6,7 +6,7 @@ import { authorizedFetch } from "../middleware/auth.middleware";
 import { getDBConnection } from "./db-service";
 import { createTableIfNotExists } from "../utils/tableExists";
 import { ProductItem } from "../../models";
-
+import { v4 as uuidv4 } from "uuid";
 /* =========================================================
    TABLE CREATION
 ========================================================= */
@@ -34,6 +34,7 @@ export const createProductTable = async () => {
       expiryDate TEXT,
       createdAt TEXT,
       createdBy TEXT,
+      deleted_at TEXT, 
       updatedAt TEXT
       );`
     );
@@ -81,40 +82,18 @@ export function generateId(prefix: string) {
 ========================================================= */
 
 export const createProduct = async (
-  db: SQLiteDatabase,
+
   product: any,
-  postProduct: any
+
 ) => {
-  console.log(product)
+  const db = await getDBConnection();
   const now = new Date().toISOString();
   const createdBy = await AsyncStorage.getItem("userId");
-
-  const productId = generateId("PRD");
+  const productId = uuidv4();
 
   const state = await NetInfo.fetch();
   let synced = 0;
 
-  // if (state.isConnected) {
-
-  //   try {
-
-  //     await postProduct({
-  //       ...product,
-  //       product_id: productId,
-  //       createdAt: now,
-  //       updatedAt: now,
-  //       createdBy
-  //     });
-
-  //     synced = 1;
-
-  //   } catch (error) {
-
-  //     console.warn("⚠️ Server sync failed. Saved locally.");
-
-  //   }
-
-  // }
 
   await db.executeSql(`
     INSERT INTO Product
@@ -161,6 +140,56 @@ export const createProduct = async (
 
 };
 
+
+export const softDeleteProduct = async (
+  id: any
+) => {
+  console.log(id)
+  const db = await getDBConnection();
+  await db.executeSql(
+    `UPDATE Product 
+     SET deleted_at = datetime('now'),  synced = 0, updatedAt = datetime('now') 
+     WHERE product_id = ?`,
+    [id]
+  );
+};
+
+export const updateProduct = async (product: any) => {
+  const db = await getDBConnection();
+  const now = new Date().toISOString();
+
+  await db.executeSql(
+    `
+    UPDATE Product
+    SET 
+      product_name = ?,
+      barcode = ?,
+      business = ?,
+      price = ?,
+      Bprice = ?,
+      soldprice = ?,
+      category_id = ?,
+      description = ?,
+      expiryDate = ?,
+      updatedAt = ?,
+      synced = 0
+    WHERE product_id = ?
+    `,
+    [
+      product.product_name,
+      product.barcode || "",
+      product.business_id || "",
+      product.price,
+      product.Bprice,
+      product.soldprice || 0,
+      product.category_id || "",
+      product.description || "",
+      product.expiryDate || "",
+      now,
+      product.product_id
+    ]
+  );
+};
 
 /* =========================================================
    SALE CREATION
@@ -261,126 +290,13 @@ export const createSale = async (
 };
 
 
-/* =========================================================
-   SYNC UNSYNCED PRODUCTS
-========================================================= */
-
-export const syncUnsyncedProducts = async (db: SQLiteDatabase) => {
-
-  const result = await db.executeSql(
-    `SELECT * FROM Product WHERE synced = 0`
-  );
-
-  const rows = result[0].rows;
-
-  const products: any[] = [];
-
-  for (let i = 0; i < rows.length; i++) {
-    products.push(rows.item(i));
-  }
-
-  if (!products.length) return;
-
-  try {
-
-    const response = await authorizedFetch(
-      `${API_URL}/api/products/bulk`,
-      {
-        method: "POST",
-        body: JSON.stringify({ products })
-      }
-    );
-
-    if (response.success) {
-
-      for (const product of products) {
-
-        await db.executeSql(
-          `UPDATE Product SET synced = 1 WHERE product_id = ?`,
-          [product.product_id]
-        );
-
-      }
-
-    }
-
-  } catch (error) {
-
-    console.error("❌ Product sync failed", error);
-
-  }
-
-};
 
 
-/* =========================================================
-   SYNC UNSYNCED SALES
-========================================================= */
-
-export const syncUnsyncedSales = async (
-  db: SQLiteDatabase,
-  postSale: any
-) => {
-
-  const result = await db.executeSql(
-    `SELECT * FROM Sale WHERE synced = 0`
-  );
-
-  const rows = result[0].rows;
-
-  const sales: any[] = [];
-
-  for (let i = 0; i < rows.length; i++) {
-    sales.push(rows.item(i));
-  }
-
-  if (!sales.length) return;
-
-  for (const sale of sales) {
-
-    try {
-
-      await postSale({
-        sale_id: sale.sale_id,
-        product_id: sale.product_id,
-        quantity: sale.quantity,
-        soldprice: sale.soldprice
-      });
-
-      await db.executeSql(
-        `UPDATE sales SET synced = 1 WHERE sale_id = ?`,
-        [sale.sale_id]
-      );
-
-    } catch (error) {
-
-      console.warn("⚠️ Sale sync failed", sale.sale_id);
-
-    }
-
-  }
-
-};
 
 
 /* =========================================================
    FETCH PRODUCTS
 ========================================================= */
-
-// export const getProducts = async (
-//   db: SQLiteDatabase,
-//   limit:number = 20,
-//   offset:number = 0
-// ) => {
-
-//   const result = await db.executeSql(
-//     `SELECT * FROM Product ORDER BY id DESC LIMIT ? OFFSET ?`,
-//     [limit,offset]
-//   );
-
-//   return result[0].rows.raw();
-
-// };
 
 
 
@@ -392,6 +308,7 @@ export const getProducts = async (
   try {
     const [results] = await db.executeSql(
       `SELECT * FROM Product
+      WHERE deleted_at IS NULL
        ORDER BY id DESC
        LIMIT ? OFFSET ?`,
       [limit, offset]

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -26,7 +26,7 @@ const AddProductModal = ({
     PostLocally,
     loading,
     categories,
-    item,
+    initialData,
     setModalVisible,
     isDarkMode
 }: any) => {
@@ -34,6 +34,7 @@ const AddProductModal = ({
     const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const theme = isDarkMode ? Theme.dark : Theme.light;
+    const [item, setData] = useState(initialData);
     const buying = parseFloat(item.Bprice) || 0;
     const selling = parseFloat(item.price) || 0;
 
@@ -68,6 +69,9 @@ const AddProductModal = ({
             useNativeDriver: true,
         }).start();
     }, []);
+
+
+    useEffect(() => setData(initialData), [initialData]);
     return (
         <Modal
             animationType="slide"
@@ -119,7 +123,7 @@ const AddProductModal = ({
                             { color: theme.text, opacity: fadeAnim }
                         ]}
                     >
-                        Add New Product
+                        {item.product_id ? "Update Product" : "Add New Product"}
                     </Animated.Text>
                     {/* PRODUCT NAME */}
                     <InputContainer
@@ -195,11 +199,12 @@ const AddProductModal = ({
                             <InputContainer
                                 label="Buying Price"
                                 placeholder="0.00"
+
                                 value={item.Bprice}
                                 onChangeText={(text: string) =>
                                     handleChange("Bprice", text)
                                 }
-                                keyboardType="numeric"
+                                keyboardType="decimal-pad"
                                 isDarkMode={isDarkMode}
                             />
                         </View>
@@ -302,7 +307,7 @@ const AddProductModal = ({
                         isDarkMode={isDarkMode}
                     />
 
-                    {msg.msg && <Toast msg={msg.msg} state={msg.state} />}
+                    {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
 
                     {/* FOOTER BUTTONS */}
                     <View style={styles.footerBtns}>
@@ -317,15 +322,15 @@ const AddProductModal = ({
 
                         <View style={{
                             position: 'absolute',
-                            bottom: 25,
+                            bottom: item.product_id ? 55 : 25,
                             left: 24,
                             right: 24,
                         }}>
                             <Button
                                 loading={loading}
                                 handleclick={PostLocally}
-                                title="Save Product"
-                                disabled={!isFormValid}
+                                title={item.product_id ? "Update" : "Save Product"}
+                                disabled={item.product_id ? false : !isFormValid}
                             />
                         </View>
                     </View>

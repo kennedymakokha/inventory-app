@@ -10,6 +10,7 @@ export type ProductItem = {
     business_id?: string
     product_name: string;
     category_id?: string;
+    product_id?: string;
     expiryDate?: any
     price: number;
     soldprice?: number;

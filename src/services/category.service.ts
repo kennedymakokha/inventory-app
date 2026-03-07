@@ -315,7 +315,7 @@ export const saveCategoryItems = async (
 /* -------------------------- */
 
 export const softDeleteCategory = async (
-  id
+  id: any
 ) => {
   const db = await getDBConnection();
   await db.executeSql(

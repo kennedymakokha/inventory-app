@@ -85,36 +85,36 @@ function App(): React.JSX.Element {
   /* ---------------- DATABASE & SYNC ---------------- */
   useEffect(() => {
     let unsubscribe: any;
-
-
+    let netUnsubscribe: any;
 
     const setupDB = async () => {
       try {
-
         const db = await getDBConnection();
-        //  await db.executeSql(`DROP TABLE IF EXISTS Category;`);
+        //  await db.executeSql(`DROP TABLE IF EXISTS Product;`);
         //  await db.executeSql(`ALTER TABLE Product ADD COLUMN stock INTEGER DEFAULT 0;`);
         //  await db.executeSql(`CREATE INDEX idx_product_id ON Product(product_id);`);
-
         await createProductTable();
         await createCategoryTable();
-
         await createSalesTable();
-        await createInventoryTable()
-        await createInventorylogTable()
-        await createRefundsTable()
-        await createRefundItemsTable()
-        const state = await NetInfo.fetch();
+        await createInventoryTable();
+        await createInventorylogTable();
+        await createRefundsTable();
+        await createRefundItemsTable();
 
-        if (state.isConnected) {
-          await globalSync(syncTables);
-        }
+        // Listen for internet changes
+        netUnsubscribe = NetInfo.addEventListener(async state => {
+          if (state.isConnected && state.isInternetReachable) {
+            console.log("🌐 Internet detected → running sync");
+            await globalSync(syncTables);
+          }
+        });
 
+        // Start periodic autosync
         unsubscribe = startGlobalAutoSync(syncTables);
 
-        console.log('All tables ready, sync started');
+        console.log("All tables ready, sync started");
       } catch (err) {
-        console.error('DB setup failed', err);
+        console.error("DB setup failed", err);
       }
     };
 
@@ -122,6 +122,7 @@ function App(): React.JSX.Element {
 
     return () => {
       if (unsubscribe) unsubscribe();
+      if (netUnsubscribe) netUnsubscribe();
     };
   }, []);
 

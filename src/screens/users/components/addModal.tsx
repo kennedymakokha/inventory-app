@@ -53,7 +53,7 @@ const AddUserModal = ({ modalVisible,isDarkMode, msg, setMsg, setItem, PostLocal
                     isDarkMode={isDarkMode}
                     onChangeText={(text: string) => handleChange("description", text)}
                 />
-                {msg.msg && <Toast msg={msg.msg} state={msg.state} />}
+               {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
                 <View className="flex w-full flex-row  ">
                     <View className="flex w-1/2 flex-row justify-center px-2 items-center">
                         <Button handleclick={() => setModalVisible(!modalVisible)} outline loading={false} title="cancel" />
