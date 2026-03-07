@@ -8,9 +8,9 @@ import { CategoryItem, ProductItem } from '../../../../models';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Theme } from '../../../utils/theme';
 
-const AddProductModal = ({ modalVisible,isDarkMode, msg, setMsg, setItem, PostLocally, fetchProducts, item, setModalVisible }: any) => {
+const AddProductModal = ({ modalVisible, onClose, isDarkMode, msg, setMsg, setItem, PostLocally, fetchProducts, item, setModalVisible }: any) => {
     const [showPicker, setShowPicker] = useState(false);
-      const theme = isDarkMode ? Theme.dark : Theme.light;
+    const theme = isDarkMode ? Theme.dark : Theme.light;
     const handleChange = (key: keyof CategoryItem, value: string) => {
         setMsg({ msg: "", state: "" });
 
@@ -42,10 +42,6 @@ const AddProductModal = ({ modalVisible,isDarkMode, msg, setMsg, setItem, PostLo
                     onChangeText={(text: string) => handleChange("category_name", text)}
                     keyboardType="text"
                 />
-
-              
-              
-               
                 <TextArea
                     placeholder="category description ..."
                     value={item.description}
@@ -56,10 +52,10 @@ const AddProductModal = ({ modalVisible,isDarkMode, msg, setMsg, setItem, PostLo
                 {msg.msg && <Toast msg={msg.msg} state={msg.state} />}
                 <View className="flex w-full flex-row  ">
                     <View className="flex w-1/2 flex-row justify-center px-2 items-center">
-                        <Button handleclick={() => setModalVisible(!modalVisible)} outline loading={false} title="cancel" />
+                        <Button handleclick={onClose} outline loading={false} title="cancel" />
                     </View>
                     <View className="flex w-1/2 flex-row px-2 justify-center items-center">
-                        <Button handleclick={PostLocally} loading={false} title="submit" />
+                        <Button handleclick={PostLocally} loading={false} title={item.category_id ? "Update" : "submit"} />
                     </View>
                 </View>
 

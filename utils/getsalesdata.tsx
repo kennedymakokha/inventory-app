@@ -105,3 +105,13 @@ export const adminFilter = [{ id: 1, title: "All" },
 { id: 5, title: "Yearly" }
 ]
 
+
+
+export const Initials = (name: string) => (
+
+    name.split(' ') // Split into ["kennedy", "makok"]
+        .map(word => word.charAt(0).toUpperCase()) // Get first letters -> ["K", "M"]
+        .join('') // Join -> "KM"
+
+)
+

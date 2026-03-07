@@ -8,6 +8,9 @@ import NetInfo from "@react-native-community/netinfo";
 import { getDBConnection } from "./db-service";
 import { createTableIfNotExists } from "../utils/tableExists";
 import { generateId } from "./product.service";
+import { v4 as uuidv4 } from "uuid";
+
+
 
 /* -------------------------- */
 /* CREATE TABLES */
@@ -34,7 +37,7 @@ export const createCategoryTable = async () => {
       `CREATE TABLE Category (
        id INTEGER PRIMARY KEY AUTOINCREMENT,
           category_name TEXT COLLATE NOCASE,
-          _id TEXT UNIQUE,
+          category_id TEXT UNIQUE,
           business TEXT,
           createdBy TEXT,
           description TEXT,
@@ -52,7 +55,33 @@ export const createCategoryTable = async () => {
   }
 };
 
+export const updateCategory = async (
+  data: CategoryItem
+) => {
+  const { category_id,
+    category_name,
+    description,
+    expiryDate } = data
+  try {
+    const db = await getDBConnection();
 
+    await db.executeSql(
+      `UPDATE Category
+       SET category_name = ?,
+           description = ?,
+           expiryDate = ?,
+           updatedAt = datetime('now'),
+           synced = 0
+       WHERE category_id = ?`,
+      [category_name, description, expiryDate ?? null, category_id]
+    );
+
+    console.log("✅ Category updated locally");
+  } catch (error) {
+    console.log("❌ updateCategory failed:", error);
+    throw error;
+  }
+};
 
 /* -------------------------- */
 /* SYNC META */
@@ -223,7 +252,7 @@ export const getUnsyncedCategories = async (
 export const saveCategoryItems = async (
   db: SQLiteDatabase,
   item: CategoryItem,
-  postCategoryToMongoDB: any
+
 ): Promise<CategoryItem[]> => {
 
   const futureDate = new Date();
@@ -233,7 +262,7 @@ export const saveCategoryItems = async (
   const createdBy = await AsyncStorage.getItem("userId");
   const now = new Date().toISOString();
 
-  const category_id = generateId('CAT');
+  const category_id = uuidv4();
   const expiryDate =
     item.expiryDate === "" ? futureDate.toISOString() : item.expiryDate;
 
@@ -250,29 +279,11 @@ export const saveCategoryItems = async (
   const state = await NetInfo.fetch();
   let synced = 0;
 
-  // if (state.isConnected) {
-  //   try {
-  //     await postCategoryToMongoDB({
-  //       ...item,
-  //       category_id,
-  //       business: item.business_id,
-  //       expiryDate,
-  //       createdBy,
-  //       createdAt: now,
-  //       updatedAt: now,
-  //     });
-
-  //     synced = 1;
-  //   } catch (err) {
-  //     console.warn("Mongo sync failed, saving locally only");
-  //   }
-  // }
-
   const insertQuery = `
     INSERT INTO Category
     (
       category_name,
-      _id,
+      category_id,
       business,
       createdBy,
       description,
@@ -304,13 +315,13 @@ export const saveCategoryItems = async (
 /* -------------------------- */
 
 export const softDeleteCategory = async (
-  db: SQLiteDatabase,
-  id: number
+  id
 ) => {
+  const db = await getDBConnection();
   await db.executeSql(
     `UPDATE Category 
-     SET deleted_at = datetime('now'), updatedAt = datetime('now') 
-     WHERE id = ?`,
+     SET deleted_at = datetime('now'),  synced = 0, updatedAt = datetime('now') 
+     WHERE category_id = ?`,
     [id]
   );
 };

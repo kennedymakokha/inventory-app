@@ -12,7 +12,7 @@ import {
 
 import { getDBConnection } from '../../services/db-service';
 import { CategoryItem, ProductItem } from '../../../models';
-import { createCategoryTable, getCategories, getSyncedCategories, getUnsyncedCategories, saveCategoryItems } from '../../services/category.service';
+import { createCategoryTable, getCategories, getSyncedCategories, getUnsyncedCategories, saveCategoryItems, softDeleteCategory, updateCategory } from '../../services/category.service';
 
 import AddCategoryModal from './components/addCategoryModal';
 import UploadProductsModal from './components/upload.modal';
@@ -34,8 +34,8 @@ const CategoryScreen = () => {
     const { isDarkMode } = useSettings();
     const theme = isDarkMode ? Theme.dark : Theme.light;
     const { query, setQuery } = useSearch();
-    const { user:{business} } = useSelector((state: any) => state.auth)
-    const initialState = { category_name: "", description: "", category_id: "",business_id: business._id || "" };
+    const { user: { business } } = useSelector((state: any) => state.auth)
+    const initialState = { category_name: "", description: "", category_id: "", business_id: business._id || "" };
 
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState<CategoryItem[]>([]);
@@ -78,9 +78,13 @@ const CategoryScreen = () => {
         if (!validateItem(item, setMsg)) return;
         try {
             const db = await getDBConnection();
-            await createCategoryTable();
-            const storedItems = await saveCategoryItems(db, item, postCategoryToMongoDB);
-            setCategories(storedItems);
+            if (item.category_id) {
+                await updateCategory(item);
+            } else {
+                await saveCategoryItems(db, item);
+            }
+
+            await loadDataCallback(0);
 
             setItem(initialState);
             setModalVisible(false);
@@ -95,52 +99,48 @@ const CategoryScreen = () => {
     }, [loadDataCallback, offset]);
 
 
-// Inside CategoryScreen
-const categoryFields = [
-    { key: 'category_name', label: 'Name', placeholder: 'Category Name' },
-    { key: 'description', label: 'Description', placeholder: 'Description' },
-];
- const handleDelete = async (cat: CategoryItem) => {
-        const db = await getDBConnection();
-        await db.executeSql('DELETE FROM categories WHERE category_id=?', [cat.category_id]);
-        setCategories(prev => prev.filter(c => c.category_id !== cat.category_id));
-    };
-const renderCategoryCard = ({ item }: { item: any }) => (
-    <SwipeableCard
-        onEdit={() => { setItem(item); setModalVisible(true); }}
-        onDelete={() => handleDelete(item)}
-    >
-        <View style={{
-            backgroundColor: '#1e293b',
-            padding: 16,
-            borderRadius: 12,
-            marginBottom: 12,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.25,
-            shadowRadius: 4,
-            elevation: 5
-        }}>
-            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{item.category_name} </Text>
-            <Text style={{ color: '#9ca3af', fontSize: 12, marginTop: 6 }}>{item.description || ''}</Text>
-        </View>
-    </SwipeableCard>
-);
+    // Inside CategoryScreen
+    const categoryFields = [
+        { key: 'category_name', label: 'Name', placeholder: 'Category Name' },
+        { key: 'description', label: 'Description', placeholder: 'Description' },
+    ];
 
-// Reusable modal for add/edit
-<EntityModal
-    visible={modalVisible}
-    onClose={() => setModalVisible(false)}
-    onSave={AddCategory} // works for both add & edit
-    initialData={item}
-    fields={categoryFields}
-/>
-  
+    const renderCategoryCard = ({ item }: { item: any }) => (
+        <SwipeableCard
+            onEdit={() => { setItem(item); setModalVisible(true); setMsg({ msg: "", state: "" }) }}
+            onDelete={async () => { await softDeleteCategory(item.category_id); setCategories(prev => prev.filter(c => c.category_id !== item.category_id)); }}
+        >
+            <View style={{
+                backgroundColor: '#1e293b',
+                padding: 16,
+                borderRadius: 12,
+                marginBottom: 12,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.25,
+                shadowRadius: 4,
+                elevation: 5
+            }}>
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{item.category_name} {item._id}</Text>
+                <Text style={{ color: '#9ca3af', fontSize: 12, marginTop: 6 }}>{item.description || ''}</Text>
+            </View>
+        </SwipeableCard>
+    );
+
+    // Reusable modal for add/edit
+    <EntityModal
+        visible={modalVisible}
+        onClose={() => { setModalVisible(false); setMsg({ msg: "", state: "" }) }}
+        onSave={AddCategory} // works for both add & edit
+        initialData={item}
+        fields={categoryFields}
+    />
+
 
     return (
         <View style={{ flex: 1, backgroundColor: isDarkMode ? '#0f172a' : '#f8fafc', paddingTop: 16 }}>
             {/* Page Header */}
-            <PageHeader />
+            <PageHeader title='Categories' />
 
             <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 12 }}>
 
@@ -165,7 +165,9 @@ const renderCategoryCard = ({ item }: { item: any }) => (
                 isDarkMode={isDarkMode}
                 msg={msg}
                 PostLocally={AddCategory}
+
                 modalVisible={modalVisible}
+                onClose={() => { setModalVisible(false); setMsg({ msg: "", state: "" }); setItem(initialState) }}
                 setItem={setItem}
                 fetchProducts={loadDataCallback}
                 item={item}

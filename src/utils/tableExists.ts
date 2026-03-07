@@ -30,7 +30,7 @@ export const createTableIfNotExists = async (db: any, tableName: string, createS
           createSQL,
           [],
           () => {
-            console.log(`✅ Table ${tableName} created`);
+           
             resolve(true);
           },
           (_tx: any, err: any) => {
@@ -42,7 +42,7 @@ export const createTableIfNotExists = async (db: any, tableName: string, createS
       });
     });
   } else {
-    console.log(`Table ${tableName} already exists`);
+    
     return true;
   }
 };

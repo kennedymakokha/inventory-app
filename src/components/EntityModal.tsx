@@ -12,10 +12,10 @@ interface EntityModalProps {
 
 const EntityModal = ({ visible, onClose, onSave, initialData = {}, fields }: EntityModalProps) => {
     const [data, setData] = useState(initialData);
-
+    console.log(initialData)
     useEffect(() => setData(initialData), [initialData]);
 
-    const handleChange = (key: string, value: string) => setData((prev:any) => ({ ...prev, [key]: value }));
+    const handleChange = (key: string, value: string) => setData((prev: any) => ({ ...prev, [key]: value }));
 
     return (
         <Modal visible={visible} transparent animationType="fade">
@@ -34,7 +34,7 @@ const EntityModal = ({ visible, onClose, onSave, initialData = {}, fields }: Ent
                     ))}
 
                     <TouchableOpacity style={styles.saveBtn} onPress={() => onSave(data)}>
-                        <Text style={{ color: '#fff', fontWeight: '700' }}>Save</Text>
+                        <Text style={{ color: '#fff', fontWeight: '700' }}>{data.business ? "Update" : "Save"}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>

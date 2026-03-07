@@ -1,3 +1,4 @@
+import 'react-native-get-random-values';
 import React, { useEffect, useRef } from 'react';
 import { StatusBar, View, Text, PermissionsAndroid, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -91,7 +92,7 @@ function App(): React.JSX.Element {
       try {
 
         const db = await getDBConnection();
-        //  await db.executeSql(`DROP TABLE IF EXISTS Product;`);
+        //  await db.executeSql(`DROP TABLE IF EXISTS Category;`);
         //  await db.executeSql(`ALTER TABLE Product ADD COLUMN stock INTEGER DEFAULT 0;`);
         //  await db.executeSql(`CREATE INDEX idx_product_id ON Product(product_id);`);
 
@@ -124,15 +125,15 @@ function App(): React.JSX.Element {
     };
   }, []);
 
-  useEffect(() => {
+  // useEffect(() => {
 
-    const interval = setInterval(() => {
-      globalSync(syncTables);
-    }, 15000);
+  //   const interval = setInterval(() => {
+  //     globalSync(syncTables);
+  //   }, 150000);
 
-    return () => clearInterval(interval);
+  //   return () => clearInterval(interval);
 
-  }, []);
+  // }, []);
   /* ---------------- UI ---------------- */
   return (
     <View style={{ flex: 1, backgroundColor: '#1e293b' }}>

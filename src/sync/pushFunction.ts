@@ -5,7 +5,7 @@ import { API_URL } from "@env";
 
 import { SyncTableConfig } from "./sync.config";
 
-export const pushUnsynced = async (db:any, config: SyncTableConfig) => {
+export const pushUnsynced = async (db: any, config: SyncTableConfig) => {
   const result = await db.executeSql(
     `SELECT * FROM ${config.tableName} WHERE synced = 0`
   );
@@ -15,7 +15,10 @@ export const pushUnsynced = async (db:any, config: SyncTableConfig) => {
 
   const unsynced = [];
   for (let i = 0; i < rows.length; i++) {
-    unsynced.push(rows.item(i));
+    const row = rows.item(i);
+
+    const { _id, ...cleanRow } = row; // remove _id
+    unsynced.push(cleanRow);
   }
 
   const response = await authorizedFetch(
@@ -23,7 +26,7 @@ export const pushUnsynced = async (db:any, config: SyncTableConfig) => {
     {
       method: "POST",
       body: JSON.stringify({
-        [config.payloadKey]: unsynced, // 👈 dynamic key
+        [config.payloadKey]: unsynced,
       }),
     }
   );
