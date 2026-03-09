@@ -1,40 +1,29 @@
-import { View, Text, FlatList, TextInput, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { SkeletonList } from './skeleton';
 import { useCallback, useEffect, useState } from 'react';
-import SearchBar from '../../components/searchBar';
-import { Fab } from '../../components/Button';
 import { getDBConnection } from '../../services/db-service';
-import { createInventoryTable, getinventories, saveInventoryItem } from '../../services/inventory.service';
-import { validateItem } from '../validations/Inventory.validation';
-import InventoryModal from './components/addInventoryModal';
-import { getProducts } from '../../services/product.service';
 import { useSearch } from '../../context/searchContext';
 import { uniqueInventory } from '../../../utils/useDropDown';
 import PageHeader from '../../components/pageHeader';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { authStackParamList } from '../../../models';
 import { useNavigation } from '@react-navigation/native';
+import { getGroupedInventoryLogs } from '../../services/inventory.service';
 
 export default function InventoryScreen() {
     const initialState = {
         product_id: "",
         quantity: "",
-        expiryDate:""
+        expiryDate: ""
     }
     const [loading, setLoading] = useState(false);
-    const [modalVisible, setModalVisible] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [inventories, setInventories] = useState([])
-    const [msg, setMsg] = useState({ msg: "", state: "" });
-    const [item, setItem] = useState(initialState)
-    const [product, setProduct] = useState(null)
     const { query, setQuery } = useSearch()
-    
     const loadDataCallback = useCallback(async () => {
         try {
             const db = await getDBConnection();
-            await createInventoryTable(db);
-            let storedItems: any = await getinventories(db);
+            let storedItems: any = await getGroupedInventoryLogs(db);
             setInventories(storedItems)
             setLoading(false);
         } catch (error) {
@@ -45,7 +34,7 @@ export default function InventoryScreen() {
         try {
             const db = await getDBConnection();
             setRefreshing(true);
-            let storedItems: any = await getinventories(db);
+            let storedItems: any = await getGroupedInventoryLogs(db);
             setInventories(storedItems)
             setRefreshing(false);
         } catch (error) {
@@ -58,33 +47,8 @@ export default function InventoryScreen() {
         loadDataCallback();
     }, [loadDataCallback]);
 
-    const AddProduct = async () => {
-        if (!validateItem(item, setMsg)) return;
-        try {
-            const db = await getDBConnection();
-            await createInventoryTable(db);
-            await saveInventoryItem(db, item);
-            let storedItems: any = await getinventories(db);
-            setInventories(storedItems);
-            closeModal()
-            setMsg({ msg: '✅ Inventory added!', state: 'success' });
-        } catch (error: any) {
-            console.log(error.message)
-            setMsg({ msg: error.message || '❌ Could not add Inventory.', state: 'error' });
-        }
-    };
 
-    const closeModal = () => {
-        setItem(initialState);
-        setModalVisible(false);
-        setProduct(null)
-        setMsg({ msg: "", state: "" })
-    }
-    const openModal = (data: any) => {
-        setProduct(data)
-        setItem(prev => ({ ...prev, product_id: data.product_id }))
-        setModalVisible(true)
-    }
+
 
 
     const filteredData = uniqueInventory(inventories).filter((e: any) => e.product_name.includes(query))
@@ -100,42 +64,30 @@ export default function InventoryScreen() {
                     data={filteredData}
                     keyExtractor={(item: any) => item.inventory_id}
                     renderItem={({ item }: any) => (
-                        <View className={`flex-row justify-between ${item.synced === 0 ? "bg-green-100" : "bg-green-50"} p-4 rounded-lg shadow-md mt-2`}>
+                        <TouchableOpacity onPress={() => navigation.navigate('inventory_Details', { product: item })} className={`flex-row justify-between ${item.synced === 0 ? "bg-green-100" : "bg-green-50"} p-4 rounded-lg shadow-md mt-2`}>
                             <View>
-                                <TouchableOpacity onPress={() => navigation.navigate('inventory_Details', { product: item })} >
+                                <View >
                                     <Text className="font-bold text-secondary-900  text-lg">
                                         {item.product_name}
                                     </Text>
-                                </TouchableOpacity>
+                                </View>
                                 <Text className="text-gray-600 dark:text-gray-300">
-                                    Stock: {item.product_quantity}
+                                    Stock: {item.qty}
                                 </Text>
-                                <Text className="text-slate-900 dark:text-slate-200 font-bold">
-                                    Price: @{parseFloat(item.product_price).toFixed(2)}
-                                </Text>
+
                             </View>
-                            <TouchableOpacity
+                            {/* <TouchableOpacity
                                 onPress={() => openModal(item)}
                                 className={`${item.product_quantity < 20 ? "bg-red-600" : "bg-green-600"} dark:bg-secondary-800 p-2 flex items-center justify-center rounded`}>
                                 <Text className="text-white font-bold">Restock</Text>
-                            </TouchableOpacity>
-                        </View>
+                            </TouchableOpacity> */}
+                        </TouchableOpacity>
                     )}
                     refreshControl={
                         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
                     }
                 />}
-                <InventoryModal
-                    setMsg={setMsg}
-                    product={product}
-                    msg={msg}
-                    closeModal={closeModal}
-                    PostLocally={AddProduct}
-                    modalVisible={modalVisible}
-                    setItem={setItem}
-                    fetchProducts={loadDataCallback}
-                    item={item}
-                />
+
             </View>
             {/* <View className="absolute bottom-5 left-5 gap-y-5 right-5 z-50 items-center">
                 <View className="flex-row w-full  ">

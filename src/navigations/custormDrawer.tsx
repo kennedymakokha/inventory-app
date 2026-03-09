@@ -17,7 +17,7 @@ import { useAuthContext } from "../context/authContext";
 
 import { getDBConnection } from "../services/db-service";
 
-import { getUnsyncedInventory } from "../services/inventory.service";
+
 import { getNow } from "../../utils";
 
 import {
@@ -36,6 +36,7 @@ import {
 } from "../services/salesApi";
 import { useSettings } from "../context/SettingsContext";
 import { Theme } from "../utils/theme";
+import { calculateExpectedCash } from "../services/closeOpen.service";
 
 const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
   navigation,
@@ -46,82 +47,19 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
   const { isDarkMode } = useSettings();
   const theme = isDarkMode ? Theme.dark : Theme.light;
 
-  const [lastSync, setLastSync] = useState<string>("");
+  const [expected, setExpected] = useState<string>("");
   const [message, setMessage] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
 
-  const [syncProduct] = useBulksyncProductsMutation();
-  const [syncInventory] = useSyncInventoryMutation();
-  const [syncSales] = useSyncSalesMutation();
 
-  const { refetch: refetchProducts } = usePullupdatedProductsinceQuery(lastSync, {
-    skip: !lastSync,
-  });
 
-  const { refetch: refetchInventory } = usePullinventoryQuery(lastSync, {
-    skip: !lastSync,
-  });
-
-  const { refetch: refetchSales } = usePullSalesQuery(lastSync, {
-    skip: !lastSync,
-  });
-
-  useEffect(() => {
-    const loadLastSync = async () => {
-      const stored = await AsyncStorage.getItem("lastSync");
-      if (stored) {
-        setLastSync(stored);
-      } else {
-        const initial = new Date(0).toISOString();
-        setLastSync(initial);
-      }
-    };
-    loadLastSync();
-  }, []);
 
   const logoutUser = async () => {
     await logout();
     await AsyncStorage.clear();
   };
 
-  const handleFullSync = async () => {
-    try {
-      setLoading(true);
-      setMessage("Starting sync...");
 
-      const db = await getDBConnection();
-
-      const productRes = await refetchProducts();
-      const inventoryRes = await refetchInventory();
-      const salesRes = await refetchSales();
-
-      const productsFromServer = productRes?.data || [];
-      const inventoryFromServer = inventoryRes?.data || [];
-      const salesFromServer = salesRes?.data || [];
-
-    //   await syncAllProducts(db, productsFromServer, syncProduct);
-
-      const unsyncedInventory = await getUnsyncedInventory(db,0);
-      if (unsyncedInventory?.length) {
-        await syncInventory(unsyncedInventory).unwrap();
-      }
-
-      if (salesFromServer?.length) {
-        await syncSales(salesFromServer).unwrap();
-      }
-
-      const now = getNow();
-      await AsyncStorage.setItem("lastSync", now);
-      setLastSync(now);
-
-      setMessage("Sync completed successfully ✅");
-    } catch (error) {
-      console.log("SYNC ERROR:", error);
-      setMessage("Sync failed ❌");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const menuItem = (
     label: string,
@@ -141,24 +79,43 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
       </Text>
     </TouchableOpacity>
   );
-
+  useEffect(() => {
+    const load = async () => {
+      const mS = await calculateExpectedCash();
+      setExpected(mS);
+    };
+    load();
+    const interval = setInterval(load, 5000); // refresh every 5 seconds
+    return () => clearInterval(interval);
+  }, []);
+  const currentHour = new Date().getHours();
+  const showText = currentHour >= 18;
   return (
     <View
       style={{ backgroundColor: theme.background }}
       className="flex-1 pt-16 px-5"
     >
       {/* Header */}
-      <View
-        style={{ borderBottomColor: theme.border }}
-        className="items-center mb-10 border-b"
-      >
+      <View className="relative items-center mb-10 border-b" style={{ borderBottomColor: theme.border }}>
+
+        {/* Background number */}
+        {!showText && <Text
+          className="absolute text-[880px] font-bold opacity-20"
+          style={{ color: "#38bdf8", bottom: 30, fontSize: 100 }}
+        >
+          {expected}
+        </Text>
+        }
+        {/* Foreground content */}
         <Image
           source={require("../assets/logo.png")}
           className="size-40 rounded-full mb-2"
         />
+
         <Text style={{ color: theme.text }} className="text-lg">
           Welcome! {user?.name}
         </Text>
+
       </View>
 
       {!!message && (
@@ -180,25 +137,7 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
       {menuItem("Settings", "settings-outline", "settings")}
 
       {/* Sync Button */}
-      {loading ? (
-        <ActivityIndicator size="large" color={theme.subText} />
-      ) : (
-        <TouchableOpacity
-          disabled={loading}
-          style={{ backgroundColor: theme.background }}
-          className="flex-row py-4 rounded-md justify-center items-center my-4"
-          onPress={handleFullSync}
-        >
-          <MaterialCommunityIcons
-            name="cloud-sync"
-            size={26}
-            color="#fff"
-          />
-          <Text className="text-white text-lg ml-3 font-bold">
-            Sync
-          </Text>
-        </TouchableOpacity>
-      )}
+
 
       {/* Footer */}
       <View

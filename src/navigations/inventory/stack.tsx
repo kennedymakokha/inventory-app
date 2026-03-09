@@ -3,9 +3,10 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useSettings } from "../../context/SettingsContext";
 import { defaultHeaderOptions } from "../navigationOptions";
 import { InventoryStackParamList } from "../../../models/navigationTypes";
-import InventoryScreen from "../../screens/Inventory";
+
 import { CustomHeaderWithSearch } from "../../components/customHeader";
 import InventoryDetails from "../../screens/inventory/inventoryDetails";
+import InventoryScreen from "../../screens/inventory/inventory.screen";
 
 export function InventoryStack() {
   const { isDarkMode } = useSettings();

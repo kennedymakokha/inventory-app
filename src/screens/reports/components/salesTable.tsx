@@ -1,91 +1,143 @@
-import React from 'react';
-import { View, Text, ScrollView, Dimensions } from 'react-native';
+import React from "react";
+import { View, Text, FlatList, ScrollView, ActivityIndicator } from "react-native";
 
-import { useSelector } from 'react-redux';
-import { useSettings } from '../../../context/SettingsContext';
-import { Theme } from '../../../utils/theme';
+type Header = {
+  key: string; // field name in data (must be unique)
+  label: string; // column label
+  width?: number; // optional custom column width
+};
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-
-const TableContainer = ({
-  headers,
-  data
-}: {
-  headers: { label: string; key: string }[];
+interface Props {
+  headers: Header[];
   data: Record<string, any>[];
+  onEndReached?: () => void;
+  loading?: boolean;
+  horizontalScroll?: boolean;
+  rowKey?: (item: Record<string, any>) => string; // custom key extractor
+  emptyComponent?: React.ReactNode;
+}
+
+const DEFAULT_COLUMN_WIDTH = 150;
+
+const SalesReportTable: React.FC<Props> = ({
+  headers,
+  data,
+  onEndReached,
+  loading = false,
+  horizontalScroll = true,
+  rowKey,
+  emptyComponent,
 }) => {
-  const { isDarkMode } = useSettings();
-  const theme = isDarkMode ? Theme.dark : Theme.light;
-  const columnWidth = 150;
-  const tableWidth = columnWidth * headers.length;
+  const tableWidth = headers.reduce(
+    (sum, h) => sum + (h.width || DEFAULT_COLUMN_WIDTH),
+    0
+  );
 
-  // Pad data to always show 10 rows
-  const paddedData = [...data];
-  while (paddedData.length < 10) {
-    paddedData.push({});
-  }
-
-  return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: theme.background }}
-      contentContainerStyle={{ flexGrow: 1 }}
-    >
-      <ScrollView horizontal>
-        <View style={{ minWidth: tableWidth }}>
-          {/* Header */}
-          <View style={{ flexDirection: 'row', backgroundColor: theme.elevated }}>
-            {headers.map((header, index) => (
-              <View
-                key={index}
-                style={{
-                  width: columnWidth,
-                  padding: 12,
-                  borderWidth: 1,
-                  borderColor: theme.border,
-                }}
-              >
-                <Text style={{ fontWeight: 'bold', color: theme.text }}>
-                  {header.label}
-                </Text>
-              </View>
-            ))}
-          </View>
-
-          {/* Rows */}
-          {paddedData.map((row, rowIndex) => {
-            const rowBackground =
-              rowIndex % 2 === 0 ? theme.card : theme.elevated;
-            return (
-              <View
-                key={rowIndex}
-                style={{ flexDirection: 'row', backgroundColor: rowBackground }}
-              >
-                {headers.map((header, cellIndex) => (
-                  <View
-                    key={cellIndex}
-                    style={{
-                      width: columnWidth,
-                      padding: 12,
-                      borderWidth: 1,
-                      borderColor: theme.border,
-                    }}
-                  >
-                    <Text
-                      style={{ color: theme.text }}
-                      numberOfLines={1}
-                      ellipsizeMode="tail"
-                    >
-                      {row[header.key]}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            );
-          })}
+  // --- Render Header ---
+  const renderHeader = () => (
+    <View style={{ flexDirection: "row", backgroundColor: "#1e293b" }}>
+      {headers.map((h) => (
+        <View
+          key={h.key} // ✅ use unique header key
+          style={{
+            width: h.width || DEFAULT_COLUMN_WIDTH,
+            paddingVertical: 12,
+            paddingHorizontal: 16,
+            borderWidth: 1,
+            borderColor: "#334155",
+          }}
+        >
+          <Text style={{ color: "white", fontWeight: "bold" }}>{h.label}</Text>
         </View>
-      </ScrollView>
+      ))}
+    </View>
+  );
+
+  // --- Render Row ---
+  const renderRow = ({ item, index }: any) => {
+    const rowColor = index % 2 === 0 ? "#0f172a" : "#1e293b";
+
+    return (
+      <View style={{ flexDirection: "row", backgroundColor: rowColor }}>
+        {headers.map((h) => (
+          <View
+            key={h.key} // ✅ safe unique key per column
+            style={{
+              width: h.width || DEFAULT_COLUMN_WIDTH,
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              borderWidth: 1,
+              borderColor: "#334155",
+            }}
+          >
+            <Text style={{ color: "white", flexShrink: 1 }}>
+              {item[h.key] ?? ""}
+            </Text>
+          </View>
+        ))}
+      </View>
+    );
+  };
+
+  // --- Footer Loader ---
+  const FooterLoader = () =>
+    loading ? (
+      <View style={{ padding: 20 }}>
+        <ActivityIndicator size="small" color="white" />
+      </View>
+    ) : null;
+
+  // --- Key Extractor for FlatList ---
+  const getKey = (item: Record<string, any>, index: number) => {
+    if (rowKey) return rowKey(item);
+    if (item.id != null) return String(item.id); // use unique id if available
+    return `row-${index}`; // fallback to index if nothing else
+  };
+
+  // --- Main Table Rendering ---
+  return horizontalScroll ? (
+    <ScrollView horizontal>
+      <View style={{ width: tableWidth }}>
+        <FlatList
+          data={data}
+          keyExtractor={getKey}
+          ListHeaderComponent={renderHeader}
+          stickyHeaderIndices={[0]}
+          renderItem={renderRow}
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={<FooterLoader />}
+          ListEmptyComponent={() =>
+            emptyComponent ?? (
+              <Text
+                style={{ color: "white", textAlign: "center", marginTop: 20 }}
+              >
+                No data available
+              </Text>
+            )
+          }
+        />
+      </View>
     </ScrollView>
+  ) : (
+    <FlatList
+      data={data}
+      keyExtractor={getKey}
+      ListHeaderComponent={renderHeader}
+      stickyHeaderIndices={[0]}
+      renderItem={renderRow}
+      onEndReached={onEndReached}
+      onEndReachedThreshold={0.5}
+      ListFooterComponent={<FooterLoader />}
+      ListEmptyComponent={() =>
+        emptyComponent ?? (
+          <Text style={{ color: "white", textAlign: "center", marginTop: 20 }}>
+            No data available
+          </Text>
+        )
+      }
+    />
   );
 };
 
-export default TableContainer;
+export default SalesReportTable;

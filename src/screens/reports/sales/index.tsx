@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import SalesReportTable from '../components/salesTable';
 import PageHeader from '../../../components/pageHeader';
 import { getDBConnection } from '../../../services/db-service';
-import { fetchCumulativeProfit, fetchGroupedProfit } from '../../../services/sales.service';
+
 import {
   adminFilter,
   Adminheaders,
@@ -33,14 +33,14 @@ const SalesReport = () => {
     const fetchProfits = async () => {
       setLoading(true);
       const db = await getDBConnection();
-      fetchCumulativeProfit(db, filter.toLowerCase(), (data: any) => {
-        setdataSales(data);
-        setLoading(false);
-      });
-      fetchGroupedProfit(db, filter.toLowerCase(), (data: any) => {
-        setSales(data);
-        setLoading(false);
-      });
+      // fetchCumulativeProfit(db, filter.toLowerCase(), (data: any) => {
+      //   setdataSales(data);
+      //   setLoading(false);
+      // });
+      // fetchGroupedProfit(db, filter.toLowerCase(), (data: any) => {
+      //   setSales(data);
+      //   setLoading(false);
+      // });
     };
     fetchProfits();
   }, [filter]);

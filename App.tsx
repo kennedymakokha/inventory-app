@@ -17,13 +17,15 @@ import { AuthStack } from './src/navigations/auth/stack';
 import { startGlobalAutoSync } from './src/sync/netinfo';
 import { syncTables } from './src/sync/tables';
 import { getDBConnection } from './src/services/db-service';
-import { createRefundItemsTable, createRefundsTable, createSalesTable } from './src/services/sales.service';
+import { createRefundItemsTable, createRefundsTable, createSalesItemTable, createSalesTable } from './src/services/sales.service';
 import { createCategoryTable } from './src/services/category.service';
-import { createInventorylogTable, createProductTable } from './src/services/product.service';
+import { createProductTable } from './src/services/product.service';
 import { createTableIfNotExists } from './src/utils/tableExists';
 import "./global.css";
 import { globalSync } from './src/sync';
-import { createInventoryTable } from './src/services/inventory.service';
+import { createInventorylogTable } from './src/services/inventory.service';
+import { createCashRegisterTable, createPaymentsTable } from './src/services/closeOpen.service';
+
 /* 🔹 Global flag to ensure tables are created only once */
 let tablesInitialized = false;
 
@@ -90,17 +92,19 @@ function App(): React.JSX.Element {
     const setupDB = async () => {
       try {
         const db = await getDBConnection();
-        //  await db.executeSql(`DROP TABLE IF EXISTS Product;`);
+        //  await db.executeSql(`DROP TABLE IF EXISTS Inventory_log;`);
         //  await db.executeSql(`ALTER TABLE Product ADD COLUMN stock INTEGER DEFAULT 0;`);
         //  await db.executeSql(`CREATE INDEX idx_product_id ON Product(product_id);`);
+        // await db.executeSql(`CREATE INDEX idx_product_id ON Product(product_id);`);
         await createProductTable();
         await createCategoryTable();
         await createSalesTable();
-        await createInventoryTable();
+        await createCashRegisterTable()
         await createInventorylogTable();
+        await createPaymentsTable()
         await createRefundsTable();
         await createRefundItemsTable();
-
+        await createSalesItemTable();
         // Listen for internet changes
         netUnsubscribe = NetInfo.addEventListener(async state => {
           if (state.isConnected && state.isInternetReachable) {
@@ -130,7 +134,7 @@ function App(): React.JSX.Element {
 
   //   const interval = setInterval(() => {
   //     globalSync(syncTables);
-  //   }, 150000);
+  //   }, 6000);
 
   //   return () => clearInterval(interval);
 

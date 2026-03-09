@@ -11,7 +11,7 @@ export function FormatDate(dateInput: any, locale = "en-US") {
   if (isNaN(date.getTime())) return "";
 
   return date.toLocaleString(locale, {
-    year: "numeric",
+    year: "2-digit",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",

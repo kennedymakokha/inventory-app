@@ -12,13 +12,12 @@ import {
 
 import { getDBConnection } from '../../services/db-service';
 import { CategoryItem, ProductItem } from '../../../models';
-import { createCategoryTable, getCategories, getSyncedCategories, getUnsyncedCategories, saveCategoryItems, softDeleteCategory, updateCategory } from '../../services/category.service';
+import { createCategoryTable, getCategories,  getSyncedCategories, getUnsyncedCategories, saveCategoryItems, softDeleteCategory, updateCategory } from '../../services/category.service';
 
 import AddCategoryModal from './components/addCategoryModal';
 import UploadProductsModal from './components/upload.modal';
 import { validateItem } from '../validations/category.validation';
 import PageHeader from '../../components/pageHeader';
-import { createInventoryTable } from '../../services/inventory.service';
 
 import { useSearch } from '../../context/searchContext';
 
@@ -53,6 +52,7 @@ const CategoryScreen = () => {
             const db = await getDBConnection();
             let storedItems: CategoryItem[] = [];
             storedItems = await getCategories(db);
+           
             setCategories(storedItems);
         } catch (error) {
             console.error('❌ Error loading categories:', error);

@@ -7,7 +7,7 @@ import { authorizedFetch } from "../middleware/auth.middleware";
 import NetInfo from "@react-native-community/netinfo";
 import { getDBConnection } from "./db-service";
 import { createTableIfNotExists } from "../utils/tableExists";
-import { generateId } from "./product.service";
+
 import { v4 as uuidv4 } from "uuid";
 
 

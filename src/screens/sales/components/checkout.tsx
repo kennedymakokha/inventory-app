@@ -25,11 +25,11 @@ import { Animated } from 'react-native';
 
 interface CheckoutModalProps {
   modalVisible: boolean;
-  isDarkMode?:any
-  setMsg?:any
-  msg?:any;
+  isDarkMode?: any
+  setMsg?: any
+  msg?: any;
   cartItems: CartItem[];
-  PostLocally: () => void;
+  PostLocally: any;
   setModalVisible: (v: boolean) => void;
 }
 
@@ -104,7 +104,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
         total: grandTotal,
         timestamp: new Date().toISOString(),
       };
-
+      PostLocally(receiptNo, method, phoneNumber, paidAmount); // Clear cart
       const buildReceiptText = ({
         receiptNo,
         invoiceId,
@@ -179,7 +179,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
         });
       }
 
-      PostLocally(); // Clear cart
+
       setPhoneNumber('');
       setAmountGiven('');
       setModalVisible(false);
@@ -190,28 +190,28 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
       setProcessing(false);
     }
   };
-const pulseAnim = useRef(new Animated.Value(1)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
-useEffect(() => {
-  if (!selectedPrinterMac) {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.1,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  } else {
-    pulseAnim.setValue(1);
-  }
-}, [selectedPrinterMac]);
+  useEffect(() => {
+    if (!selectedPrinterMac) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.1,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [selectedPrinterMac]);
   return (
     <Modal animationType="fade" transparent={false} visible={modalVisible}>
       <SafeAreaView className="flex-1 bg-slate-900 pt-20">
@@ -276,8 +276,8 @@ useEffect(() => {
             <TouchableOpacity
               onPress={() => setPaymentMethod('CASH')}
               className={` w-1/3 py-5 rounded-3xl items-center border-2 ${paymentMethod === 'CASH'
-                  ? 'border-green-500 bg-green-500/10'
-                  : 'border-slate-800 bg-slate-900'
+                ? 'border-green-500 bg-green-500/10'
+                : 'border-slate-800 bg-slate-900'
                 }`}
             >
               <Icon name="wallet" color={paymentMethod === 'CASH' ? '#22c55e' : '#475569'} size={24} />
@@ -292,8 +292,8 @@ useEffect(() => {
             <TouchableOpacity
               onPress={() => setPaymentMethod('MPESA')}
               className={`w-1/3 py-5 rounded-3xl items-center border-2 ${paymentMethod === 'MPESA'
-                  ? 'border-green-500 bg-green-500/10'
-                  : 'border-slate-800 bg-slate-900'
+                ? 'border-green-500 bg-green-500/10'
+                : 'border-slate-800 bg-slate-900'
                 }`}
             >
               <Icon
@@ -362,8 +362,8 @@ useEffect(() => {
               }
               disabled={processing || (paymentMethod === 'CASH' && !amountGiven)}
               className={`py-6 rounded-3xl items-center justify-center shadow-xl ${processing || (paymentMethod === 'CASH' && !amountGiven)
-                  ? 'bg-slate-700'
-                  : 'bg-green-600'
+                ? 'bg-slate-700'
+                : 'bg-green-600'
                 }`}
             >
               <Text className="text-white font-black text-lg uppercase tracking-widest">
@@ -388,19 +388,22 @@ useEffect(() => {
 
       {/* PRINTER LINK */}
 
-    
-    <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-  <TouchableOpacity
-    onPress={() => setShowPrinterModal(true)}
-    className={`p-2 rounded flex-row items-center ${
-      selectedPrinterMac ? "bg-slate-700" : "bg-red-600"
-    }`}
-  >
-    <Text className="text-white">
-      🖨 {selectedPrinterMac ? "Printer Linked" : "No Printer Linked"}
-    </Text>
-  </TouchableOpacity>
-</Animated.View>
+
+      <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+        <View className='flex items-center justify-center b' style={{ backgroundColor: theme.background }}>
+
+          <TouchableOpacity
+            onPress={() => setShowPrinterModal(true)}
+            className={`p-2 rounded w-1/2 justify-center flex-row items-center ${selectedPrinterMac ? "bg-slate-700" : "bg-red-600 "
+              }`}
+          >
+            <Text className="text-white text-center">
+              🖨 {selectedPrinterMac ? "Printer Linked" : "No Printer Linked"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+      </Animated.View>
 
 
 

@@ -18,7 +18,7 @@ import { getProducts } from '../../services/product.service';
 import { getDBConnection } from '../../services/db-service';
 import { CartItem, DataSales, ProductItem } from '../../../models';
 import CheckoutModal from './components/checkout';
-import { createSalesTable, fetchCumulativeProfit, fetchSales, finalizeSale } from '../../services/sales.service';
+import { createSalesTable,  finalizeSale } from '../../services/sales.service';
 import Toast from '../../components/Toast';
 import { useSearch } from '../../context/searchContext';
 import { useSettings } from '../../context/SettingsContext';
@@ -41,12 +41,11 @@ const SalesScreen = () => {
     const [sellingPrices, setSellingPrices] = useState<Record<string, string>>({});
     const [state, setState] = useState<Record<string, boolean>>({});
     const [datasales, setdataSales] = useState<DataSales | null>(null);
-    const [postSale] = useCreateSaleMutation()
     const theme = isDarkMode ? Theme.dark : Theme.light;
 
     useEffect(() => {
         loadData();
-        
+
     }, []);
 
     const loadData = async () => {
@@ -54,16 +53,11 @@ const SalesScreen = () => {
         const db = await getDBConnection();
         const fetchedProducts: ProductItem[] = await getProducts(db);
         setProducts(fetchedProducts);
-        fetchProfits();
+        
         setLoading(false);
     };
 
-    const fetchProfits = async () => {
-        const db = await getDBConnection();
-        const data = await fetchCumulativeProfit(db, "today");
-        setdataSales(data);
-    };
-
+    
     const handleBarcodeScanned = (event: any) => {
         const code = event.nativeEvent.codeStringValue;
         if (!code) return;
@@ -124,11 +118,13 @@ const SalesScreen = () => {
         setSellingPrices((prev) => ({ ...prev, [product.id]: '' }));
     };
 
-    const PostSale = async () => {
+    const PostSale = async (
+        recieptNo: string, method: string, phone?: string, paidAmount?: string
+    ) => {
         try {
             const db = await getDBConnection();
-    
-            await finalizeSale(db, cart);
+
+            await finalizeSale(db, cart, { recieptNo, method, phone, paidAmount });
             await loadData();
             setModalVisible(false);
             setQuantities({});
@@ -169,7 +165,7 @@ const SalesScreen = () => {
                         className="px-2 py-1 rounded-full"
                     >
                         <Text style={{ color: '#fff', fontSize: 12 }}>
-                            {item.quantity} in stock 
+                            {item.quantity} in stock
                         </Text>
                     </View>
                 </View>
@@ -289,19 +285,8 @@ const SalesScreen = () => {
         item?.product_name?.toLowerCase().includes(query?.toLowerCase()) ||
         (item.barcode && item.barcode.includes(query))
     );
-    const fetch = async () => {
-        const db = await getDBConnection();
-        fetchSales(db).then((data) => {
-            // setdataSales(data)
-            console.log(data)
-        }).catch((err) => {
-            console.log(err)
-        }
-        )
-    }
-    useEffect(() => {
-        fetch();
-    }, [])
+  
+   
 
     return (
         <KeyboardAvoidingView
@@ -348,7 +333,7 @@ const SalesScreen = () => {
             />
             {/* )} */}
 
-           {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
+            {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
 
             {cart.length > 0 && (
                 <View

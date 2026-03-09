@@ -90,6 +90,8 @@ export type InputProps = {
 export type CartItem = {
     id: string | any;
     product_name: string;
+    receipt_number?: string
+    payment_method?: string
     product_id: string;
     price: number;
     quantity: number;

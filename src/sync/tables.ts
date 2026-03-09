@@ -22,5 +22,13 @@ export const syncTables = [
         updatedSinceEndpoint: "/api/sales/updated-since",
         lastSyncKey: "sales_last_sync",
         payloadKey: "sales",
-    }
+    },
+    {
+        tableName: "Inventory_log",
+        primaryKey: "inventory_log_id",
+        bulkEndpoint: "/api/inventory-logs/bulk",
+        updatedSinceEndpoint: "/api/inventory-logs/updated-since",
+        lastSyncKey: "inventory_log_last_sync",
+        payloadKey: "inventories",
+    },
 ];

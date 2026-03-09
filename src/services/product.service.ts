@@ -44,102 +44,68 @@ export const createProductTable = async () => {
   }
 };
 
-export const createInventorylogTable = async () => {
-  try {
-    const db = await getDBConnection();
-    await createTableIfNotExists(
-      db,
-      'Inventory_log',
-      `CREATE TABLE Inventory_log (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        product_id TEXT UNIQUE,
-        type TEXT,
-        business TEXT,
-        quantity INTEGER DEFAULT 0,
-        synced INTEGER DEFAULT 0,
-        note TEXT,
-        createdAt TEXT,
-        createdBy TEXT,
-        updatedAt TEXT
-      );`
-    );
-  } catch (err) {
-    console.error('❌ createProductTable failed:', err);
-    throw err;
-  }
-};
+
 /* =========================================================
    UTILITY
 ========================================================= */
 
-export function generateId(prefix: string) {
-  return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
-}
 
 
 /* =========================================================
    PRODUCT CREATION
 ========================================================= */
-
-export const createProduct = async (
-
-  product: any,
-
-) => {
+export const createProduct = async (product: any) => {
   const db = await getDBConnection();
   const now = new Date().toISOString();
   const createdBy = await AsyncStorage.getItem("userId");
   const productId = uuidv4();
 
-  const state = await NetInfo.fetch();
-  let synced = 0;
+  db.transaction((tx) => {
 
+    tx.executeSql(
+      `INSERT INTO Product
+      (product_id, product_name, barcode, business,
+       price, Bprice, soldprice, category_id,
+       description, quantity, synced,
+       expiryDate, createdAt, createdBy, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        productId,
+        product.product_name,
+        product.barcode || "",
+        product.business_id || "",
+        product.price,
+        product.Bprice,
+        product.soldprice || 0,
+        product.category_id || "",
+        product.description || "",
+        product.initial_stock || 0,
+        0,
+        product.expiryDate || "",
+        now,
+        createdBy,
+        now
+      ]
+    );
 
-  await db.executeSql(`
-    INSERT INTO Product
-    (product_id, product_name, barcode, business,
-     price, Bprice, soldprice, category_id,
-     description, quantity, synced,
-     expiryDate, createdAt, createdBy, updatedAt)
+    tx.executeSql(
+      `INSERT INTO Inventory_log
+      (product_id, quantity, business, reference_type, note, createdBy, synced, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        productId,
+        product.initial_stock || 0,
+        product.business_id || "",
+        "INITIAL_STOCK",
+        "Initial product stock",
+        createdBy,
+        0,
+        now
+      ]
+    );
 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `, [
-    productId,
-    product.product_name,
-    product.barcode || "",
-    product.business_id || "",
-    product.price,
-    product.Bprice,
-    product.soldprice || 0,
-    product.category_id || "",
-    product.description || "",
-    product.initial_stock || 0,
-    synced,
-    product.expiryDate || "",
-    now,
-    createdBy,
-    now
-  ]);
-
-
-  /* INVENTORY LEDGER ENTRY */
-
-  await db.executeSql(`
-    INSERT INTO Inventory_log
-    (product_id, type, quantity, note, createdBy, synced, createdAt)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `, [
-    productId,
-    "INITIAL_STOCK",
-    product.initial_stock || 0,
-    "Initial product stock",
-    createdBy,
-    synced,
-    now
-  ]);
-
+  });
 };
-
 
 export const softDeleteProduct = async (
   id: any
@@ -211,7 +177,7 @@ export const createSale = async (
 
     for (const item of cartItems) {
 
-      const saleId = generateId("SALE");
+      const saleId = uuidv4()
 
       let synced = 0;
 
@@ -311,6 +277,32 @@ export const getProducts = async (
       WHERE deleted_at IS NULL
        ORDER BY id DESC
        LIMIT ? OFFSET ?`,
+      [limit, offset]
+    );
+
+    const products: ProductItem[] = [];
+
+    for (let i = 0; i < results.rows.length; i++) {
+      products.push(results.rows.item(i));
+    }
+
+    return products;
+  } catch (error) {
+    console.log("❌ getProducts error:", error);
+    return [];
+  }
+};
+
+
+export const SearchProduct = async (
+  db: SQLiteDatabase,
+  limit: number = 20,
+  offset: number = 0
+): Promise<ProductItem[]> => {
+  try {
+    const [results] = await db.executeSql(
+      `SELECT * FROM Product
+WHERE product_name LIKE '%milk%'`,
       [limit, offset]
     );
 

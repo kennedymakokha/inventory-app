@@ -32,7 +32,7 @@ import AddProductModal from './components/addProductModal';
 import UploadProductsModal from './components/uploadProduct.modal';
 import PageHeader from '../../components/pageHeader';
 import Icon from 'react-native-vector-icons/Feather';
-import { createInventoryTable } from '../../services/inventory.service';
+
 import { useSearch } from '../../context/searchContext';
 import RadialFab from '../../components/multiFab';
 import { getCategories } from '../../services/category.service';
@@ -43,6 +43,7 @@ import { useCreateProductMutation } from '../../services/productApi';
 import { validateItem } from '../validations/product.validation';
 import { useSelector } from 'react-redux';
 import Toast from '../../components/Toast';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
@@ -83,7 +84,7 @@ const ProductScreen = () => {
     const [msg, setMsg] = useState({ msg: "", state: "" });
     const [offset, setOffset] = useState(0);
     const [hasMore, setHasMore] = useState(true);
-
+    const [saving, setSaving] = useState(false);
     const PAGE_SIZE = 20;
     const loadProducts = async () => {
         if (loading || !hasMore) return;
@@ -129,9 +130,11 @@ const ProductScreen = () => {
     };
 
     const handleAddProduct = async () => {
+        if (saving) return;   // 🚨 prevents duplicate calls
         if (!validateItem(item, setMsg)) return;
 
         try {
+            setSaving(true);
 
             if (item.product_id) {
                 await updateProduct(item);
@@ -147,6 +150,8 @@ const ProductScreen = () => {
 
         } catch (error: any) {
             setMsg({ msg: error.message || "❌ Error saving product.", state: "error" });
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -156,22 +161,63 @@ const ProductScreen = () => {
         return matchesSearch && matchesCategory;
     });
 
+
     const handleRestock = async () => {
         if (!selectedProduct || !restockQty) return;
+
         const qty = parseInt(restockQty);
         if (isNaN(qty)) return;
 
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        try {
+            const db = await getDBConnection();
+            const now = new Date().toISOString();
+            const createdBy = await AsyncStorage.getItem("userId");
 
-        const updated = products.map(p =>
-            p.id === selectedProduct.id
-                ? { ...p, quantity: p.quantity + qty }
-                : p
-        );
+            const newQty = selectedProduct.quantity + qty;
 
-        setProducts(updated);
-        setRestockModalVisible(false);
-        setRestockQty('');
+            // update product quantity
+            await db.executeSql(
+                `UPDATE Product 
+             SET quantity = ?, updatedAt = ?, synced = 0
+             WHERE product_id = ?`,
+                [newQty, now, selectedProduct.product_id]
+            );
+
+            // add inventory log
+            await db.executeSql(
+                `INSERT INTO Inventory_log
+            (product_id, reference_type, quantity,business, note, createdBy, synced, createdAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    selectedProduct.product_id,
+                    "RESTOCK",
+
+                    qty,
+                    business._id,
+                    "Manual restock",
+                    createdBy,
+                    0,
+                    now
+                ]
+            );
+
+            // update UI
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
+            setProducts(prev =>
+                prev.map(p =>
+                    p.product_id === selectedProduct.product_id
+                        ? { ...p, quantity: newQty }
+                        : p
+                )
+            );
+
+            setRestockModalVisible(false);
+            setRestockQty('');
+
+        } catch (err) {
+            console.log("Restock error:", err);
+        }
     };
     const handleDelete = async (prod: ProductItem) => {
         try {
@@ -371,7 +417,7 @@ const ProductScreen = () => {
                         />
 
                         <TouchableOpacity
-                            onPress={handleRestock}
+                            onPress={() => handleRestock()}
                             style={styles.confirmBtn}
                         >
                             <Text style={{ color: '#fff', fontWeight: '700' }}>
@@ -386,7 +432,7 @@ const ProductScreen = () => {
                 setMsg={setMsg}
                 msg={msg}
                 categories={categories}
-                PostLocally={handleAddProduct}
+                PostLocally={() => handleAddProduct()}
                 loading={loading}
                 modalVisible={modalVisible}
                 setItem={setItem}
