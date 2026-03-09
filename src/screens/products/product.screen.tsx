@@ -44,7 +44,7 @@ import { validateItem } from '../validations/product.validation';
 import { useSelector } from 'react-redux';
 import Toast from '../../components/Toast';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import { v4 as uuidv4 } from "uuid";
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
 
@@ -182,13 +182,14 @@ const ProductScreen = () => {
              WHERE product_id = ?`,
                 [newQty, now, selectedProduct.product_id]
             );
-
+            const inve_id = uuidv4();
             // add inventory log
             await db.executeSql(
                 `INSERT INTO Inventory_log
-            (product_id, reference_type, quantity,business, note, createdBy, synced, createdAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            (inventory_log_id,product_id, reference_type, quantity,business, note, createdBy, synced, createdAt)
+            VALUES (?,?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
+                    inve_id,
                     selectedProduct.product_id,
                     "RESTOCK",
 

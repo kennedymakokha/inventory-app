@@ -111,10 +111,12 @@ export const createRefundItemsTable = async () => {
       `CREATE TABLE IF NOT EXISTS RefundItems (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           refund_id TEXT,
+          refund_item_id TEXT,
           product_id TEXT,
           product_name TEXT,
           quantity INTEGER,
           price REAL,
+          synced INTEGER DEFAULT 0,
           total REAL
         );
       );`
@@ -242,15 +244,15 @@ export const finalizeSale = async (
               return true;
             }
           );
-
+          const inv_id = uuidv4();
           // INVENTORY LOG
           tx.executeSql(
             `INSERT INTO Inventory_log
-            (product_id,type,quantity,reference_id,reference_type,createdBy,synced,createdAt)
+            (inventory_log_id,product_id,quantity,reference_id,reference_type,createdBy,synced,createdAt)
             VALUES (?,?,?,?,?,?,?,?)`,
             [
+              inv_id,
               item.product_id,
-              "SALE",
               item.quantity,
               saleId,
               "SALE",
@@ -265,11 +267,13 @@ export const finalizeSale = async (
             }
           );
         }
+        const paymentId = uuidv4();
         tx.executeSql(
           `INSERT INTO Payments
-    (sale_id, method, amount, created_at)
-    VALUES (?, ?, ?, datetime('now'))`,
+    (payment_id,sale_id, method, amount, created_at)
+    VALUES (?,?, ?, ?, datetime('now'))`,
           [
+            paymentId,
             saleId,
             data.method,
             total

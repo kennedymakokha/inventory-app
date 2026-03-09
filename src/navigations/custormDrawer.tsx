@@ -4,36 +4,12 @@ import {
   Text,
   TouchableOpacity,
   Image,
-  ActivityIndicator,
 } from "react-native";
 import { DrawerContentComponentProps } from "@react-navigation/drawer";
 import Icon from "react-native-vector-icons/Ionicons";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSelector } from "react-redux";
-
 import { useAuthContext } from "../context/authContext";
-
-
-import { getDBConnection } from "../services/db-service";
-
-
-import { getNow } from "../../utils";
-
-import {
-  useBulksyncProductsMutation,
-  usePullupdatedProductsinceQuery,
-} from "../services/productApi";
-
-import {
-  usePullinventoryQuery,
-  useSyncInventoryMutation,
-} from "../services/inventoryApi";
-
-import {
-  usePullSalesQuery,
-  useSyncSalesMutation,
-} from "../services/salesApi";
 import { useSettings } from "../context/SettingsContext";
 import { Theme } from "../utils/theme";
 import { calculateExpectedCash } from "../services/closeOpen.service";
@@ -131,9 +107,8 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
       {menuItem("Home", "home-outline", "dashboard")}
       {menuItem("Products", "swap-horizontal-outline", "products")}
       {menuItem("Categories", "grid-outline", "categories")}
-      {menuItem("Inventory", "cube-outline", "inventory")}
       {menuItem("Sales", "cart-outline", "sales")}
-      {menuItem("Sales Report", "book-outline", "salesreport")}
+      {menuItem("Reports", "book-outline", "salesreport")}
       {menuItem("Settings", "settings-outline", "settings")}
 
       {/* Sync Button */}

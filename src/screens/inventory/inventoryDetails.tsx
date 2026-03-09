@@ -91,15 +91,7 @@ const InventoryDetails: React.FC = ({ route, navigation }: any) => {
         }))
     }, [data])
 
-    const FooterLoader = () => {
-        if (!loadingMore) return null
-
-        return (
-            <View className="py-4">
-                <ActivityIndicator size="small" color="#4ade80" />
-            </View>
-        )
-    }
+ 
 
     const EmptyState = () => {
         if (loading) return null

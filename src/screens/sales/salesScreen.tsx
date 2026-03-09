@@ -18,7 +18,7 @@ import { getProducts } from '../../services/product.service';
 import { getDBConnection } from '../../services/db-service';
 import { CartItem, DataSales, ProductItem } from '../../../models';
 import CheckoutModal from './components/checkout';
-import { createSalesTable,  finalizeSale } from '../../services/sales.service';
+import { createSalesTable, finalizeSale } from '../../services/sales.service';
 import Toast from '../../components/Toast';
 import { useSearch } from '../../context/searchContext';
 import { useSettings } from '../../context/SettingsContext';
@@ -53,11 +53,11 @@ const SalesScreen = () => {
         const db = await getDBConnection();
         const fetchedProducts: ProductItem[] = await getProducts(db);
         setProducts(fetchedProducts);
-        
+
         setLoading(false);
     };
 
-    
+
     const handleBarcodeScanned = (event: any) => {
         const code = event.nativeEvent.codeStringValue;
         if (!code) return;
@@ -285,8 +285,8 @@ const SalesScreen = () => {
         item?.product_name?.toLowerCase().includes(query?.toLowerCase()) ||
         (item.barcode && item.barcode.includes(query))
     );
-  
-   
+
+
 
     return (
         <KeyboardAvoidingView
@@ -322,6 +322,7 @@ const SalesScreen = () => {
                     </View>
                 </View>
             } />
+            {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
 
             {/* {loading ? <SkeletonList /> : ( */}
             <FlatList
@@ -333,7 +334,6 @@ const SalesScreen = () => {
             />
             {/* )} */}
 
-            {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
 
             {cart.length > 0 && (
                 <View

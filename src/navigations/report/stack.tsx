@@ -3,6 +3,7 @@ import { useSettings } from "../../context/SettingsContext";
 import { defaultHeaderOptions } from "../navigationOptions";
 import { ReportStackParamList } from "../../../models/navigationTypes";
 import SalesReport from "../../screens/reports/sales";
+import { ReportsTabs } from "./tabs";
 
 export function ReportStack() {
   const { isDarkMode } = useSettings();
@@ -11,7 +12,7 @@ const ReportStackNav = createNativeStackNavigator<ReportStackParamList>();
     <ReportStackNav.Navigator screenOptions={defaultHeaderOptions(isDarkMode)}>
       <ReportStackNav.Screen
         name="salesReport"
-        component={SalesReport}
+        component={ReportsTabs}
         options={{ headerShown: false }}
       />
     </ReportStackNav.Navigator>

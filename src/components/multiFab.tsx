@@ -1,11 +1,5 @@
 import React, { useRef, useState } from 'react';
-import {
-  View,
-  TouchableOpacity,
-  Animated,
-  Easing,
-  StyleSheet,
-} from 'react-native';
+import { View, TouchableOpacity, Animated, Easing, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 export interface ActionButton {
@@ -16,7 +10,8 @@ export interface ActionButton {
 }
 
 interface RadialFabProps {
-  actions: ActionButton[];
+  actions?: ActionButton[];
+  mainAction?: () => void; // optional main action if no sub-actions
   mainColor?: string;
   mainIcon?: keyof typeof Ionicons.glyphMap;
   position?: { bottom: number; right: number };
@@ -25,8 +20,9 @@ interface RadialFabProps {
 }
 
 const RadialFab = ({
-  actions,
-  mainColor = '#16a34a', // POS green
+  actions = [],
+  mainAction,
+  mainColor = '#16a34a',
   mainIcon = 'menu',
   position = { bottom: 25, right: 25 },
   radius = 100,
@@ -36,6 +32,12 @@ const RadialFab = ({
   const animation = useRef(new Animated.Value(0)).current;
 
   const toggleFab = () => {
+    if (!actions || actions.length === 0) {
+      // If no actions, trigger mainAction directly
+      mainAction?.();
+      return;
+    }
+
     Animated.timing(animation, {
       toValue: open ? 0 : 1,
       duration: 260,
@@ -48,56 +50,57 @@ const RadialFab = ({
 
   return (
     <View style={[styles.container, { bottom: position.bottom, right: position.right }]}>
+      {/* Render sub-actions only if actions exist */}
+      {actions && actions.length > 0 &&
+        actions.map((action, index) => {
+          const step = actions.length > 1 ? angle / (actions.length - 1) : 0;
+          const theta = (step * index * Math.PI) / 180;
 
-      {actions.map((action, index) => {
-        const step = actions.length > 1 ? angle / (actions.length - 1) : 0;
-        const theta = (step * index * Math.PI) / 180;
+          const translateX = animation.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, -radius * Math.cos(theta)],
+          });
 
-        const translateX = animation.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, -radius * Math.cos(theta)],
-        });
+          const translateY = animation.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, -radius * Math.sin(theta)],
+          });
 
-        const translateY = animation.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, -radius * Math.sin(theta)],
-        });
+          const scale = animation.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0.6, 0.85],
+          });
 
-        const scale = animation.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0.6, 0.85], // smaller than main FAB
-        });
+          const opacity = animation.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, 1],
+          });
 
-        const opacity = animation.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, 1],
-        });
-
-        return (
-          <Animated.View
-            key={index}
-            style={[
-              styles.smallFab,
-              {
-                transform: [{ translateX }, { translateY }, { scale }],
-                opacity,
-                backgroundColor: action.color || '#22c55e',
-              },
-            ]}
-          >
-            <TouchableOpacity
-              onPress={() => {
-                action.onPress();
-                toggleFab(); // auto close after press
-              }}
-              activeOpacity={0.8}
-              style={styles.actionButton}
+          return (
+            <Animated.View
+              key={index}
+              style={[
+                styles.smallFab,
+                {
+                  transform: [{ translateX }, { translateY }, { scale }],
+                  opacity,
+                  backgroundColor: action.color || '#22c55e',
+                },
+              ]}
             >
-              <Ionicons name={action.icon} size={20} color="#fff" />
-            </TouchableOpacity>
-          </Animated.View>
-        );
-      })}
+              <TouchableOpacity
+                onPress={() => {
+                  action.onPress();
+                  toggleFab(); // auto close after press
+                }}
+                activeOpacity={0.8}
+                style={styles.actionButton}
+              >
+                <Ionicons name={action.icon} size={20} color="#fff" />
+              </TouchableOpacity>
+            </Animated.View>
+          );
+        })}
 
       {/* Main FAB */}
       <TouchableOpacity
@@ -132,7 +135,7 @@ const styles = StyleSheet.create({
   },
 
   smallFab: {
-    width: 48, // smaller
+    width: 48,
     height: 48,
     borderRadius: 24,
     position: 'absolute',

@@ -16,7 +16,7 @@ const InventoryStackNav = createNativeStackNavigator<InventoryStackParamList>();
       <InventoryStackNav.Screen
         name="inventory_Dashboard"
         component={InventoryScreen}
-        options={{ header: () => <CustomHeaderWithSearch noSearch title="Inventory" /> }}
+        options={{   headerShown: false, }}
       />
       <InventoryStackNav.Screen
         name="inventory_Details"

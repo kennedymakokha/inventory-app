@@ -1,57 +1,102 @@
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import SalesReportTable from '../components/salesTable';
 import PageHeader from '../../../components/pageHeader';
-import { getDBConnection } from '../../../services/db-service';
-
-import {
-  adminFilter,
-  Adminheaders,
-  getadminSalesReportData,
-  getSalesReportData,
-  salesFilter,
-  salesheaders
-} from '../../../../utils/getsalesdata';
-
-import { DataSales } from '../../../../models';
+import { getProductSalesReport, getTopProducts } from '../../../services/analytics.service';
+import { adminFilter, salesFilter } from '../../../../utils/getsalesdata';
 import { useSettings } from '../../../context/SettingsContext';
 import { Theme } from '../../../utils/theme';
+import PieChart from '../../dashbordItems/PieChart';
+import RadialFab from '../../../components/multiFab';
+
+const PAGE_SIZE = 10;
 
 const SalesReport = () => {
-  const { user, themeMode } = useSelector((state: any) => state.auth); // themeMode: "light" | "dark"
-    const { isDarkMode } = useSettings();
-    const theme = isDarkMode ? Theme.dark : Theme.light;
+  const { user } = useSelector((state: any) => state.auth);
+  const { isDarkMode } = useSettings();
+  const theme = isDarkMode ? Theme.dark : Theme.light;
 
-  const [datasales, setdataSales] = useState<DataSales | null>(null);
-  const [sales, setSales] = useState([]);
+  const [sales, setSales] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [state, setState] = useState<Record<string, boolean>>({});
+  const [loadingMore, setLoadingMore] = useState(false);
   const [filter, setFilter] = useState('All');
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [state, setState] = useState<Record<string, boolean>>({});
+  const [TopProducts, setTopProducts] = useState([]);
+  const [showPie, setShowPie] = useState(false); // toggle state
+
+  const filterData = user?.role === 'superAdmin' || user?.role === 'admin' ? adminFilter : salesFilter;
+
+  const fetchSales = async (pageNumber = 1, append = false) => {
+    try {
+      if (pageNumber === 1) setLoading(true);
+      else setLoadingMore(true);
+
+      const selectedFilter = filterData.find((f) => f.title === filter);
+      const filterId = selectedFilter ? selectedFilter.id : 0;
+
+      const report = await getProductSalesReport({
+        userRole: user.role === 'sales' ? 'sales' : 'admin',
+        userId: user.id,
+        filterId,
+        page: pageNumber,
+        pageSize: PAGE_SIZE,
+      });
+
+      if (append) setSales((prev) => [...prev, ...report]);
+      else setSales(report);
+
+      setHasMore(report.length === PAGE_SIZE);
+    } catch (err) {
+      console.error('Error fetching sales report:', err);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchProfits = async () => {
-      setLoading(true);
-      const db = await getDBConnection();
-      // fetchCumulativeProfit(db, filter.toLowerCase(), (data: any) => {
-      //   setdataSales(data);
-      //   setLoading(false);
-      // });
-      // fetchGroupedProfit(db, filter.toLowerCase(), (data: any) => {
-      //   setSales(data);
-      //   setLoading(false);
-      // });
-    };
-    fetchProfits();
+    setPage(1);
+    fetchSales(1, false);
   }, [filter]);
 
-  const filterData: any = user?.role === 'superAdmin' ? adminFilter : salesFilter;
+  useEffect(() => {
+    const load = async () => {
+      const tp: any = await getTopProducts();
+      setTopProducts(tp);
+    };
+    load();
+  }, []);
+
+  const loadMore = () => {
+    if (!hasMore || loadingMore) return;
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchSales(nextPage, true);
+  };
+
+  // Format sales data for pie chart: [{ key, value }]
+  const pieData = sales.map((item) => ({
+    key: item.product_name,
+    value: Number(item.total_sales || 0),
+  }));
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
+      {/* Filter Tabs */}
       <PageHeader
         component={() => (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-around', gap: 4, paddingVertical: 12 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              justifyContent: 'space-around',
+              gap: 4,
+              paddingVertical: 12,
+            }}
+          >
             {filterData.map((tab: any) => {
               const isActive = state[tab.id] && filter === tab.title;
               return (
@@ -70,12 +115,14 @@ const SalesReport = () => {
                     backgroundColor: isActive ? theme.elevated : theme.card,
                   }}
                 >
-                  <Text style={{
-                    textAlign: 'center',
-                    fontWeight: '600',
-                    color: isActive ? theme.text : theme.subText,
-                    textTransform: 'capitalize',
-                  }}>
+                  <Text
+                    style={{
+                      textAlign: 'center',
+                      fontWeight: '600',
+                      color: isActive ? theme.text : theme.subText,
+                      textTransform: 'capitalize',
+                    }}
+                  >
                     {tab.title}
                   </Text>
                 </TouchableOpacity>
@@ -85,18 +132,59 @@ const SalesReport = () => {
         )}
       />
 
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginVertical: 8 }}>
-        <Text style={{ fontSize: 18, fontWeight: 'bold', textTransform: 'uppercase', color: Theme.success }}>
-          {filter} Sales Report
-        </Text>
-        <Text style={{ fontWeight: 'bold', color: Theme.primary, letterSpacing: 1 }}>
-          {datasales?.total_sales_revenue}/-
-        </Text>
-      </View>
 
-      <SalesReportTable
-        headers={user?.role === 'superAdmin' ? Adminheaders : salesheaders}
-        data={user?.role === 'superAdmin' ? getadminSalesReportData(sales) : getSalesReportData(sales)}
+      <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+        {showPie ? (
+          <PieChart title={` ${filter} Sales Report`} data={pieData.length ? pieData : TopProducts} />
+        ) : (
+          <>
+            {/* Report Header */}
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingHorizontal: 20,
+                marginVertical: 8,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: 'bold',
+                  textTransform: 'uppercase',
+                  color: Theme.success,
+                }}
+              >
+                {filter} Sales Report
+              </Text>
+            </View>
+
+            {/* Sales Table */}
+            <SalesReportTable
+              headers={[
+                { key: 'product_name', label: 'Name', width: 180 },
+                { key: 'quantity_sold', label: 'Quantity' },
+                { key: 'total_sales', label: 'Sales' },
+              ]}
+              data={sales}
+              onEndReached={loadMore}
+              loading={loading || loadingMore}
+              rowKey={(item) => `${item.product_id}`}
+            />
+          </>
+        )}
+      </ScrollView>
+      <RadialFab
+        mainColor={Theme.primary}
+        mainIcon={showPie ? "list" : "menu"}
+        radius={120}
+        angle={90}
+        mainAction={() => setShowPie(!showPie)}
+        actions={showPie ? [] : [
+          { icon: 'pie-chart-outline', label: 'Pie Chart ', onPress: () => setShowPie(!showPie) },
+          { icon: 'cloud-download-outline', label: 'Download', onPress: () => console.log(true) },
+        ]}
       />
     </View>
   );

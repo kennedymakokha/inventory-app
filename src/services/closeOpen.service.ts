@@ -41,6 +41,7 @@ export const createPaymentsTable = async () => {
             'Payments',
             `CREATE TABLE IF NOT EXISTS Payments (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
+              payment_id TEXT UNIQUE,
               sale_id TEXT,
               method TEXT,
               amount REAL,

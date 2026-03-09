@@ -1,8 +1,19 @@
 import 'react-native-get-random-values';
-import React, { useEffect, useRef } from 'react';
-import { StatusBar, View, Text, PermissionsAndroid, Platform, ActivityIndicator } from 'react-native';
+import React, { useEffect } from 'react';
+import {
+StatusBar,
+View,
+Text,
+PermissionsAndroid,
+Platform,
+ActivityIndicator,
+StyleSheet
+} from 'react-native';
+
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import NetInfo from "@react-native-community/netinfo";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { store, persistor } from './store';
@@ -14,154 +25,296 @@ import { useTokenExpiryWatcher } from './src/hooks/useTokenExpiryWatcher';
 import { RootDrawer } from './src/navigations/rootDrawer';
 import { AuthStack } from './src/navigations/auth/stack';
 
-import { startGlobalAutoSync } from './src/sync/netinfo';
+import { globalSync } from './src/sync';
 import { syncTables } from './src/sync/tables';
+
 import { getDBConnection } from './src/services/db-service';
 import { createRefundItemsTable, createRefundsTable, createSalesItemTable, createSalesTable } from './src/services/sales.service';
 import { createCategoryTable } from './src/services/category.service';
 import { createProductTable } from './src/services/product.service';
-import { createTableIfNotExists } from './src/utils/tableExists';
-import "./global.css";
-import { globalSync } from './src/sync';
 import { createInventorylogTable } from './src/services/inventory.service';
 import { createCashRegisterTable, createPaymentsTable } from './src/services/closeOpen.service';
 
-/* 🔹 Global flag to ensure tables are created only once */
+import { SyncLoader } from './src/sync/SyncLoader';
+
+import "./global.css";
+
+/* -------------------------------- */
+/* Global Guards */
+/* -------------------------------- */
+
 let tablesInitialized = false;
+let syncing = false;
+
+/* -------------------------------- */
+/* Sync Wrapper */
+/* -------------------------------- */
+
+const safeSync = async () => {
+
+const token = await AsyncStorage.getItem("accessToken");
+
+if (!token) {
+console.log("⛔ No token → skipping sync");
+return;
+}
+
+if (syncing) return;
+
+syncing = true;
+
+try {
+await globalSync(syncTables);
+} catch (e) {
+console.log("Sync error:", e);
+} finally {
+syncing = false;
+}
+
+};
+
+/* -------------------------------- */
+/* Main App */
+/* -------------------------------- */
 
 function App(): React.JSX.Element {
 
-  /* ---------------- AUTH ---------------- */
-  const AppWithAuth = () => {
-    const { token, logout } = useAuthContext();
-    const [checkingToken, setCheckingToken] = React.useState(true);
+/* -------------------------------- */
+/* AUTH FLOW */
+/* -------------------------------- */
 
-    useTokenExpiryWatcher(token, logout);
+const AppWithAuth = () => {
 
-    // Simulate token check/loading
-    useEffect(() => {
-      setCheckingToken(false);
-    }, [token]);
 
-    if (checkingToken) {
-      return (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1e293b' }}>
-          <ActivityIndicator size="large" color="#ffffff" />
-          <Text style={{ color: 'white', marginTop: 10 }}>Checking authentication...</Text>
-        </View>
-      );
-    }
+const { token, logout } = useAuthContext();
+const [syncDone, setSyncDone] = React.useState(false);
 
-    return token ? <RootDrawer /> : <AuthStack />;
+useTokenExpiryWatcher(token, logout);
+
+/* ------------------------------- */
+/* START SYNC ONLY WHEN LOGGED IN */
+/* ------------------------------- */
+
+useEffect(() => {
+
+  if (!token) return;
+
+  let netUnsubscribe: any;
+  let interval: any;
+
+  const startSync = () => {
+
+    netUnsubscribe = NetInfo.addEventListener(state => {
+
+      if (state.isConnected && state.isInternetReachable) {
+
+        console.log("🌐 Internet detected → running sync");
+
+        safeSync();
+
+      }
+
+    });
+
+    interval = setInterval(() => {
+
+      safeSync();
+
+    }, 120000);
+
   };
 
-  /* ---------------- PERMISSIONS ---------------- */
-  const requestBluetoothPermissions = async () => {
-    if (Platform.OS !== 'android') return true;
+  startSync();
 
-    try {
-      const granted = await PermissionsAndroid.requestMultiple([
-        PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
-        PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-      ]);
+  return () => {
 
-      return (
-        granted['android.permission.BLUETOOTH_CONNECT'] === PermissionsAndroid.RESULTS.GRANTED &&
-        granted['android.permission.BLUETOOTH_SCAN'] === PermissionsAndroid.RESULTS.GRANTED
-      );
-    } catch (err) {
-      console.log('Permission error:', err);
-      return false;
-    }
+    if (netUnsubscribe) netUnsubscribe();
+    if (interval) clearInterval(interval);
+
   };
 
-  useEffect(() => {
-    const setupPermissions = async () => {
-      const granted = await requestBluetoothPermissions();
-      if (!granted) console.log('Bluetooth permission denied');
-    };
-    setupPermissions();
-  }, []);
+}, [token]);
 
-  /* ---------------- DATABASE & SYNC ---------------- */
-  useEffect(() => {
-    let unsubscribe: any;
-    let netUnsubscribe: any;
+if (!token) {
+  return <AuthStack />;
+}
 
-    const setupDB = async () => {
-      try {
-        const db = await getDBConnection();
-        //  await db.executeSql(`DROP TABLE IF EXISTS Inventory_log;`);
+if (!syncDone) {
+  return <SyncLoader onDone={() => setSyncDone(true)} />;
+}
+
+return <RootDrawer />;
+
+
+};
+
+/* -------------------------------- */
+/* BLUETOOTH PERMISSIONS */
+/* -------------------------------- */
+
+const requestBluetoothPermissions = async () => {
+
+
+if (Platform.OS !== 'android' || Platform.Version < 31) {
+  return true;
+}
+
+try {
+
+  const granted = await PermissionsAndroid.requestMultiple([
+    PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+    PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+    PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+  ]);
+
+  return (
+    granted['android.permission.BLUETOOTH_CONNECT'] === PermissionsAndroid.RESULTS.GRANTED &&
+    granted['android.permission.BLUETOOTH_SCAN'] === PermissionsAndroid.RESULTS.GRANTED
+  );
+
+} catch (err) {
+  console.log('Permission error:', err);
+  return false;
+}
+
+
+};
+
+useEffect(() => {
+
+
+const setupPermissions = async () => {
+
+  const granted = await requestBluetoothPermissions();
+
+  if (!granted) {
+    console.log('Bluetooth permission denied');
+  }
+
+};
+
+setupPermissions();
+
+
+}, []);
+
+/* -------------------------------- */
+/* DATABASE SETUP */
+/* -------------------------------- */
+
+useEffect(() => {
+
+
+const setupDB = async () => {
+
+  try {
+
+    if (tablesInitialized) return;
+
+    let db = await getDBConnection();
+// let db = await getDBConnection();
+        // await db.executeSql(`DROP TABLE IF EXISTS Inventory_log;`);
         //  await db.executeSql(`ALTER TABLE Product ADD COLUMN stock INTEGER DEFAULT 0;`);
         //  await db.executeSql(`CREATE INDEX idx_product_id ON Product(product_id);`);
         // await db.executeSql(`CREATE INDEX idx_product_id ON Product(product_id);`);
-        await createProductTable();
-        await createCategoryTable();
-        await createSalesTable();
-        await createCashRegisterTable()
-        await createInventorylogTable();
-        await createPaymentsTable()
-        await createRefundsTable();
-        await createRefundItemsTable();
-        await createSalesItemTable();
-        // Listen for internet changes
-        netUnsubscribe = NetInfo.addEventListener(async state => {
-          if (state.isConnected && state.isInternetReachable) {
-            console.log("🌐 Internet detected → running sync");
-            await globalSync(syncTables);
+
+    await createProductTable();
+    await createCategoryTable();
+    await createSalesTable();
+    await createSalesItemTable();
+
+    await createRefundsTable();
+    await createRefundItemsTable();
+
+    await createInventorylogTable();
+
+    await createCashRegisterTable();
+    await createPaymentsTable();
+
+    tablesInitialized = true;
+
+    console.log("Database ready");
+
+  } catch (err) {
+
+    console.error("DB setup failed", err);
+
+  }
+
+};
+
+setupDB();
+
+
+}, []);
+
+/* -------------------------------- */
+/* UI */
+/* -------------------------------- */
+
+return (
+
+
+<View style={styles.container}>
+
+  <StatusBar animated backgroundColor="#000000" />
+
+  <SafeAreaProvider>
+
+    <Provider store={store}>
+
+      <SettingsProvider>
+
+        <PersistGate
+          persistor={persistor}
+          loading={
+            <View style={styles.center}>
+              <ActivityIndicator size="large" color="#ffffff" />
+              <Text style={styles.loadingText}>Loading app...</Text>
+            </View>
           }
-        });
+        >
 
-        // Start periodic autosync
-        unsubscribe = startGlobalAutoSync(syncTables);
+          <AppWithAuth />
 
-        console.log("All tables ready, sync started");
-      } catch (err) {
-        console.error("DB setup failed", err);
-      }
-    };
+        </PersistGate>
 
-    setupDB();
+      </SettingsProvider>
 
-    return () => {
-      if (unsubscribe) unsubscribe();
-      if (netUnsubscribe) netUnsubscribe();
-    };
-  }, []);
+    </Provider>
 
-  // useEffect(() => {
+  </SafeAreaProvider>
 
-  //   const interval = setInterval(() => {
-  //     globalSync(syncTables);
-  //   }, 6000);
+</View>
 
-  //   return () => clearInterval(interval);
 
-  // }, []);
-  /* ---------------- UI ---------------- */
-  return (
-    <View style={{ flex: 1, backgroundColor: '#1e293b' }}>
-      <StatusBar animated backgroundColor="#000000" />
-      <SafeAreaProvider>
-        <Provider store={store}>
-          <SettingsProvider>
-            <PersistGate
-              loading={
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1e293b' }}>
-                  <ActivityIndicator size="large" color="#ffffff" />
-                  <Text style={{ color: 'white', marginTop: 10 }}>Loading app...</Text>
-                </View>
-              }
-              persistor={persistor}
-            >
-              <AppWithAuth />
-            </PersistGate>
-          </SettingsProvider>
-        </Provider>
-      </SafeAreaProvider>
-    </View>
-  );
+);
+
 }
 
 export default App;
+
+/* -------------------------------- */
+/* Styles */
+/* -------------------------------- */
+
+const styles = StyleSheet.create({
+
+container: {
+flex: 1,
+backgroundColor: '#1e293b'
+},
+
+center: {
+flex: 1,
+justifyContent: 'center',
+alignItems: 'center',
+backgroundColor: '#1e293b'
+},
+
+loadingText: {
+color: 'white',
+marginTop: 10
+}
+
+});

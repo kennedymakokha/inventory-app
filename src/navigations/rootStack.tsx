@@ -49,7 +49,7 @@ export function RootStack() {
       <RootStackNav.Screen
         name="salesreport"
         component={ReportStack}
-        options={{ header: () => <CustomHeaderWithSearch noSearch title="Sales Report" /> }}
+        options={{ headerShown: false }}
       />
       <RootStackNav.Screen
         name="settings"

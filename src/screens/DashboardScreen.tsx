@@ -1,17 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, ScrollView } from 'react-native';
 import { useSelector } from 'react-redux';
 import { useSettings } from '../context/SettingsContext';
 import { Theme } from '../utils/theme';
-import { DataSales } from '../../models';
-import { getDBConnection } from '../services/db-service';
 
-import { adminFilter, Adminheaders, getadminSalesReportData, getSalesReportData, salesFilter, salesheaders } from '../../utils/getsalesdata';
 import PageHeader from '../components/pageHeader';
-import TableContainer from './reports/components/salesTable';
 import { getLowStockProducts, getMonthlySales, getTodaySales, getTodayTransactions, getTopProducts } from '../services/analytics.service';
 import DataGraph from './dashbordItems/DataGraph';
-import AnimatedPieChart from './dashbordItems/PieChart';
+import PieChart from './dashbordItems/PieChart';
+
 
 
 
@@ -19,42 +16,14 @@ const Dashboard = () => {
   const { user } = useSelector((state: any) => state.auth);
   const { isDarkMode } = useSettings();
   const theme = isDarkMode ? Theme.dark : Theme.light;
-
-  const [db, setDb] = useState<any>(null);
-  const [dbReady, setDbReady] = useState(false);
-  const [datasales, setdataSales] = useState<DataSales | null>(null);
   const [sales, setSales] = useState<any[]>([]);
   const [lowstcks, setlowstcks] = useState<any[]>([]);
   const [monthlySales, setMonthlySales] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [filter, setFilter] = useState('All');
+
   const [TopProducts, setTopProducts] = useState([]);
 
-  const filterData = user?.role === 'superAdmin' ? adminFilter : salesFilter;
 
-  // ---------------- INIT DB ----------------
-  useEffect(() => {
-    const initDB = async () => {
-      try {
-        const connection = await getDBConnection();
-
-
-        setDb(connection);
-        setDbReady(true);
-      } catch (err) {
-        console.error('❌ Failed to initialize DB:', err);
-      }
-    };
-
-    initDB();
-  }, []);
-
-  // ---------------- FETCH SALES DATA ----------------
-  useEffect(() => {
-    if (!dbReady) return;
-
-
-  }, [dbReady, filter]);
 
   const [transactions, setTransactions] = useState(0);
 
@@ -62,18 +31,15 @@ const Dashboard = () => {
 
     const load = async () => {
 
-      const db = await getDBConnection();
-
-      const todaySales = await getTodaySales(db);
-      const tp: any = await getTopProducts(db);
-      const mS = await getMonthlySales(db)
-      console.log(mS)
+      const totalToday: any = await getTodaySales(user.role, user.id);
+      const tp: any = await getTopProducts(user.role, user.id);
+      const mS = await getMonthlySales(user.role, user.id)
       setMonthlySales(mS)
-      const todayTx = await getTodayTransactions(db);
-      const stcks = await getLowStockProducts(db);
+      const todayTx = await getTodayTransactions(user.role, user.id);
+      const stcks = await getLowStockProducts();
       setTopProducts(tp)
       setlowstcks(stcks)
-      setSales(todaySales);
+      setSales(totalToday);
       setTransactions(todayTx);
 
     };
@@ -81,16 +47,6 @@ const Dashboard = () => {
     load();
 
   }, []);
-
-  if (!dbReady) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={Theme.primary} />
-        <Text style={{ marginTop: 10, color: theme.text }}>Loading dashboard...</Text>
-      </View>
-    );
-  }
-
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: theme.background }}>
@@ -135,17 +91,13 @@ const Dashboard = () => {
         </View>
       </ScrollView>
       <DataGraph title="Top Performing Products" data={TopProducts} />
-      <AnimatedPieChart title="Monthly sales" data={TopProducts} />
+
+      <PieChart title="Monthly sales" data={monthlySales} />
 
 
 
-      {/* Sales Table */}
-      {/* <View style={{ marginHorizontal: 10, marginBottom: 20 }}>
-        <TableContainer
-          headers={user?.role === 'admin' ? Adminheaders : salesheaders}
-          data={user?.role === 'admin' ? getadminSalesReportData(sales) : getSalesReportData(sales)}
-        />
-      </View> */}
+
+
     </ScrollView>
   );
 };

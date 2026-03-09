@@ -1,7 +1,5 @@
 import { SQLiteDatabase } from "react-native-sqlite-storage";
-import { InventoryItem } from "../../models";
 import { getDBConnection } from "./db-service";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createTableIfNotExists } from "../utils/tableExists";
 
 export const createInventorylogTable = async () => {
@@ -15,7 +13,6 @@ export const createInventorylogTable = async () => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         inventory_log_id TEXT UNIQUE,
         product_id TEXT,
-        type TEXT,
         business TEXT,
         reference_id TEXT,
         reference_type TEXT,
@@ -93,7 +90,7 @@ export const getGroupedInventoryLogs = async (
             p.expiryDate,
             SUM(
               CASE 
-                WHEN l.type = 'SALE' THEN -l.quantity
+                WHEN l.reference_type = 'SALE' THEN -l.quantity
                 ELSE l.quantity
               END
             ) as qty
