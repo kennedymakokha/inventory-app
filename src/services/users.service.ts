@@ -100,35 +100,39 @@ export const getUsers = async (
 
 
 export const saveUserItems = async (
-
-  item: UserItem,
-
+  item: UserItem
 ): Promise<UserItem[]> => {
-  
-    const db = await getDBConnection();
-    const futureDate = new Date();
-    futureDate.setDate(futureDate.getDate() + 1000);
 
-    const trimmedName = item.name.trim();
-    const createdBy = await AsyncStorage.getItem("userId");
-    const now = new Date().toISOString();
+  const db = await getDBConnection();
 
-    const user_id = uuidv4();
+  const trimmedName = item.name.trim();
+  const createdBy = await AsyncStorage.getItem("userId");
+  const now = new Date().toISOString();
 
-    const checkQuery =
-      `SELECT COUNT(*) as count FROM User WHERE LOWER(name) = LOWER(?)`;
+  const user_id = uuidv4();
 
-    const checkResult = await db.executeSql(checkQuery, [trimmedName]);
-    const count = checkResult[0].rows.item(0).count;
+  // check if user exists
+  const checkQuery = `
+    SELECT COUNT(*) as count 
+    FROM User 
+    WHERE LOWER(name) = LOWER(?) 
+    AND business_id = ?
+  `;
 
-    if (count > 0) {
-      throw new Error(`User "${trimmedName}" already exists`);
-    }
+  const checkResult = await db.executeSql(checkQuery, [
+    trimmedName,
+    item.business_id
+  ]);
 
-  
-    let synced = 0;
+  const count = checkResult[0].rows.item(0).count;
 
-    const insertQuery = `
+  if (count > 0) {
+    throw new Error(`User "${trimmedName}" already exists`);
+  }
+
+  const synced = 0;
+
+  const insertQuery = `
     INSERT INTO User
     (
       name,
@@ -138,39 +142,38 @@ export const saveUserItems = async (
       phone_number,
       role,
       email,
-      createdBy,
       synced,
       createdAt,
       updatedAt
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,?,?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
-    await db.executeSql(insertQuery, [
-      trimmedName,
-      user_id,
-      item.business_id || "",
-      createdBy,
-      item.phone_number || "",
-      item.role || "",
-      item.email || "",
-      synced,
-      now,
-      now,
-    ]);
+  await db.executeSql(insertQuery, [
+    trimmedName,
+    user_id,
+    item.business_id || "",
+    createdBy,
+    item.phone_number || "",
+    item.role || "",
+    item.email || "",
+    synced,
+    now,
+    now
+  ]);
 
-    return await getUsers(db);
-  };
+  return await getUsers(db);
+};
 
-  export const softDeleteUser = async (
-    id: any
-  ) => {
-    const db = await getDBConnection();
-    await db.executeSql(
-      `UPDATE User 
+export const softDeleteUser = async (
+  id: any
+) => {
+  const db = await getDBConnection();
+  await db.executeSql(
+    `UPDATE User 
      SET deleted_at = datetime('now'),  synced = 0, updatedAt = datetime('now') 
      WHERE user_id = ?`,
-      [id]
-    );
-  };
+    [id]
+  );
+};
 

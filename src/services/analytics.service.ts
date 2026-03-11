@@ -42,27 +42,33 @@ export const getTodayTransactions = async (userRole: string, userId?: string) =>
 };
 export const getTopProducts = async (userRole: string, userId?: string) => {
     const db = await getDBConnection();
-    await createSalesItemTable()
-    await createProductTable()
-    // Role-based filter
-    let roleCondition = '';
-    if (userRole === 'sales' && userId) {
-        roleCondition = `WHERE s.createdBy = '${userId}'`;
-    }
-    // Admin sees all → no condition
 
-    const [result] = await db.executeSql(
-        `SELECT 
-        p.product_name AS key,
-        SUM(si.quantity) AS value
-     FROM SaleItems si
-     JOIN Product p ON si.product_id = p.product_id
-     JOIN Sale s ON si.sale_id = s.sale_id
-     ${roleCondition}
-     GROUP BY si.product_id
-     ORDER BY value DESC
-     LIMIT 10`
-    );
+    console.log(userId)
+
+    let query = `
+        SELECT 
+            p.product_name AS key,
+            SUM(si.quantity) AS value
+        FROM SaleItems si
+        JOIN Product p ON si.product_id = p.product_id
+        JOIN Sale s ON si.sale_id = s.sale_id
+    `;
+
+    const params: any[] = [];
+
+    // Role filter
+    if (userRole === "sales" && userId) {
+        query += ` WHERE s.createdBy = ? `;
+        params.push(userId);
+    }
+
+    query += `
+        GROUP BY si.product_id
+        ORDER BY value DESC
+        LIMIT 10
+    `;
+
+    const [result] = await db.executeSql(query, params);
 
     const products: { key: string; value: number }[] = [];
 

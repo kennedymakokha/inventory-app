@@ -26,18 +26,36 @@ const getRandomColor = () => {
     return color;
 };
 
-const PieChart: React.FC<PieChartProps> = ({ data, title }) => {
+const PieChart: React.FC<PieChartProps> = ({ data = [], title }) => {
     const { isDarkMode } = useSettings();
     const theme = isDarkMode ? Theme.dark : Theme.light;
     const { user: { role } } = useSelector((state: any) => state.auth);
+
+    // --- Empty state ---
+    if (!data || data.length === 0) {
+        return (
+            <View style={{
+                borderColor: theme.border,
+                padding: 16,
+                alignItems: "center",
+                backgroundColor: theme.background
+            }}>
+                <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 16, color: theme.text }}>
+                    {title}
+                </Text>
+                <Text style={{ color: theme.text, fontSize: 16 }}>
+                    No data available
+                </Text>
+            </View>
+        );
+    }
+
     const total = data.reduce((acc, item) => acc + item.value, 0);
     const size = 200;
     const radius = size / 2;
     const center = radius;
 
-    // Assign a color to each slice once
     const sliceColors = data.map((item) => item.color ?? getRandomColor());
-
     let cumulativeAngle = 0;
 
     const createSlice = (value: number) => {
@@ -62,21 +80,10 @@ const PieChart: React.FC<PieChartProps> = ({ data, title }) => {
                 {/* Pie chart */}
                 <Svg width={size} height={size}>
                     {data.length === 1 ? (
-                        // Single slice: draw a full circle
-                        <Circle
-                            cx={center}
-                            cy={center}
-                            r={radius}
-                            fill={sliceColors[0]}
-                        />
+                        <Circle cx={center} cy={center} r={radius} fill={sliceColors[0]} />
                     ) : (
-                        // Multiple slices: draw paths
                         data.map((item, index) => (
-                            <Path
-                                key={index}
-                                d={createSlice(item.value)}
-                                fill={sliceColors[index]}
-                            />
+                            <Path key={index} d={createSlice(item.value)} fill={sliceColors[index]} />
                         ))
                     )}
                 </Svg>
@@ -91,13 +98,13 @@ const PieChart: React.FC<PieChartProps> = ({ data, title }) => {
                                     style={{
                                         width: 14,
                                         height: 14,
-                                        backgroundColor: sliceColors[index], // reuse the same color
+                                        backgroundColor: sliceColors[index],
                                         marginRight: 8,
                                         borderRadius: 3,
                                     }}
                                 />
-                                <Text style={{ fontSize: 6, fontStyle: 'italic', color: theme.text }}>
-                                    {item.key}: {role === "admin" && item.value} ({Math.round(slicePercent)}%)
+                                <Text style={{ fontSize: 12, color: theme.text }}>
+                                    {item.key}: {role === "admin" ? item.value : ""} ({Math.round(slicePercent)}%)
                                 </Text>
                             </View>
                         );

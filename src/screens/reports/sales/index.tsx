@@ -34,18 +34,13 @@ const SalesReport = () => {
     try {
       if (pageNumber === 1) setLoading(true);
       else setLoadingMore(true);
-      let db = await getDBConnection();
-      const [salesResult] = await db.executeSql("SELECT * FROM Sale LIMIT 10");
-      console.log("Sales restored:", salesResult.rows.length);
-      // setSale(salesResult)
-      const [itemsResult] = await db.executeSql("SELECT * FROM SaleItems LIMIT 10");
-      console.log("SaleItems restored:", itemsResult.rows.length);
+     
       const selectedFilter = filterData.find((f) => f.title === filter);
       const filterId = selectedFilter ? selectedFilter.id : 0;
 
       const report = await getProductSalesReport({
         userRole: user.role === 'sales' ? 'sales' : 'admin',
-        userId: user.id,
+        userId: user._id,
         filterId,
         page: pageNumber,
         pageSize: PAGE_SIZE,

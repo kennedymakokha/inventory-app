@@ -8,6 +8,7 @@ import { CategoriesStack } from "../categories/stack";
 import { UsersStack } from "../users/stack";
 import SalesReport from "../../screens/reports/sales";
 import { InventoryStack } from "../inventory/stack";
+import { useSelector } from "react-redux";
 
 const Tab = createBottomTabNavigator();
 
@@ -17,7 +18,7 @@ export function ReportsTabs() {
   const tabBackground = isDarkMode ? "#1e293b" : "#f8fafc";
   const activeTint = isDarkMode ? "#d4af37" : "#0f172a";
   const inactiveTint = isDarkMode ? "#cbd5e1" : "#64748b";
-
+  const { user } = useSelector((state: any) => state.auth);
   // Map tab names to header titles
   const headerTitles: Record<string, string> = {
     sales: "Sales",
@@ -29,7 +30,7 @@ export function ReportsTabs() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        header: () => <CustomHeader title={`${headerTitles[route.name] } Report `|| ""} />,
+        header: () => <CustomHeader title={`${headerTitles[route.name]} Report ` || ""} />,
         tabBarIcon: ({ color, size }) => {
           const icons: Record<string, string> = {
             sales: "cart",
@@ -49,21 +50,21 @@ export function ReportsTabs() {
         component={SalesReport}
         initialParams={{ filter: "home" }}
       />
-      <Tab.Screen
+      {user.role === "admin" && <Tab.Screen
         name="Inventory"
         component={InventoryStack}
         initialParams={{ filter: "categories" }}
-      />
-      <Tab.Screen
+      />}
+      {user.role === "admin" && <Tab.Screen
         name="products"
         component={ProductScreen}
         initialParams={{ filter: "products" }}
-      />
-      <Tab.Screen
+      />}
+      {user.role === "admin" && <Tab.Screen
         name="users"
         component={UsersStack}
         initialParams={{ filter: "users" }}
-      />
+      />}
     </Tab.Navigator>
   );
 }

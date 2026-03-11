@@ -29,16 +29,16 @@ const Dashboard = () => {
   const [transactions, setTransactions] = useState(0);
 
   useEffect(() => {
-
+    console.log(user.role)
     const load = async () => {
 
-      const totalToday: any = await getTodaySales(user.role, user.id);
-      const tp: any = await getTopProducts(user.role, user.id);
-      const mS = await getMonthlySales(user.role, user.id)
+      const totalToday: any = await getTodaySales(user.role, user._id);
+      const tp: any = await getTopProducts(user.role, user._id);
+      const mS = await getMonthlySales(user.role, user._id)
       setMonthlySales(mS)
       const sales = await fetchSales()
       setSalest(sales)
-      const todayTx = await getTodayTransactions(user.role, user.id);
+      const todayTx = await getTodayTransactions(user.role, user._id);
       const stcks = await getLowStockProducts();
       setTopProducts(tp)
       setlowstcks(stcks)
@@ -95,7 +95,7 @@ const Dashboard = () => {
       </ScrollView>
 
       <DataGraph title="Top Performing Products" data={TopProducts} />
-    
+
 
       <PieChart title="Monthly sales" data={monthlySales} />
 

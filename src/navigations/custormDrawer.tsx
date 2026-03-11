@@ -110,6 +110,7 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
       {menuItem("Sales", "cart-outline", "sales")}
       {menuItem("Reports", "book-outline", "salesreport")}
       {menuItem("Settings", "settings-outline", "settings")}
+       {menuItem("Profile", "person-outline", "settings")}
 
       {/* Sync Button */}
 

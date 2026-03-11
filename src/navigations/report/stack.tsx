@@ -4,15 +4,17 @@ import { defaultHeaderOptions } from "../navigationOptions";
 import { ReportStackParamList } from "../../../models/navigationTypes";
 import SalesReport from "../../screens/reports/sales";
 import { ReportsTabs } from "./tabs";
+import { useSelector } from "react-redux";
 
 export function ReportStack() {
   const { isDarkMode } = useSettings();
-const ReportStackNav = createNativeStackNavigator<ReportStackParamList>();
+  const ReportStackNav = createNativeStackNavigator<ReportStackParamList>();
+  const { user } = useSelector((state: any) => state.auth);
   return (
     <ReportStackNav.Navigator screenOptions={defaultHeaderOptions(isDarkMode)}>
       <ReportStackNav.Screen
         name="salesReport"
-        component={ReportsTabs}
+        component={user.role === "admin" ? ReportsTabs : SalesReport}
         options={{ headerShown: false }}
       />
     </ReportStackNav.Navigator>

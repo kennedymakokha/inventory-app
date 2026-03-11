@@ -70,6 +70,6 @@ export const syncTables = [
         bulkEndpoint: "/api/auth/bulk",
         updatedSinceEndpoint: "/api/auth/updated-since",
         lastSyncKey: "auth_last_sync",
-        payloadKey: "auth",
+        payloadKey: "users",
     },
 ];
