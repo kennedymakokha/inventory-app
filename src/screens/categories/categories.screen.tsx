@@ -1,193 +1,194 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
     FlatList,
-    RefreshControl,
     ScrollView,
     Text,
     TouchableOpacity,
     View,
-    useColorScheme
+    StyleSheet,
+    LayoutAnimation,
+    RefreshControl
 } from 'react-native';
 
 import { getDBConnection } from '../../services/db-service';
-import { CategoryItem, ProductItem } from '../../../models';
-import { createCategoryTable, getCategories,  getSyncedCategories, getUnsyncedCategories, saveCategoryItems, softDeleteCategory, updateCategory } from '../../services/category.service';
+import { CategoryItem } from '../../../models';
+import { getCategories, saveCategoryItems, updateCategory, softDeleteCategory } from '../../services/category.service';
 
 import AddCategoryModal from './components/addCategoryModal';
 import UploadProductsModal from './components/upload.modal';
-import { validateItem } from '../validations/category.validation';
 import PageHeader from '../../components/pageHeader';
-
-import { useSearch } from '../../context/searchContext';
-
 import RadialFab from '../../components/multiFab';
-import { useCreateCategoryMutation } from '../../services/categoryApi';
+import { useSearch } from '../../context/searchContext';
 import { useSettings } from '../../context/SettingsContext';
 import { useSelector } from 'react-redux';
-import EntityModal from '../../components/EntityModal';
+import Toast from '../../components/Toast';
 import SwipeableCard from '../../components/SwipeableCard';
+import { validateItem } from '../validations/category.validation';
 import { Theme } from '../../utils/theme';
 
 const CategoryScreen = () => {
     const { isDarkMode } = useSettings();
     const theme = isDarkMode ? Theme.dark : Theme.light;
-    const { query, setQuery } = useSearch();
-    const { user: { business } } = useSelector((state: any) => state.auth)
-    const initialState = { category_name: "", description: "", category_id: "", business_id: business._id || "" };
+    const { query } = useSearch();
+    const { user } = useSelector((state: any) => state.auth);
+    const { business } = user;
 
-    const [loading, setLoading] = useState(false);
+    const initialState = {
+        category_name: "",
+        description: "",
+        category_id: "",
+        business_id: business._id
+    };
+
+    const swipeRefs = useRef<any>({});
+    const currentlyOpenSwipe = useRef<any>(null);
+
     const [categories, setCategories] = useState<CategoryItem[]>([]);
+    const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [uploadModalVisible, setUploadModalVisible] = useState(false);
     const [item, setItem] = useState(initialState);
     const [msg, setMsg] = useState({ msg: "", state: "" });
-    const [offset, setOffset] = useState(10);
 
-
-    const loadDataCallback = useCallback(async (offset = 0, filter = 'all') => {
+    // Load categories
+    const loadCategories = async () => {
+        setLoading(true);
         try {
-            setLoading(true);
             const db = await getDBConnection();
-            let storedItems: CategoryItem[] = [];
-            storedItems = await getCategories(db);
-           
-            setCategories(storedItems);
-        } catch (error) {
-            console.error('❌ Error loading categories:', error);
-        } finally {
-            setLoading(false);
+            const storedCategories = await getCategories(db);
+            setCategories(storedCategories);
+        } catch (err) {
+            console.log("❌ loadCategories error:", err);
         }
+        setLoading(false);
+    };
+
+    useEffect(() => {
+        loadCategories();
     }, []);
 
     const onRefresh = async () => {
         setRefreshing(true);
-        await loadDataCallback(0);
+        await loadCategories();
         setRefreshing(false);
     };
 
-    const AddCategory = async () => {
+    const handleAddCategory = async () => {
         if (!validateItem(item, setMsg)) return;
+
         try {
             const db = await getDBConnection();
+
             if (item.category_id) {
                 await updateCategory(item);
+                swipeRefs.current[item.category_id]?.close();
+                setMsg({ msg: "Category updated!", state: "success" });
             } else {
                 await saveCategoryItems(db, item);
+                setMsg({ msg: "Category added!", state: "success" });
             }
-
-            await loadDataCallback(0);
 
             setItem(initialState);
             setModalVisible(false);
-            setMsg({ msg: '✅ Category added!', state: 'success' });
-        } catch (error: any) {
-            setMsg({ msg: error.message || '❌ Could not add category.', state: 'error' });
+            await onRefresh();
+        } catch (err: any) {
+            setMsg({ msg: err.message || "❌ Error saving category.", state: "error" });
         }
     };
 
-    useEffect(() => {
-        loadDataCallback(offset);
-    }, [loadDataCallback, offset]);
+    const handleDelete = async (cat: CategoryItem) => {
+        try {
+            await softDeleteCategory(cat.category_id);
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+            setCategories(prev => prev.filter(c => c.category_id !== cat.category_id));
+        } catch (err) {
+            console.log(err);
+        }
+    };
 
+    const filteredCategories = categories.filter(c =>
+        c.category_name.toLowerCase().includes(query.toLowerCase())
+    );
 
-    // Inside CategoryScreen
-    const categoryFields = [
-        { key: 'category_name', label: 'Name', placeholder: 'Category Name' },
-        { key: 'description', label: 'Description', placeholder: 'Description' },
-    ];
-
-    const renderCategoryCard = ({ item }: { item: any }) => (
+    const renderCategoryCard = ({ item }: { item: CategoryItem }) => (
         <SwipeableCard
-            onEdit={() => { setItem(item); setModalVisible(true) }}
-            onDelete={async () => { await softDeleteCategory(item.category_id); setCategories(prev => prev.filter(c => c.category_id !== item.category_id)); }}
+            uniqueId={item.category_id}
+            swipeRefs={swipeRefs}
+            currentlyOpenSwipe={currentlyOpenSwipe}
+            onEdit={() => { setItem(item); setModalVisible(true); }}
+            onDelete={() => handleDelete(item)}
         >
-            <View style={{
-                backgroundColor: '#1e293b',
-                padding: 16,
-                borderRadius: 12,
-                marginBottom: 12,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.25,
-                shadowRadius: 4,
-                elevation: 5
-            }}>
-                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{item.category_name}</Text>
-                <Text style={{ color: '#9ca3af', fontSize: 12, marginTop: 6 }}>{item.description || ''}</Text>
-            </View>
+            <TouchableOpacity
+                activeOpacity={0.9}
+                style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}
+            >
+                <Text style={[styles.nameText, { color: theme.text }]}>{item?.category_name}</Text>
+                <Text style={{ color: theme.subText, fontSize: 12, marginTop: 4 }}>
+                    {item?.description || ""}
+                </Text>
+            </TouchableOpacity>
         </SwipeableCard>
     );
 
-    // Reusable modal for add/edit
-    <EntityModal
-        visible={modalVisible}
-        onClose={() => { setModalVisible(false); setMsg({ msg: "", state: "" }) }}
-        onSave={AddCategory} // works for both add & edit
-        initialData={item}
-        fields={categoryFields}
-    />
-
-
     return (
-        <View style={{ flex: 1, backgroundColor: isDarkMode ? '#0f172a' : '#f8fafc', paddingTop: 16 }}>
-            {/* Page Header */}
-            <PageHeader title='Categories' />
+        <View style={{ flex: 1, backgroundColor: theme.background, paddingTop: 16 }}>
+            <PageHeader
+                component={() => (
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.filterContainer}
+                        style={{ flexGrow: 0 }}
+                    >
+                        {/* Add any category filters here if needed */}
+                    </ScrollView>
+                )}
+            />
 
-            <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 12 }}>
+            <FlatList
+                data={filteredCategories}
+                keyExtractor={(item) => item.category_id}
+                renderItem={renderCategoryCard}
+                contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 16, paddingTop: 12 }}
+                onEndReachedThreshold={0.5}
+                onEndReached={loadCategories}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            />
 
-                {/* {loading ? (
-          <SkeletonList />
-        ) : ( */}
-                <FlatList
-                    contentContainerStyle={{ paddingBottom: 120 }}
-                    data={categories.filter(p => p?.category_name?.toLowerCase().includes(query?.toLowerCase()))}
-                    keyExtractor={(item, index) => String(item.id || item.category_name || index)}
-                    renderItem={renderCategoryCard}
-                    onEndReached={() => setOffset(prev => prev + 10)}
-                    onEndReachedThreshold={0.5}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-                />
-                {/* )} */}
-            </View>
+            {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
 
-            {/* Modals */}
             <AddCategoryModal
-                setMsg={setMsg}
                 isDarkMode={isDarkMode}
+                setMsg={setMsg}
                 msg={msg}
-                PostLocally={AddCategory}
-
+                PostLocally={handleAddCategory}
                 modalVisible={modalVisible}
-                onClose={() => { setModalVisible(false); setMsg({ msg: "", state: "" }); setItem(initialState) }}
                 setItem={setItem}
-                fetchProducts={loadDataCallback}
-                item={item}
+                fetchCategories={onRefresh}
+                initialData={item}
                 setModalVisible={setModalVisible}
             />
+
             <UploadProductsModal
-                setMsg={setMsg}
-                theme={theme}
                 isDarkMode={isDarkMode}
+                setMsg={setMsg}
                 msg={msg}
-                PostLocally={AddCategory}
+                PostLocally={() => {}}
                 modalVisible={uploadModalVisible}
                 setItem={setItem}
-                fetchProducts={loadDataCallback}
-                item={item}
+                fetchProducts={onRefresh}
+                initialData={item}
                 setModalVisible={setUploadModalVisible}
             />
 
-            {/* Floating Action Buttons */}
-            {/* Multi Action FAB */}
             <RadialFab
-                mainColor="#1e293b"
+                mainColor={Theme.primary}
                 mainIcon="menu"
-                radius={120}    // how far buttons spread
-                angle={90}      // fan angle
+                radius={120}
+                angle={90}
                 actions={[
-                    { icon: 'add-outline', label: 'Add Product', onPress: () => setModalVisible(true) },
+                    { icon: 'add-outline', label: 'Add Category', onPress: () => setModalVisible(true) },
                     { icon: 'cloud-upload-outline', label: 'Upload', onPress: () => setUploadModalVisible(true) },
                     { icon: 'settings-outline', label: 'Settings', onPress: () => console.log('Settings') },
                 ]}
@@ -195,5 +196,27 @@ const CategoryScreen = () => {
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    filterContainer: {
+        paddingHorizontal: 2,
+        paddingVertical: 8,
+        alignItems: 'center'
+    },
+    card: {
+        width: '100%',
+        padding: 14,
+        borderRadius: 5,
+        marginBottom: 16,
+        borderWidth: 1,
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 10,
+        elevation: 6,
+    },
+    nameText: {
+        fontWeight: '700',
+        fontSize: 14,
+    }
+});
 
 export default CategoryScreen;

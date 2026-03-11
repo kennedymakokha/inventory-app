@@ -204,7 +204,7 @@ const AddProductModal = ({
                                 onChangeText={(text: string) =>
                                     handleChange("Bprice", text)
                                 }
-                                keyboardType="decimal-pad"
+                                keyboardType="phone-pad"
                                 isDarkMode={isDarkMode}
                             />
                         </View>
@@ -236,7 +236,7 @@ const AddProductModal = ({
                                 onChangeText={(text: string) =>
                                     handleChange("price", text)
                                 }
-                                keyboardType="numeric"
+                                 keyboardType="phone-pad"
                                 isDarkMode={isDarkMode}
                             />
                         </View>
@@ -250,7 +250,7 @@ const AddProductModal = ({
                         onChangeText={(text: string) =>
                             handleChange("initial_stock", text)
                         }
-                        keyboardType="numeric"
+                         keyboardType="phone-pad"
                         isDarkMode={isDarkMode}
                     />
 

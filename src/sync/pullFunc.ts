@@ -58,7 +58,7 @@ export const pullUpdates = async (
       ON CONFLICT(${config.primaryKey}) DO UPDATE SET
       ${updates}
     `;
-   
+
     await db.executeSql(query, values);
   }
 

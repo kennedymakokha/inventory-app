@@ -23,6 +23,7 @@ export const tableExists = async (db: any, tableName: string): Promise<boolean> 
 // Safe table creation
 export const createTableIfNotExists = async (db: any, tableName: string, createSQL: string) => {
   const exists = await tableExists(db, tableName);
+  // console.log(tableName, "exists")
   if (!exists) {
     return new Promise((resolve, reject) => {
       db.transaction((tx: any) => {
@@ -30,7 +31,7 @@ export const createTableIfNotExists = async (db: any, tableName: string, createS
           createSQL,
           [],
           () => {
-           
+            // console.log(tableName, "created")
             resolve(true);
           },
           (_tx: any, err: any) => {
@@ -42,7 +43,7 @@ export const createTableIfNotExists = async (db: any, tableName: string, createS
       });
     });
   } else {
-    
+
     return true;
   }
 };

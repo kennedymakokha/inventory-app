@@ -15,6 +15,7 @@ export const syncTables = [
         lastSyncKey: "products_last_sync",
         payloadKey: "products",
     },
+
     {
         tableName: "Sale",
         primaryKey: "sale_id",
@@ -62,5 +63,13 @@ export const syncTables = [
         updatedSinceEndpoint: "/api/inventory-logs/updated-since",
         lastSyncKey: "inventory_log_last_sync",
         payloadKey: "inventories",
+    },
+    {
+        tableName: "User",
+        primaryKey: "user_id",
+        bulkEndpoint: "/api/auth/bulk",
+        updatedSinceEndpoint: "/api/auth/updated-since",
+        lastSyncKey: "auth_last_sync",
+        payloadKey: "auth",
     },
 ];

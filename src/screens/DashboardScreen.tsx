@@ -8,6 +8,7 @@ import PageHeader from '../components/pageHeader';
 import { getLowStockProducts, getMonthlySales, getTodaySales, getTodayTransactions, getTopProducts } from '../services/analytics.service';
 import DataGraph from './dashbordItems/DataGraph';
 import PieChart from './dashbordItems/PieChart';
+import { fetchSales } from '../services/sales.service';
 
 
 
@@ -20,7 +21,7 @@ const Dashboard = () => {
   const [lowstcks, setlowstcks] = useState<any[]>([]);
   const [monthlySales, setMonthlySales] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-
+  const [Sales, setSalest] = useState(sales);
   const [TopProducts, setTopProducts] = useState([]);
 
 
@@ -35,6 +36,8 @@ const Dashboard = () => {
       const tp: any = await getTopProducts(user.role, user.id);
       const mS = await getMonthlySales(user.role, user.id)
       setMonthlySales(mS)
+      const sales = await fetchSales()
+      setSalest(sales)
       const todayTx = await getTodayTransactions(user.role, user.id);
       const stcks = await getLowStockProducts();
       setTopProducts(tp)
@@ -90,7 +93,9 @@ const Dashboard = () => {
 
         </View>
       </ScrollView>
+
       <DataGraph title="Top Performing Products" data={TopProducts} />
+    
 
       <PieChart title="Monthly sales" data={monthlySales} />
 

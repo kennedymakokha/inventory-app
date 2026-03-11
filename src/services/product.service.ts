@@ -44,16 +44,6 @@ export const createProductTable = async () => {
   }
 };
 
-
-/* =========================================================
-   UTILITY
-========================================================= */
-
-
-
-/* =========================================================
-   PRODUCT CREATION
-========================================================= */
 export const createProduct = async (product: any) => {
   const db = await getDBConnection();
   const now = new Date().toISOString();
@@ -62,6 +52,7 @@ export const createProduct = async (product: any) => {
 
   db.transaction((tx) => {
 
+    // INSERT PRODUCT
     tx.executeSql(
       `INSERT INTO Product
       (product_id, product_name, barcode, business,
@@ -80,7 +71,7 @@ export const createProduct = async (product: any) => {
         product.category_id || "",
         product.description || "",
         product.initial_stock || 0,
-        0,
+        0, // synced
         product.expiryDate || "",
         now,
         createdBy,
@@ -88,18 +79,24 @@ export const createProduct = async (product: any) => {
       ]
     );
 
+    // INVENTORY LOG (INITIAL STOCK)
+    const inve_id = uuidv4();
+
     tx.executeSql(
       `INSERT INTO Inventory_log
-      (product_id, quantity, business, reference_type, note, createdBy, synced, createdAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      (inventory_log_id, product_id, quantity, business,
+       reference_type, note, createdBy, synced, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
+        inve_id,
         productId,
         product.initial_stock || 0,
         product.business_id || "",
         "INITIAL_STOCK",
         "Initial product stock",
         createdBy,
-        0,
+        0, // synced
+        now,
         now
       ]
     );
@@ -234,12 +231,13 @@ export const createSale = async (
 
 
       /* INVENTORY LEDGER ENTRY */
-
+      const inve_id = uuidv4();
       tx.executeSql(`
         INSERT INTO Inventory_log
-        (product_id, type, quantity, note, createdBy, synced, createdAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        (inventory_log_id,product_id, type, quantity, note, createdBy, synced, createdAt)
+        VALUES (?,?, ?, ?, ?, ?, ?, ?)
       `, [
+        inve_id,
         item.product_id,
         "SALE",
         -item.quantity,
@@ -292,8 +290,80 @@ export const getProducts = async (
     return [];
   }
 };
+export const getProductsByCategoryName = async (
+  db: SQLiteDatabase,
+  categoryName: string,
+  limit: number = 20,
+  offset: number = 0
+): Promise<ProductItem[]> => {
+  try {
+    const [results] = await db.executeSql(
+      `
+      SELECT p.*
+      FROM Product p
+      LEFT JOIN Category c 
+        ON p.category_id = c.category_id
+      WHERE p.deleted_at IS NULL
+      AND c.category_name = ?
+      ORDER BY p.product_name ASC
+      LIMIT ? OFFSET ?
+      `,
+      [categoryName, limit, offset]
+    );
 
+    const products: ProductItem[] = [];
 
+    for (let i = 0; i < results.rows.length; i++) {
+      products.push(results.rows.item(i));
+    }
+
+    return products;
+  } catch (error) {
+    console.log("❌ getProductsByCategoryName error:", error);
+    return [];
+  }
+};
+export const getProductsGroupedByCategory = async (
+  db: SQLiteDatabase,
+  limit: number = 20,
+  offset: number = 0
+): Promise<Record<string, any[]>> => {
+  try {
+    const [results] = await db.executeSql(
+      `
+      SELECT 
+        p.*,
+        c.category_name
+      FROM Product p
+      LEFT JOIN Category c 
+        ON p.category_id = c.category_id
+      WHERE p.deleted_at IS NULL
+      ORDER BY c.category_name ASC, p.product_name ASC
+      LIMIT ? OFFSET ?
+      `,
+      [limit, offset]
+    );
+
+    const grouped: Record<string, any[]> = {};
+
+    for (let i = 0; i < results.rows.length; i++) {
+      const row = results.rows.item(i);
+
+      const category = row.category_name || "Uncategorized";
+
+      if (!grouped[category]) {
+        grouped[category] = [];
+      }
+
+      grouped[category].push(row);
+    }
+
+    return grouped;
+  } catch (error) {
+    console.log("❌ getProductsGroupedByCategory error:", error);
+    return {};
+  }
+};
 export const SearchProduct = async (
   db: SQLiteDatabase,
   limit: number = 20,

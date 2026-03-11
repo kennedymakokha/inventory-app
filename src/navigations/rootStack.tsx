@@ -12,6 +12,7 @@ import SettingsScreen from "../screens/settingsScreen";
 import { useSettings } from "../context/SettingsContext";
 import { useSelector } from "react-redux";
 import Dashboard from "../screens/DashboardScreen";
+import { SalesStack } from "./sales/stack";
 
 export function RootStack() {
   const { isDarkMode } = useSettings();
@@ -43,7 +44,7 @@ export function RootStack() {
       />
       <RootStackNav.Screen
         name="sales"
-        component={SalesScreen}
+        component={SalesStack}
         options={{ header: () => <CustomHeaderWithSearch noSearch title="Sales" /> }}
       />
       <RootStackNav.Screen

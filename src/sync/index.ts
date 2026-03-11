@@ -30,20 +30,20 @@ export const globalSync = async (
 
     for (const table of tables) {
 
-      console.log(`⬆️ PUSH START: ${table.tableName}`);
+      // console.log(`⬆️ PUSH START: ${table.tableName}`);
 
       await pushUnsynced(db, table);
 
-      console.log(`✅ PUSH DONE: ${table.tableName}`);
+      // console.log(`✅ PUSH DONE: ${table.tableName}`);
 
       completed++;
       onProgress?.(Math.floor((completed / totalSteps) * 100));
 
-      console.log(`⬇️ PULL START: ${table.tableName}`);
+      // console.log(`⬇️ PULL START: ${table.tableName}`);
 
       await pullUpdates(db, table);
 
-      console.log(`✅ PULL DONE: ${table.tableName}`);
+      // console.log(`✅ PULL DONE: ${table.tableName}`);
 
       completed++;
       onProgress?.(Math.floor((completed / totalSteps) * 100));

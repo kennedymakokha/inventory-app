@@ -10,19 +10,19 @@ export const createInventorylogTable = async () => {
             db,
             'Inventory_log',
             `CREATE TABLE Inventory_log (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        inventory_log_id TEXT UNIQUE,
-        product_id TEXT,
-        business TEXT,
-        reference_id TEXT,
-        reference_type TEXT,
-        quantity INTEGER DEFAULT 0,
-        synced INTEGER DEFAULT 0,
-        note TEXT,
-        createdAt TEXT,
-        createdBy TEXT,
-        updatedAt TEXT
-      );`
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                inventory_log_id TEXT UNIQUE,
+                product_id TEXT,
+                business TEXT,
+                reference_id TEXT,
+                reference_type TEXT,
+                quantity INTEGER DEFAULT 0,
+                synced INTEGER DEFAULT 0,
+                note TEXT,
+                createdAt TEXT,
+                createdBy TEXT,
+                updatedAt TEXT
+            );`
         );
 
         // Create unique index to prevent duplicate INITIAL_STOCK entries

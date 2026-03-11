@@ -15,7 +15,7 @@ export type RootStackParamList = {
 
 export type InventoryStackParamList = {
   inventory_Dashboard: undefined;
-  inventory_Details: { product: { product_name: string; [key: string]: any } };
+  inventory_Details: { product: { product_name: string;[key: string]: any } };
 };
 
 export type CategoriesStackParamList = {
@@ -24,7 +24,10 @@ export type CategoriesStackParamList = {
 export type UsersStackParamList = {
   Users_Dashboard: undefined;
 };
-
+export type SalesStackParamList = {
+  Sales_Dashboard: undefined;
+  Sales_Details: { category: String };
+};
 export type ReportStackParamList = {
   salesReport: undefined;
 };

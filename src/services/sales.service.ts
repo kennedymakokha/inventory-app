@@ -7,15 +7,6 @@ import { createTableIfNotExists } from "../utils/tableExists";
 
 import { v4 as uuidv4 } from "uuid";
 
-// -------------------------------
-// CREATE SALES TABLE
-// -------------------------------
-
-
-// -------------------------------
-// CREATE OR MIGRATE SALES TABLE
-// -------------------------------
-
 
 
 
@@ -59,7 +50,9 @@ export const createSalesItemTable = async () => {
         refunded_quantity INTEGER DEFAULT 0,
         total REAL,
         synced INTEGER DEFAULT 0,
-        created_at TEXT
+        created_at TEXT,
+        updatedAt TEXT
+
       );`
     );
   } catch (err) {
@@ -68,14 +61,6 @@ export const createSalesItemTable = async () => {
   }
 };
 
-
-
-// -------------------------------
-// GENERATE SALE ID
-// -------------------------------
-const generateSaleId = (userId: string, productId: number) => {
-  return `${userId}-${Date.now()}-${productId}`;
-};
 
 export const createRefundsTable = async () => {
   try {
@@ -92,6 +77,7 @@ export const createRefundsTable = async () => {
           cashier_id TEXT,
           reason TEXT,
           created_at TEXT,
+          updatedAt TEXT,
           synced INTEGER DEFAULT 0
         );
       );`
@@ -116,6 +102,7 @@ export const createRefundItemsTable = async () => {
           product_name TEXT,
           quantity INTEGER,
           price REAL,
+          updatedAt TEXT,
           synced INTEGER DEFAULT 0,
           total REAL
         );
@@ -139,6 +126,7 @@ export const finalizeSale = async (
     method: string;
     phone?: string;
     paidAmount?: string;
+    business_id?: string,
   }
 ): Promise<void> => {
 
@@ -149,20 +137,14 @@ export const finalizeSale = async (
     return;
   }
 
-
-
   const createdBy = (await AsyncStorage.getItem("userId")) ?? "local-user";
   const now = new Date().toISOString();
   const saleId = uuidv4();
-
-  console.log("Sale ID:", saleId);
 
   const total = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-
-  console.log("Total:", total);
 
   return new Promise((resolve, reject) => {
 
@@ -189,11 +171,14 @@ export const finalizeSale = async (
             now
           ],
           (_, result) => {
-            console.log("✅ Sale inserted", result.rowsAffected);
+            if (result.rowsAffected === 0) {
+              throw new Error("Sale insert failed");
+            }
+            console.log("✅ Sale inserted");
           },
           (_, error) => {
             console.log("❌ Sale insert error", error);
-            return true;
+            throw error;
           }
         );
 
@@ -207,8 +192,8 @@ export const finalizeSale = async (
           // INSERT SALE ITEM
           tx.executeSql(
             `INSERT INTO SaleItems
-            (sale_item_id,sale_id,product_id,quantity,price,total,synced,created_at)
-            VALUES (?,?,?,?,?,?,?,?)`,
+            (sale_item_id,sale_id,product_id,quantity,price,total,synced,created_at,updatedAt)
+            VALUES (?,?,?,?,?,?,?,?,?)`,
             [
               saleItemId,
               saleId,
@@ -217,69 +202,102 @@ export const finalizeSale = async (
               item.price,
               itemTotal,
               0,
+              now,
               now
             ],
             () => console.log("✅ SaleItem inserted"),
             (_, error) => {
               console.log("❌ SaleItem error", error);
-              return true;
+              throw error;
             }
           );
 
-          // UPDATE PRODUCT
+          // UPDATE PRODUCT STOCK
           tx.executeSql(
             `UPDATE Product
-             SET quantity = quantity - ?
+             SET quantity = quantity - ?, synced = 0, updatedAt = ?
              WHERE product_id = ? AND quantity >= ?`,
             [
               item.quantity,
+              now,
               item.product_id,
               item.quantity
             ],
             (_, res) => {
-              // console.log("📉 Stock updated", res.rowsAffected);
+
+              if (res.rowsAffected === 0) {
+                console.log("❌ Not enough stock for", item.product_id);
+                throw new Error("Insufficient stock");
+              }
+
+              console.log("📉 Stock updated");
+
             },
             (_, error) => {
               console.log("❌ Stock update error", error);
-              return true;
+              throw error;
             }
           );
-          const inv_id = uuidv4();
+
           // INVENTORY LOG
+          const inventoryId = uuidv4();
+
           tx.executeSql(
             `INSERT INTO Inventory_log
-            (inventory_log_id,product_id,quantity,reference_id,reference_type,createdBy,synced,createdAt)
-            VALUES (?,?,?,?,?,?,?,?)`,
+            (inventory_log_id,
+            business,
+            product_id,
+            quantity,
+            reference_id,
+            reference_type,
+            createdBy,
+            synced,
+            createdAt,
+            updatedAt)
+            VALUES (?,?,?,?,?,?,?,?,?,?)`,
             [
-              inv_id,
+              inventoryId,
+              data.business_id,
               item.product_id,
               item.quantity,
               saleId,
               "SALE",
               createdBy,
               0,
+              now,
               now
             ],
-            // () => console.log("📒 Inventory log inserted"),
+            () => console.log("📒 Inventory log inserted"),
             (_, error) => {
               console.log("❌ Inventory log error", error);
-              return true;
+              throw error;
             }
           );
+
         }
+
+        // INSERT PAYMENT
         const paymentId = uuidv4();
+
         tx.executeSql(
           `INSERT INTO Payments
-    (payment_id,sale_id, method, amount, created_at)
-    VALUES (?,?, ?, ?, datetime('now'))`,
+          (payment_id,sale_id,method,amount,synced,created_at,updatedAt)
+          VALUES (?,?,?,?,?,?,?)`,
           [
             paymentId,
             saleId,
             data.method,
-            total
-          ]
+            total,
+            0,
+            now,
+            now
+          ],
+          () => console.log("💳 Payment inserted"),
+          (_, error) => {
+            console.log("❌ Payment insert error", error);
+            throw error;
+          }
         );
-
 
       },
 
@@ -297,7 +315,6 @@ export const finalizeSale = async (
 
   });
 };
-
 
 export const createRefund = async (
   db: SQLiteDatabase,
@@ -377,205 +394,26 @@ export const createRefund = async (
 // -------------------------------
 // FETCH RECENT SALES
 // -------------------------------
-// export const fetchSales = async (
-//   db: SQLiteDatabase
-// ): Promise<any[]> => {
+export const fetchSales = async (): Promise<any[]> => {
+  const db = await getDBConnection();
 
-//   return new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
+    db.transaction(tx => {
+      tx.executeSql(
+        `SELECT * FROM Inventory_log`,
+        [],
+        (_, { rows }) => {
+          const sales = rows.raw();
 
-//     db.transaction(tx => {
+          console.log("Sales from DB:", sales); // 👈 log here
 
-//       tx.executeSql(
-//         `
-//         SELECT
-//           Sale.id AS Sale_id,
-//           Sale.product_id,
-//           Sale.synced,
-//           Product.product_name,
-//           Product.quantity AS product_quantity,
-//           Product.price AS product_price,
-//           Sale.created_at,
-//           Sale.updatedAt
-//         FROM Sale
-//         JOIN Product ON Sale.product_id = Product.id
-//         ORDER BY Sale.updatedAt DESC
-//         LIMIT 10
-//         `,
-//         [],
-//         (_, { rows }) => resolve(rows.raw()),
-//         (_, error) => {
-//           reject(error);
-//           return false;
-//         }
-//       );
-
-//     });
-
-//   });
-
-// };
-// -------------------------------
-// GROUPED PROFIT ANALYTICS
-// // -------------------------------
-// export const fetchGroupedProfit = (
-//   db: SQLiteDatabase,
-//   groupType: string
-// ): Promise<any[]> => {
-
-//   return new Promise((resolve, reject) => {
-
-//     let query = "";
-
-//     switch (groupType) {
-
-//       case "daily":
-//         query = `
-//         SELECT
-//           strftime('%Y-%m-%d', Sale.created_at) AS day,
-//           Product.product_name,
-//           SUM(Sale.quantity) AS total_units_sold,
-//           IFNULL(SUM(Sale.soldprice * Sale.quantity),0) AS total_sales_revenue,
-//           IFNULL(SUM((Sale.soldprice - Product.Bprice) * Sale.quantity),0) AS total_profit
-//         FROM Sale
-//         JOIN Product ON Sale.product_id = Product.id
-//         GROUP BY day, Sale.product_id
-//         ORDER BY day DESC
-//         LIMIT 10
-//         `;
-//         break;
-
-//       case "weekly":
-//         query = `
-//         SELECT
-//           strftime('%Y-W%W', Sale.created_at) AS week,
-//           Product.product_name,
-//           SUM(Sale.quantity) AS total_units_sold,
-//           IFNULL(SUM(Sale.soldprice * Sale.quantity),0) AS total_sales_revenue,
-//           IFNULL(SUM((Sale.soldprice - Product.Bprice) * Sale.quantity),0) AS total_profit
-//         FROM Sale
-//         JOIN Product ON Sale.product_id = Product.id
-//         GROUP BY week, Sale.product_id
-//         ORDER BY week DESC
-//         LIMIT 10
-//         `;
-//         break;
-
-//       case "monthly":
-//         query = `
-//         SELECT
-//           strftime('%Y-%m', Sale.created_at) AS month,
-//           Product.product_name,
-//           SUM(Sale.quantity) AS total_units_sold,
-//           IFNULL(SUM(Sale.soldprice * Sale.quantity),0) AS total_sales_revenue,
-//           IFNULL(SUM((Sale.soldprice - Product.Bprice) * Sale.quantity),0) AS total_profit
-//         FROM Sale
-//         JOIN Product ON Sale.product_id = Product.id
-//         GROUP BY month, Sale.product_id
-//         ORDER BY month DESC
-//         LIMIT 10
-//         `;
-//         break;
-
-//       case "all":
-//       default:
-//         query = `
-//         SELECT
-//           Product.product_name,
-//           SUM(Sale.quantity) AS total_units_sold,
-//           IFNULL(SUM(Sale.soldprice * Sale.quantity),0) AS total_sales_revenue,
-//           IFNULL(SUM((Sale.soldprice - Product.Bprice) * Sale.quantity),0) AS total_profit
-//         FROM Sale
-//         JOIN Product ON Sale.product_id = Product.id
-//         GROUP BY Sale.product_id
-//         ORDER BY total_profit DESC
-//         `;
-//     }
-
-//     db.transaction(tx => {
-
-//       tx.executeSql(
-//         query,
-//         [],
-//         (_, { rows }) => resolve(rows.raw()),
-//         (_, error) => {
-//           reject(error);
-//           return false;
-//         }
-//       );
-
-//     });
-
-//   });
-
-// };
-
-
-// -------------------------------
-// CUMULATIVE PROFIT
-// -------------------------------
-// export const fetchCumulativeProfit = (
-//   db: SQLiteDatabase,
-//   timeframe: string
-// ): Promise<any> => {
-
-//   return new Promise((resolve, reject) => {
-
-//     let whereClause = "";
-
-//     switch (timeframe) {
-
-//       case "today":
-//         whereClause = "WHERE date(Sale.created_at) = date('now')";
-//         break;
-
-//       case "last-week":
-//         whereClause = "WHERE date(Sale.created_at) >= date('now','-7 days')";
-//         break;
-
-//       case "last-month":
-//         whereClause = "WHERE date(Sale.created_at) >= date('now','-1 month')";
-//         break;
-
-//       case "last-3months":
-//         whereClause = "WHERE date(Sale.created_at) >= date('now','-3 months')";
-//         break;
-
-//       case "monthly":
-//         whereClause = "WHERE strftime('%Y-%m', Sale.created_at) = strftime('%Y-%m','now')";
-//         break;
-
-//       case "yearly":
-//         whereClause = "WHERE strftime('%Y', Sale.created_at) = strftime('%Y','now')";
-//         break;
-
-//       default:
-//         whereClause = "";
-//     }
-
-//     const query = `
-//       SELECT
-//         IFNULL(SUM(Sale.soldprice * Sale.quantity),0) AS total_sales_revenue,
-//         IFNULL(SUM((Sale.soldprice - Product.Bprice) * Sale.quantity),0) AS total_profit,
-//         IFNULL(SUM((Product.price - Product.Bprice) * Sale.quantity),0) AS expected_profit
-//       FROM Sale
-//       JOIN Product ON Sale.product_id = Product.id
-//       ${whereClause}
-//     `;
-
-//     db.transaction(tx => {
-
-//       tx.executeSql(
-//         query,
-//         [],
-//         (_, { rows }) => resolve(rows.item(0)),
-//         (_, error) => {
-//           reject(error);
-//           return false;
-//         }
-//       );
-
-//     });
-
-//   });
-
-// };
+          resolve(sales);
+        },
+        (_, error) => {
+          reject(error);
+          return false;
+        }
+      );
+    });
+  });
+};

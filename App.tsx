@@ -1,13 +1,13 @@
 import 'react-native-get-random-values';
 import React, { useEffect } from 'react';
 import {
-StatusBar,
-View,
-Text,
-PermissionsAndroid,
-Platform,
-ActivityIndicator,
-StyleSheet
+  StatusBar,
+  View,
+  Text,
+  PermissionsAndroid,
+  Platform,
+  ActivityIndicator,
+  StyleSheet
 } from 'react-native';
 
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -38,6 +38,8 @@ import { createCashRegisterTable, createPaymentsTable } from './src/services/clo
 import { SyncLoader } from './src/sync/SyncLoader';
 
 import "./global.css";
+import { createUserTable } from './src/services/users.service';
+import { CartProvider } from './src/context/CartContext';
 
 /* -------------------------------- */
 /* Global Guards */
@@ -52,24 +54,24 @@ let syncing = false;
 
 const safeSync = async () => {
 
-const token = await AsyncStorage.getItem("accessToken");
+  const token = await AsyncStorage.getItem("accessToken");
 
-if (!token) {
-console.log("⛔ No token → skipping sync");
-return;
-}
+  if (!token) {
+    console.log("⛔ No token → skipping sync");
+    return;
+  }
 
-if (syncing) return;
+  if (syncing) return;
 
-syncing = true;
+  syncing = true;
 
-try {
-await globalSync(syncTables);
-} catch (e) {
-console.log("Sync error:", e);
-} finally {
-syncing = false;
-}
+  try {
+    await globalSync(syncTables);
+  } catch (e) {
+    console.log("Sync error:", e);
+  } finally {
+    syncing = false;
+  }
 
 };
 
@@ -79,216 +81,211 @@ syncing = false;
 
 function App(): React.JSX.Element {
 
-/* -------------------------------- */
-/* AUTH FLOW */
-/* -------------------------------- */
+  /* -------------------------------- */
+  /* AUTH FLOW */
+  /* -------------------------------- */
 
-const AppWithAuth = () => {
+  const AppWithAuth = () => {
 
 
-const { token, logout } = useAuthContext();
-const [syncDone, setSyncDone] = React.useState(false);
+    const { token, logout } = useAuthContext();
+    const [syncDone, setSyncDone] = React.useState(false);
 
-useTokenExpiryWatcher(token, logout);
+    useTokenExpiryWatcher(token, logout);
 
-/* ------------------------------- */
-/* START SYNC ONLY WHEN LOGGED IN */
-/* ------------------------------- */
+    /* ------------------------------- */
+    /* START SYNC ONLY WHEN LOGGED IN */
+    /* ------------------------------- */
 
-useEffect(() => {
+    useEffect(() => {
 
-  if (!token) return;
+      if (!token) return;
 
-  let netUnsubscribe: any;
-  let interval: any;
+      let netUnsubscribe: any;
+      let interval: any;
 
-  const startSync = () => {
+      const startSync = () => {
 
-    netUnsubscribe = NetInfo.addEventListener(state => {
+        netUnsubscribe = NetInfo.addEventListener(state => {
 
-      if (state.isConnected && state.isInternetReachable) {
+          if (state.isConnected && state.isInternetReachable) {
 
-        console.log("🌐 Internet detected → running sync");
+            console.log("🌐 Internet detected → running sync");
 
-        safeSync();
+            safeSync();
+
+          }
+
+        });
+
+        interval = setInterval(() => {
+
+          safeSync();
+
+        }, 120000);
+
+      };
+
+      startSync();
+
+      return () => {
+
+        if (netUnsubscribe) netUnsubscribe();
+        if (interval) clearInterval(interval);
+
+      };
+
+    }, [token]);
+
+    if (!token) {
+      return <AuthStack />;
+    }
+
+    if (!syncDone) {
+      return <SyncLoader onDone={() => setSyncDone(true)} />;
+    }
+
+    return <RootDrawer />;
+
+
+  };
+
+  /* -------------------------------- */
+  /* BLUETOOTH PERMISSIONS */
+  /* -------------------------------- */
+
+  const requestBluetoothPermissions = async () => {
+
+
+    if (Platform.OS !== 'android' || Platform.Version < 31) {
+      return true;
+    }
+
+    try {
+
+      const granted = await PermissionsAndroid.requestMultiple([
+        PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+        PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+      ]);
+
+      return (
+        granted['android.permission.BLUETOOTH_CONNECT'] === PermissionsAndroid.RESULTS.GRANTED &&
+        granted['android.permission.BLUETOOTH_SCAN'] === PermissionsAndroid.RESULTS.GRANTED
+      );
+
+    } catch (err) {
+      console.log('Permission error:', err);
+      return false;
+    }
+
+
+  };
+
+  useEffect(() => {
+
+
+    const setupPermissions = async () => {
+
+      const granted = await requestBluetoothPermissions();
+
+      if (!granted) {
+        console.log('Bluetooth permission denied');
+      }
+
+    };
+
+    setupPermissions();
+
+
+  }, []);
+
+  /* -------------------------------- */
+  /* DATABASE SETUP */
+  /* -------------------------------- */
+
+  useEffect(() => {
+
+
+    const setupDB = async () => {
+
+      try {
+
+        if (tablesInitialized) return;
+
+        let db = await getDBConnection();
+  // await db.executeSql(`DROP TABLE IF EXISTS SaleItems;`);
+
+        await createUserTable();
+        await createPaymentsTable();
+        await createProductTable();
+        await createCategoryTable();
+        await createSalesTable();
+        await createSalesItemTable();
+        await createRefundsTable();
+        await createRefundItemsTable();
+        await createInventorylogTable();
+        await createCashRegisterTable();
+
+
+        tablesInitialized = true;
+
+        console.log("Database ready");
+
+      } catch (err) {
+
+        console.error("DB setup failed", err);
 
       }
 
-    });
+    };
 
-    interval = setInterval(() => {
-
-      safeSync();
-
-    }, 120000);
-
-  };
-
-  startSync();
-
-  return () => {
-
-    if (netUnsubscribe) netUnsubscribe();
-    if (interval) clearInterval(interval);
-
-  };
-
-}, [token]);
-
-if (!token) {
-  return <AuthStack />;
-}
-
-if (!syncDone) {
-  return <SyncLoader onDone={() => setSyncDone(true)} />;
-}
-
-return <RootDrawer />;
+    setupDB();
 
 
-};
+  }, []);
 
-/* -------------------------------- */
-/* BLUETOOTH PERMISSIONS */
-/* -------------------------------- */
-
-const requestBluetoothPermissions = async () => {
-
-
-if (Platform.OS !== 'android' || Platform.Version < 31) {
-  return true;
-}
-
-try {
-
-  const granted = await PermissionsAndroid.requestMultiple([
-    PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
-    PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
-    PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-  ]);
+  /* -------------------------------- */
+  /* UI */
+  /* -------------------------------- */
 
   return (
-    granted['android.permission.BLUETOOTH_CONNECT'] === PermissionsAndroid.RESULTS.GRANTED &&
-    granted['android.permission.BLUETOOTH_SCAN'] === PermissionsAndroid.RESULTS.GRANTED
+
+
+    <View style={styles.container}>
+
+      <StatusBar animated backgroundColor="#000000" />
+
+      <SafeAreaProvider>
+        <CartProvider>
+          <Provider store={store}>
+
+            <SettingsProvider>
+
+              <PersistGate
+                persistor={persistor}
+                loading={
+                  <View style={styles.center}>
+                    <ActivityIndicator size="large" color="#ffffff" />
+                    <Text style={styles.loadingText}>Loading app...</Text>
+                  </View>
+                }
+              >
+
+                <AppWithAuth />
+
+              </PersistGate>
+
+            </SettingsProvider>
+
+          </Provider>
+        </CartProvider>
+      </SafeAreaProvider>
+
+    </View>
+
+
   );
-
-} catch (err) {
-  console.log('Permission error:', err);
-  return false;
-}
-
-
-};
-
-useEffect(() => {
-
-
-const setupPermissions = async () => {
-
-  const granted = await requestBluetoothPermissions();
-
-  if (!granted) {
-    console.log('Bluetooth permission denied');
-  }
-
-};
-
-setupPermissions();
-
-
-}, []);
-
-/* -------------------------------- */
-/* DATABASE SETUP */
-/* -------------------------------- */
-
-useEffect(() => {
-
-
-const setupDB = async () => {
-
-  try {
-
-    if (tablesInitialized) return;
-
-    let db = await getDBConnection();
-// let db = await getDBConnection();
-        // await db.executeSql(`DROP TABLE IF EXISTS Inventory_log;`);
-        //  await db.executeSql(`ALTER TABLE Product ADD COLUMN stock INTEGER DEFAULT 0;`);
-        //  await db.executeSql(`CREATE INDEX idx_product_id ON Product(product_id);`);
-        // await db.executeSql(`CREATE INDEX idx_product_id ON Product(product_id);`);
-
-    await createProductTable();
-    await createCategoryTable();
-    await createSalesTable();
-    await createSalesItemTable();
-
-    await createRefundsTable();
-    await createRefundItemsTable();
-
-    await createInventorylogTable();
-
-    await createCashRegisterTable();
-    await createPaymentsTable();
-
-    tablesInitialized = true;
-
-    console.log("Database ready");
-
-  } catch (err) {
-
-    console.error("DB setup failed", err);
-
-  }
-
-};
-
-setupDB();
-
-
-}, []);
-
-/* -------------------------------- */
-/* UI */
-/* -------------------------------- */
-
-return (
-
-
-<View style={styles.container}>
-
-  <StatusBar animated backgroundColor="#000000" />
-
-  <SafeAreaProvider>
-
-    <Provider store={store}>
-
-      <SettingsProvider>
-
-        <PersistGate
-          persistor={persistor}
-          loading={
-            <View style={styles.center}>
-              <ActivityIndicator size="large" color="#ffffff" />
-              <Text style={styles.loadingText}>Loading app...</Text>
-            </View>
-          }
-        >
-
-          <AppWithAuth />
-
-        </PersistGate>
-
-      </SettingsProvider>
-
-    </Provider>
-
-  </SafeAreaProvider>
-
-</View>
-
-
-);
 
 }
 
@@ -300,21 +297,21 @@ export default App;
 
 const styles = StyleSheet.create({
 
-container: {
-flex: 1,
-backgroundColor: '#1e293b'
-},
+  container: {
+    flex: 1,
+    backgroundColor: '#1e293b'
+  },
 
-center: {
-flex: 1,
-justifyContent: 'center',
-alignItems: 'center',
-backgroundColor: '#1e293b'
-},
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#1e293b'
+  },
 
-loadingText: {
-color: 'white',
-marginTop: 10
-}
+  loadingText: {
+    color: 'white',
+    marginTop: 10
+  }
 
 });

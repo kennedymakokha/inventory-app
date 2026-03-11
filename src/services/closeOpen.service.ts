@@ -46,7 +46,8 @@ export const createPaymentsTable = async () => {
               method TEXT,
               amount REAL,
               created_at TEXT,
-              synced INTEGER DEFAULT 0
+              synced INTEGER DEFAULT 0,
+              updatedAt TEXT
              ) `
         );
     } catch (err) {
@@ -58,6 +59,7 @@ export const createPaymentsTable = async () => {
 
 export const calculateExpectedCash = async () => {
     const db = await getDBConnection()
+    await createPaymentsTable()
     const [cashSales] = await db.executeSql(
         `SELECT SUM(amount) as total
      FROM Payments

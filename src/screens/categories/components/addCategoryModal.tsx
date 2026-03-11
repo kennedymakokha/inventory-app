@@ -38,13 +38,13 @@ const AddProductModal = ({ modalVisible, onClose, isDarkMode, msg, setMsg, setIt
                 <InputContainer
                     label="Name"
                     placeholder="category name"
-                    value={item.category_name}
+                    value={item?.category_name}
                     onChangeText={(text: string) => handleChange("category_name", text)}
                     keyboardType="text"
                 />
                 <TextArea
                     placeholder="category description ..."
-                    value={item.description}
+                    value={item?.description}
                     theme={theme}
                     isDarkMode={isDarkMode}
                     onChangeText={(text: string) => handleChange("description", text)}
@@ -55,7 +55,7 @@ const AddProductModal = ({ modalVisible, onClose, isDarkMode, msg, setMsg, setIt
                         <Button handleclick={onClose} outline loading={false} title="cancel" />
                     </View>
                     <View className="flex w-1/2 flex-row px-2 justify-center items-center">
-                        <Button handleclick={PostLocally} loading={false} title={item.category_id ? "Update" : "submit"} />
+                        <Button handleclick={PostLocally} loading={false} title={item?.category_id ? "Update" : "submit"} />
                     </View>
                 </View>
 

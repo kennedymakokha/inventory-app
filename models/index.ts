@@ -7,30 +7,43 @@ export type ProductItem = {
     _id?: string;
     id?: string | any
     barcode?: string;
-    business_id?: string
+    business_id: string
     product_name: string;
-    category_id?: string;
-    product_id?: string;
-    expiryDate?: any
+    category_id: string;
+    product_id: string;
+    expiryDate: any
     price: number;
-    soldprice?: number;
+    soldprice: number;
     initial_stock: string,
     quantity: number
     createdBy?: string | any,
-    Bprice?: number
+    Bprice: number
     description: string,
-    updatedAt?: string
-    synced?: boolean
+    updatedAt: string
+    synced: boolean
 };
 export type CategoryItem = {
     _id?: string;
     id?: string | any
     category_name: string;
-    business_id?: string
-    expiryDate?: any
-    category_id?: string;
+    business_id: string
+   
+    category_id: string;
     createdBy?: string | any,
     description: string,
+    updatedAt?: string
+    synced?: boolean
+};
+export type UserItem = {
+    name: string;
+    business_id: string;
+    phone_number: string;
+    role: string;
+    user_id: string;
+    id?: string
+    email?: string;
+    createdBy?: string | any,
+
     updatedAt?: string
     synced?: boolean
 };

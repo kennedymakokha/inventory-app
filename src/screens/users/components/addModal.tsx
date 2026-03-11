@@ -1,73 +1,145 @@
-import { View, Text, Modal, TextInput, TouchableOpacity, Platform } from 'react-native'
-import React, { useState } from 'react'
-import { InputContainer, TextArea } from '../../../components/Input';
-import { authorizedFetch } from '../../../middleware/auth.middleware';
-import Toast from '../../../components/Toast';
-import Button from '../../../components/Button';
-import { CategoryItem, ProductItem } from '../../../../models';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { Theme } from '../../../utils/theme';
+import { View, Text, Modal } from "react-native";
+import React from "react";
+import { InputContainer } from "../../../components/Input";
+import Toast from "../../../components/Toast";
+import Button from "../../../components/Button";
+import { Theme } from "../../../utils/theme";
+import { Picker } from "@react-native-picker/picker";
 
-const AddUserModal = ({ modalVisible,isDarkMode, msg, setMsg, setItem, PostLocally, fetchProducts, item, setModalVisible }: any) => {
-    const [showPicker, setShowPicker] = useState(false);
-      const theme = isDarkMode ? Theme.dark : Theme.light;
-    const handleChange = (key: keyof CategoryItem, value: string) => {
-        setMsg({ msg: "", state: "" });
+const AddUserModal = ({
+  modalVisible,
+  setModalVisible,
+  onClose,
+  isDarkMode,
+  msg,
+  setMsg,
+  item,
+  setItem,
+  PostLocally,
+}: any) => {
 
-        setItem((prev: any) => ({
-            ...prev,
-            [key]: value
-        }));
+  const theme = isDarkMode ? Theme.dark : Theme.light;
+
+  const roles = [
+    { label: "Admin", value: "admin" },
+    // { label: "Manager", value: "manager" },
+    { label: "Sales", value: "sales" },
+    // { label: "User", value: "user" },
+  ];
+
+  const handleChange = (key: string, value: string) => {
+    setMsg({ msg: "", state: "" });
+
+    setItem((prev: any) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
+  const validatePhone = (phone: string) => {
+    const phoneRegex = /^[0-9]{9,15}$/;
+    return phoneRegex.test(phone);
+  };
+
+  const handleSubmit = () => {
+    if (!item.name) {
+      return setMsg({ msg: "Name is required", state: "error" });
     }
 
-    const futureDate = new Date();
-    futureDate.setDate(futureDate.getDate() + 1000);
+    // if (item.phone_number && !validatePhone(item.phone_number)) {
+    //   return setMsg({ msg: "Invalid phone number", state: "error" });
+    // }
 
-    return (
+    PostLocally();
+  };
 
-        <Modal
-            animationType="slide"
-            transparent={false}
-            visible={modalVisible}
-            onRequestClose={() => {
-                setModalVisible(!modalVisible);
-            }}>
-            <View className='flex-1 px-10  bg-secondary-900 justify-center'>
-                <Text className="text-2xl font-bold text-center uppercase text-green-500 mb-5">New Product</Text>
+  return (
+    <Modal
+      animationType="slide"
+      transparent={false}
+      visible={modalVisible}
+      onRequestClose={() => setModalVisible(false)}
+    >
+      <View className="flex-1 px-10 bg-secondary-900 justify-center">
 
-                <InputContainer
-                    label="Name"
-                    placeholder="category name"
-                    value={item.category_name}
-                    onChangeText={(text: string) => handleChange("category_name", text)}
-                    keyboardType="text"
-                />
+        <Text className="text-2xl font-bold text-center uppercase text-green-500 mb-6">
+          {item?.user_id ? "Update User" : "Add New User"}
+        </Text>
 
-              
-              
-               
-                <TextArea
-                    placeholder="category description ..."
-                    value={item.description}
-                    theme={theme}
-                    isDarkMode={isDarkMode}
-                    onChangeText={(text: string) => handleChange("description", text)}
-                />
-               {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
-                <View className="flex w-full flex-row  ">
-                    <View className="flex w-1/2 flex-row justify-center px-2 items-center">
-                        <Button handleclick={() => setModalVisible(!modalVisible)} outline loading={false} title="cancel" />
-                    </View>
-                    <View className="flex w-1/2 flex-row px-2 justify-center items-center">
-                        <Button handleclick={PostLocally} loading={false} title="submit" />
-                    </View>
-                </View>
+        <InputContainer
+          label="Full Name"
+          placeholder="Enter full name"
+          value={item.name}
+          onChangeText={(text: string) => handleChange("name", text)}
+        />
 
+        <InputContainer
+          label="Phone Number"
+          placeholder="e.g 712345678"
+          value={item.phone_number}
+          keyboardType="phone-pad"
+          onChangeText={(text: string) => handleChange("phone_number", text)}
+        />
 
-            </View>
-        </Modal>
+        <InputContainer
+          label="Email"
+          placeholder="Enter email"
+          value={item.email}
+          keyboardType="email-address"
+          onChangeText={(text: string) => handleChange("email", text)}
+        />
 
-    )
-}
+        {/* ROLE DROPDOWN */}
 
-export default AddUserModal
+        <Text className="text-white mb-1 mt-3">Role</Text>
+
+        <View className="bg-gray-800 rounded-lg mb-4">
+          <Picker
+            selectedValue={item.role}
+            onValueChange={(value) => handleChange("role", value)}
+            dropdownIconColor="white"
+          >
+            <Picker.Item label="Select role" value="" />
+            {roles.map((role) => (
+              <Picker.Item
+                key={role.value}
+                label={role.label}
+                value={role.value}
+              />
+            ))}
+          </Picker>
+        </View>
+
+        {msg.msg && (
+          <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />
+        )}
+
+        {/* BUTTONS */}
+
+        <View className="flex-row w-full mt-4">
+
+          <View className="w-1/2 px-2">
+            <Button
+              handleclick={onClose}
+              outline
+              loading={false}
+              title="Cancel"
+            />
+          </View>
+
+          <View className="w-1/2 px-2">
+            <Button
+              handleclick={handleSubmit}
+              loading={false}
+              title={item?.user_id ? "Update" : "Submit"}
+            />
+          </View>
+
+        </View>
+
+      </View>
+    </Modal>
+  );
+};
+
+export default AddUserModal;

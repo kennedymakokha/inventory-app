@@ -9,6 +9,7 @@ import { useSettings } from '../../../context/SettingsContext';
 import { Theme } from '../../../utils/theme';
 import PieChart from '../../dashbordItems/PieChart';
 import RadialFab from '../../../components/multiFab';
+import { getDBConnection } from '../../../services/db-service';
 
 const PAGE_SIZE = 10;
 
@@ -18,13 +19,13 @@ const SalesReport = () => {
   const theme = isDarkMode ? Theme.dark : Theme.light;
 
   const [sales, setSales] = useState<any[]>([]);
+  const [sale, setSale] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [filter, setFilter] = useState('All');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [state, setState] = useState<Record<string, boolean>>({});
-  const [TopProducts, setTopProducts] = useState([]);
   const [showPie, setShowPie] = useState(false); // toggle state
 
   const filterData = user?.role === 'superAdmin' || user?.role === 'admin' ? adminFilter : salesFilter;
@@ -33,7 +34,12 @@ const SalesReport = () => {
     try {
       if (pageNumber === 1) setLoading(true);
       else setLoadingMore(true);
-
+      let db = await getDBConnection();
+      const [salesResult] = await db.executeSql("SELECT * FROM Sale LIMIT 10");
+      console.log("Sales restored:", salesResult.rows.length);
+      // setSale(salesResult)
+      const [itemsResult] = await db.executeSql("SELECT * FROM SaleItems LIMIT 10");
+      console.log("SaleItems restored:", itemsResult.rows.length);
       const selectedFilter = filterData.find((f) => f.title === filter);
       const filterId = selectedFilter ? selectedFilter.id : 0;
 
@@ -62,13 +68,7 @@ const SalesReport = () => {
     fetchSales(1, false);
   }, [filter]);
 
-  useEffect(() => {
-    const load = async () => {
-      const tp: any = await getTopProducts();
-      setTopProducts(tp);
-    };
-    load();
-  }, []);
+
 
   const loadMore = () => {
     if (!hasMore || loadingMore) return;
@@ -135,7 +135,7 @@ const SalesReport = () => {
 
       <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
         {showPie ? (
-          <PieChart title={` ${filter} Sales Report`} data={pieData.length ? pieData : TopProducts} />
+          <PieChart title={` ${filter} Sales Report`} data={pieData.length ? pieData : []} />
         ) : (
           <>
             {/* Report Header */}

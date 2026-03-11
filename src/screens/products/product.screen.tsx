@@ -1,8 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
-    RefreshControl,
     ScrollView,
     Text,
     TouchableOpacity,
@@ -10,13 +9,11 @@ import {
     StyleSheet,
     Dimensions,
     LayoutAnimation,
-    UIManager,
-    Platform,
     Modal,
     TextInput
 } from 'react-native';
 
-import { Swipeable } from 'react-native-gesture-handler';
+
 
 import { getDBConnection } from '../../services/db-service';
 import { CategoryItem, ProductItem } from '../../../models';
@@ -38,13 +35,12 @@ import RadialFab from '../../components/multiFab';
 import { getCategories } from '../../services/category.service';
 import { Theme } from '../../utils/theme';
 import { useSettings } from '../../context/SettingsContext';
-import RestockModal from './components/restockModal';
-import { useCreateProductMutation } from '../../services/productApi';
 import { validateItem } from '../validations/product.validation';
 import { useSelector } from 'react-redux';
 import Toast from '../../components/Toast';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from "uuid";
+import SwipeableCard from '../../components/SwipeableCard';
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
 
@@ -69,7 +65,7 @@ const ProductScreen = () => {
         product_id: ""
     };
 
-
+    const swipeRefs = useRef<any>({});
     const [products, setProducts] = useState<ProductItem[]>([]);
     const [categories, setCategories] = useState<CategoryItem[]>([]);
     const [refreshing, setRefreshing] = useState(false);
@@ -86,6 +82,7 @@ const ProductScreen = () => {
     const [hasMore, setHasMore] = useState(true);
     const [saving, setSaving] = useState(false);
     const PAGE_SIZE = 20;
+    const currentlyOpenSwipe = useRef<any>(null);
     const loadProducts = async () => {
         if (loading || !hasMore) return;
 
@@ -138,6 +135,7 @@ const ProductScreen = () => {
 
             if (item.product_id) {
                 await updateProduct(item);
+                swipeRefs.current[item.product_id]?.close();
                 setMsg({ msg: "Product updated!", state: "success" });
             } else {
                 await createProduct(item);
@@ -232,10 +230,13 @@ const ProductScreen = () => {
         <View style={styles.swipeContainer}>
             <TouchableOpacity
                 onPress={() => {
+                    swipeRefs.current[prod.product_id]?.close(); // 👈 close swipe first
+
                     setItem({
                         ...initialState,
                         ...prod
-                    });   // set the selected product
+                    });
+
                     setModalVisible(true);
                 }}
                 style={[styles.swipeBtn, { backgroundColor: Theme.primary }]}
@@ -245,7 +246,10 @@ const ProductScreen = () => {
             </TouchableOpacity>
 
             <TouchableOpacity
-                onPress={() => handleDelete(prod)}
+                onPress={() => {
+                    swipeRefs.current[prod.product_id]?.close();
+                    handleDelete(prod);
+                }}
                 style={[styles.swipeBtn, { backgroundColor: Theme.danger }]}
             >
                 <Icon name="trash" size={20} color="#fff" />
@@ -256,15 +260,25 @@ const ProductScreen = () => {
     useEffect(() => {
         loadProducts();
     }, []);
+
+
     const renderProductCard = ({ item }: { item: ProductItem }) => {
         const lowStock = item.quantity <= 5;
         const sales = (item as any)?.total_sales || 0;
 
         return (
-            <Swipeable renderRightActions={() => renderRightActions(item)}>
+            <SwipeableCard
+                uniqueId={item.product_id}
+                swipeRefs={swipeRefs}
+                currentlyOpenSwipe={currentlyOpenSwipe}
+                onEdit={() => { setItem({ ...item }); setModalVisible(true); }}
+                onDelete={() => handleDelete(item)}
+            >
+
                 <TouchableOpacity
                     activeOpacity={0.9}
                     onLongPress={() => {
+                        swipeRefs.current[item.product_id]?.close(); // 👈 close swipe
                         setSelectedProduct(item);
                         setRestockModalVisible(true);
                     }}
@@ -324,7 +338,7 @@ const ProductScreen = () => {
                         </View>
                     </View>
                 </TouchableOpacity>
-            </Swipeable>
+            </SwipeableCard>
         );
     };
 

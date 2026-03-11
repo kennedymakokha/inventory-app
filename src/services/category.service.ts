@@ -16,16 +16,6 @@ import { v4 as uuidv4 } from "uuid";
 /* CREATE TABLES */
 /* -------------------------- */
 
-export const createSyncTable = async (db: SQLiteDatabase) => {
-  const query = `
-    CREATE TABLE IF NOT EXISTS sync_meta (
-      key TEXT PRIMARY KEY,
-      value TEXT
-    );
-  `;
-  await db.executeSql(query);
-};
-
 
 
 export const createCategoryTable = async () => {
