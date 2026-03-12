@@ -1,6 +1,9 @@
 // navigationTypes.ts
 export type AuthStackParamList = {
   login: undefined;
+  forgetPass: undefined;
+  activation: { emailOrPhone: string };
+  resetPassword: { emailOrPhone: string; otp: string };
 };
 
 export type RootStackParamList = {

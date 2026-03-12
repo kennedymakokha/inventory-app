@@ -16,6 +16,27 @@ export const injectEndpoints = api.injectEndpoints({
                 body,
             }),
         }),
+        verify: builder.mutation({
+            query: (body) => ({
+                url: '/auth/verify-otp',
+                method: 'POST',
+                body,
+            }),
+        }),
+        requestOTP: builder.mutation({
+            query: (body) => ({
+                url: '/auth/request-otp',
+                method: 'POST',
+                body,
+            }),
+        }),
+         resetPassword: builder.mutation({
+            query: (body) => ({
+                url: '/auth/reset-password',
+                method: 'POST',
+                body,
+            }),
+        }),
         login: builder.mutation({
             query: (body) => ({
                 url: '/auth/login',
@@ -46,6 +67,9 @@ export const injectEndpoints = api.injectEndpoints({
 });
 
 export const {
+    useResetPasswordMutation,
+    useVerifyMutation,
+    useRequestOTPMutation,
     useFetchuserQuery,
     useUpdateuserMutation,
     useActivateMutation,
