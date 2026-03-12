@@ -11,6 +11,8 @@ export type RootStackParamList = {
   sales: undefined;
   salesreport: undefined;
   settings: undefined;
+  business: undefined;
+  profile: undefined
 };
 
 export type InventoryStackParamList = {

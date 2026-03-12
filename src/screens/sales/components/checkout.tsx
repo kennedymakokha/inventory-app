@@ -22,6 +22,8 @@ import { PrinterSelectionModal } from '../../printerSelection';
 import { useSettings } from '../../../context/SettingsContext';
 import { Theme } from '../../../utils/theme';
 import { Animated } from 'react-native';
+import { useBusiness } from '../../../context/BusinessContext';
+import { useUser } from '../../../context/UserContext';
 
 interface CheckoutModalProps {
   modalVisible: boolean;
@@ -41,7 +43,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   setMsg,
   setModalVisible,
 }) => {
-  const { user } = useSelector((state: any) => state.auth);
+  const { user} = useUser();
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'MPESA'>('CASH');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [amountGiven, setAmountGiven] = useState(''); // Cash input
@@ -51,7 +53,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [adjustedCart, setAdjustedCart] = useState<CartItem[]>([...cartItems]);
   const { isDarkMode } = useSettings();
   const theme = isDarkMode ? Theme.dark : Theme.light;
-  const { business } = user;
+  const { business } = useBusiness();
 
   useEffect(() => {
     // Load saved printer
@@ -121,9 +123,11 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
         };
 
         let text = '';
-        text += center(business.business_name.toUpperCase());
-        text += center(business.postal_address);
-        text += center(`Tel: ${business.phone_number}`);
+        if (business) {
+          text += center(business.business_name.toUpperCase());
+          text += center(business.postal_address);
+          text += center(`Tel: ${business.phone_number}`);
+        }
         text += line;
 
         const now = new Date();

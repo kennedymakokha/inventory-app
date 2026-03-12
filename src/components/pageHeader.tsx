@@ -34,35 +34,35 @@ const POSHeader = ({ component, title }: { component?: () => React.ReactNode, ti
   }, []);
 
   return (
-    <View style={{ backgroundColor: bgColor }} className="px-5 pt-6 pb-4 shadow-lg">
+    <View style={{ backgroundColor: bgColor }} className="px-5 pt-0 pb-0 shadow-lg">
       {/* Business Name */}
-      <Text style={{ color: textColor }} className="text-2xl text-center font-extrabold tracking-wide">
+      {/* <Text style={{ color: textColor }} className="text-2xl text-center font-extrabold tracking-wide">
         {business.business_name}
-      </Text>
+      </Text> */}
 
       {/* User + Terminal Info */}
-      <View className="flex-row justify-between items-center mt-3">
-        {/* Cashier Info */}
+      {/* <View className="flex-row justify-between items-center mt-3">
+        Cashier Info
         <View>
-          <Text style={{ color: textColor }} className="text-lg font-semibold">{user?.username}</Text>
-          <View style={{ backgroundColor: badgeBg }} className="px-3 py-1 rounded-sm mt-1 self-start">
-            <Text style={{ color: textColor }} className="text-xs font-bold uppercase tracking-wide">
-              {user?.role}
-            </Text>
-          </View>
-        </View>
+          <Text style={{ color: textColor }} className="text-lg font-semibold">{user?.name}</Text>
 
-        {/* Terminal & Online Status */}
+        </View>
+        <View style={{ backgroundColor: badgeBg }} className="px-3 py-1 rounded-sm mt-1 self-start">
+          <Text style={{ color: textColor }} className="text-xs font-bold uppercase tracking-wide">
+            {user?.role}
+          </Text>
+        </View>
+        Terminal & Online Status
         <View className="items-end">
           <Text style={{ color: textColor }} className="text-sm font-medium">{dateTime}</Text>
           <Text style={{ color: online ? onlineColor : offlineColor }} className="text-xs font-semibold mt-1">
             ● {online ? "Online" : "Offline"} | Terminal: `{Initials(business.business_name)}-POS-01`
           </Text>
         </View>
-      </View>
+      </View> */}
 
       {/* Search / Custom Component */}
-      <View className="mt-4">
+      <View className="mt-0">
         {component ? component() : <SearchBar white={isDarkMode} placeholder={`Search ${title ? title : ""}...`} />}
       </View>
     </View>

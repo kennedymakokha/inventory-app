@@ -11,15 +11,17 @@ import { User } from '../../models';
 import { setCredentials } from '../features/auth/authSlice';
 import { useDispatch } from 'react-redux';
 import { useLoginMutation } from '../services/authApi';
+import { useUser } from '../context/UserContext';
 
 const LoginScreen = ({ navigation }: any) => {
     const [msg, setMsg] = useState({ msg: "", state: "" });
     const [loading, setLoading] = useState(false)
     const [progress, setprogress] = useState("")
-    const [item, setItem] = useState({ phone_number: "0716017221", password: '0716017221' });
-    const [loginUser, { isLoading, error }] = useLoginMutation();
+    const [item, setItem] = useState({ phone_number: "0727270677", password: '+254727270677' });
+    const [loginUser, { error }] = useLoginMutation();
     const dispatch = useDispatch()
     const { login } = useAuthContext();
+    const { setUser } = useUser();
     const handleChange = (key: keyof User, value: string) => {
         setMsg({ msg: "", state: "" });
 
@@ -32,64 +34,46 @@ const LoginScreen = ({ navigation }: any) => {
 
     const handleLogin = async (e?: any) => {
         try {
-            setprogress("starting")
+            setprogress("starting");
             setMsg({ msg: "", state: "" });
 
             if (!item.phone_number || !item.password) {
                 setMsg({ msg: "Both fields are required", state: "error" });
                 return;
             }
-            setLoading(true)
 
-            const data = await loginUser(item).unwrap()
-            // const data = {
-            //     "ok": true,
-            //     "message": "Logged in",
-            //     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWEwMTVkNzZjMGExYzcyMjMwNmFhZWIiLCJ1c2VybmFtZSI6Ik1rb2xvbmdvbG8gU3VwcGxpZXMncyBBZG1pbiIsInJvbGUiOiJhZG1pbiIsIm5hbWUiOiJNa29sb25nb2xvIFN1cHBsaWVzJ3MgQWRtaW4iLCJpYXQiOjE3NzI0MjEzNjgsImV4cCI6MTc3MzAyNjE2OH0.vuTlhHjhDfKtkUhk1Cfkl-R49FhgVKaqpphA5vxDseE",
-            //     "exp": 1773026168,
-            //     "user": {
-            //         "_id": "69a015d76c0a1c722306aaeb",
-            //         "phone_number": "0727270677",
-            //         "name": "Mkolongolo Supplies's Admin",
-            //         "business": {
-            //             "_id": "69a015d66c0a1c722306aae9",
-            //             "business_name": "Mkolongolo Supplies",
-            //             "postal_address": "P.O BOX 123 - NAIROBI",
-            //             "phone_number": "+254727270677",
-            //             "contact_number": "0727270677",
-            //             "kra_pin": "P051234567X",
-            //             "api_key": "1234567ss8bcer6"
-            //         },
-            //         "role": "admin",
-            //         "activated": true,
-            //         "password": "$2b$10$O1aMv1dXtn7KlJk28ybWdeDjDPG9cmgo7IyMIWxC1TTam0rBdh7Hm"
-            //     }
-            // }
+            setLoading(true);
 
-            if (data.ok === true) {
-                setprogress("Data truei")
-                dispatch(setCredentials({ ...data }))
+            const data = await loginUser(item).unwrap();
+
+            if (data.ok) {
+                setprogress("Data truei");
+
+                // Update Redux / AsyncStorage if needed
+                dispatch(setCredentials({ ...data }));
                 await AsyncStorage.setItem("accessToken", data.token);
-                await AsyncStorage.setItem('userId', data.user._id);
-                if (data?.exp) {
+                await AsyncStorage.setItem("userId", data.user._id);
 
+                // ✅ Update context with logged-in user
+                await setUser(data.user);
+
+                if (data.exp) {
                     await AsyncStorage.setItem("tokenExpiry", data.exp.toString());
                     await login(data.token);
                 }
-                setLoading(false)
-                setMsg({ msg: `Login successful! Redirecting...`, state: "success" })
 
+                setLoading(false);
+                setMsg({ msg: "Login successful! Redirecting...", state: "success" });
             } else {
-                setLoading(false)
-                setprogress("Data false")
+                setLoading(false);
+                setprogress("Data false");
             }
-
         } catch (error: any) {
             console.error(error);
-            setMsg({ msg: error.message || error.data || "Error Occured try again 😧😧😧 !!!", state: "error" });
-
-        } finally {
-
+            setMsg({
+                msg: error.message || error.data || "Error occurred, try again 😧",
+                state: "error",
+            });
         }
     };
 

@@ -27,7 +27,7 @@ export type CategoryItem = {
     id?: string | any
     category_name: string;
     business_id: string
-   
+
     category_id: string;
     createdBy?: string | any,
     description: string,
@@ -115,4 +115,15 @@ export interface DataSales {
     pending_orders: number;
     total_profit: number;
     // Add other properties if needed
+}
+
+
+export interface DataPoint {
+    key: string;
+    value: number;
+}
+
+export interface Dataset {
+    label: string;
+    data: DataPoint[];
 }

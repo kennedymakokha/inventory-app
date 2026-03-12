@@ -43,8 +43,6 @@ export const getTodayTransactions = async (userRole: string, userId?: string) =>
 export const getTopProducts = async (userRole: string, userId?: string) => {
     const db = await getDBConnection();
 
-    console.log(userId)
-
     let query = `
         SELECT 
             p.product_name AS key,
@@ -83,41 +81,61 @@ export const getTopProducts = async (userRole: string, userId?: string) => {
     return products;
 };
 
-export const getHourlySales = async (
-    db: SQLiteDatabase,
+export const getHourlySalesByProduct = async (
     userRole: string,
     userId?: string
 ) => {
+    const db = await getDBConnection();
 
-    // Role condition
     let roleCondition = '';
     if (userRole === 'sales' && userId) {
-        roleCondition = `AND createdBy = '${userId}'`;
+        roleCondition = `AND s.createdBy = '${userId}'`;
     }
 
     const [result] = await db.executeSql(
         `SELECT 
-        strftime('%H', created_at) as hour,
-        SUM(total) as sales
-     FROM Sale
-     WHERE date(created_at) = date('now') ${roleCondition}
-     GROUP BY hour
-     ORDER BY hour`
+       p.product_name as productName,
+       strftime('%H', s.created_at) as hour,
+       SUM(si.total) as sales
+     FROM Sale s
+     JOIN SaleItems si ON si.sale_id = s.sale_id
+     JOIN Product p ON p.product_id = si.product_id
+     WHERE date(s.created_at) = date('now')
+       ${roleCondition}
+     GROUP BY productName, hour
+     ORDER BY productName, hour`
     );
 
-    const hours: { hour: string; sales: number }[] = [];
+    const productMap: Record<string, { key: string; value: number }[]> = {};
 
     for (let i = 0; i < result.rows.length; i++) {
         const row = result.rows.item(i);
-        hours.push({
-            hour: row.hour,
-            sales: Number(row.sales),
+        const productName = row.productName;
+        if (!productMap[productName]) productMap[productName] = [];
+        productMap[productName].push({
+            key: row.hour,
+            value: Number(row.sales),
         });
     }
 
-    return hours;
-};
+    // fill missing hours 00-23
+    const allHours = Array.from({ length: 24 }, (_, i) =>
+        i.toString().padStart(2, '0')
+    );
 
+    const datasets = Object.entries(productMap).map(([productName, data]) => {
+        const filledData = allHours.map(hour => {
+            const existing = data.find(d => d.key === hour);
+            return { key: hour, value: existing ? existing.value : 0 };
+        });
+        return {
+            label: productName,
+            data: filledData,
+        };
+    });
+
+    return datasets;
+};
 export const getLowStockProducts = async (
 
 ) => {

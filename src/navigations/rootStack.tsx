@@ -13,6 +13,8 @@ import { useSettings } from "../context/SettingsContext";
 import { useSelector } from "react-redux";
 import Dashboard from "../screens/DashboardScreen";
 import { SalesStack } from "./sales/stack";
+import BusinessProfileScreen from "../screens/Business";
+import UserProfileScreen from "../screens/profile";
 
 export function RootStack() {
   const { isDarkMode } = useSettings();
@@ -51,6 +53,16 @@ export function RootStack() {
         name="salesreport"
         component={ReportStack}
         options={{ headerShown: false }}
+      />
+      <RootStackNav.Screen
+        name="business"
+        component={BusinessProfileScreen}
+        options={{ header: () => <CustomHeaderWithSearch noSearch title="My Business" /> }}
+      />
+      <RootStackNav.Screen
+        name="profile"
+        component={UserProfileScreen}
+        options={{ header: () => <CustomHeaderWithSearch noSearch title="My Profile" /> }}
       />
       <RootStackNav.Screen
         name="settings"

@@ -40,6 +40,8 @@ import { SyncLoader } from './src/sync/SyncLoader';
 import "./global.css";
 import { createUserTable } from './src/services/users.service';
 import { CartProvider } from './src/context/CartContext';
+import { BusinessProvider } from './src/context/BusinessContext';
+import { UserProvider } from './src/context/UserContext';
 
 /* -------------------------------- */
 /* Global Guards */
@@ -214,7 +216,7 @@ function App(): React.JSX.Element {
         if (tablesInitialized) return;
 
         let db = await getDBConnection();
-  // await db.executeSql(`DROP TABLE IF EXISTS SaleItems;`);
+        // await db.executeSql(`DROP TABLE IF EXISTS Payments;`);
 
         await createUserTable();
         await createPaymentsTable();
@@ -258,27 +260,30 @@ function App(): React.JSX.Element {
 
       <SafeAreaProvider>
         <CartProvider>
+
           <Provider store={store}>
+            <BusinessProvider>
+              <UserProvider>
+                <SettingsProvider>
+                  <PersistGate
+                    persistor={persistor}
+                    loading={
+                      <View style={styles.center}>
+                        <ActivityIndicator size="large" color="#ffffff" />
+                        <Text style={styles.loadingText}>Loading app...</Text>
+                      </View>
+                    }
+                  >
 
-            <SettingsProvider>
+                    <AppWithAuth />
 
-              <PersistGate
-                persistor={persistor}
-                loading={
-                  <View style={styles.center}>
-                    <ActivityIndicator size="large" color="#ffffff" />
-                    <Text style={styles.loadingText}>Loading app...</Text>
-                  </View>
-                }
-              >
+                  </PersistGate>
 
-                <AppWithAuth />
-
-              </PersistGate>
-
-            </SettingsProvider>
-
+                </SettingsProvider>
+              </UserProvider>
+            </BusinessProvider>
           </Provider>
+
         </CartProvider>
       </SafeAreaProvider>
 

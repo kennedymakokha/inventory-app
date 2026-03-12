@@ -12,7 +12,8 @@ import { useSelector } from "react-redux";
 import { useAuthContext } from "../context/authContext";
 import { useSettings } from "../context/SettingsContext";
 import { Theme } from "../utils/theme";
-import { calculateExpectedCash } from "../services/closeOpen.service";
+import { calculateExpectedCash, closeRegister } from "../services/closeOpen.service";
+import { formatNumber } from "../../utils/formatNumbers";
 
 const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
   navigation,
@@ -23,7 +24,7 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
   const { isDarkMode } = useSettings();
   const theme = isDarkMode ? Theme.dark : Theme.light;
 
-  const [expected, setExpected] = useState<string>("");
+  const [expected, setExpected] = useState<any>("0");
   const [message, setMessage] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -31,7 +32,9 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
 
 
   const logoutUser = async () => {
+    await closeRegister(user.role, user._id, 40)
     await logout();
+
     await AsyncStorage.clear();
   };
 
@@ -40,24 +43,32 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
   const menuItem = (
     label: string,
     icon: string,
-    screen: string
-  ) => (
-    <TouchableOpacity
-      className="flex-row items-center my-4"
-      onPress={() => navigation.navigate("Home", { screen })}
-    >
-      <Icon name={icon} size={20} color={theme.text} />
-      <Text
-        style={{ color: theme.text }}
-        className="tracking-widest uppercase text-base ml-3"
-      >
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
+    screen: string,
+    role?: string
+  ) => {
+    // show if admin OR role matches
+    if (user?.role === "admin" || user?.role === role) {
+      return (
+        <TouchableOpacity
+          className="flex-row items-center my-4"
+          onPress={() => navigation.navigate("Home", { screen })}
+        >
+          <Icon name={icon} size={20} color={theme.text} />
+          <Text
+            style={{ color: theme.text }}
+            className="tracking-widest uppercase text-base ml-3"
+          >
+            {label}
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+
+    return null;
+  };
   useEffect(() => {
     const load = async () => {
-      const mS = await calculateExpectedCash();
+      const mS = await calculateExpectedCash(user.role, user._id);
       setExpected(mS);
     };
     load();
@@ -79,7 +90,7 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
           className="absolute text-[880px] font-bold opacity-20"
           style={{ color: "#38bdf8", bottom: 30, fontSize: 100 }}
         >
-          {expected}
+          {formatNumber(expected)}
         </Text>
         }
         {/* Foreground content */}
@@ -87,7 +98,12 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
           source={require("../assets/logo.png")}
           className="size-40 rounded-full mb-2"
         />
-
+        <Text
+          className="absolute text-[880px] font-bold opacity-20"
+          style={{ color: "#38bdf8", bottom: 20, fontSize: 20 }}
+        >
+          {expected}
+        </Text>
         <Text style={{ color: theme.text }} className="text-lg">
           Welcome! {user?.name}
         </Text>
@@ -104,13 +120,14 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
       )}
 
       {/* Navigation */}
-      {menuItem("Home", "home-outline", "dashboard")}
-      {menuItem("Products", "swap-horizontal-outline", "products")}
-      {menuItem("Categories", "grid-outline", "categories")}
-      {menuItem("Sales", "cart-outline", "sales")}
-      {menuItem("Reports", "book-outline", "salesreport")}
-      {menuItem("Settings", "settings-outline", "settings")}
-       {menuItem("Profile", "person-outline", "settings")}
+      {menuItem("Home", "home-outline", "dashboard", "sales")}
+      {menuItem("Business", "briefcase-outline", "business", "admin")}
+      {menuItem("Products", "swap-horizontal-outline", "products", "admin")}
+      {menuItem("Categories", "grid-outline", "categories", "admin")}
+      {menuItem("Sales", "cart-outline", "sales", "sales")}
+      {menuItem("Reports", "book-outline", "salesreport", "sales")}
+      {menuItem("Settings", "settings-outline", "settings", "sales")}
+      {menuItem("Profile", "person-outline", "profile", "sales")}
 
       {/* Sync Button */}
 

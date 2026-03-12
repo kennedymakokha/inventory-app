@@ -26,6 +26,16 @@ export const injectEndpoints = api.injectEndpoints({
         getSession: builder.query({
             query: () => '/auth',
         }),
+        fetchuser: builder.query({
+            query: () => `auth/active-user`
+        }),
+        updateuser: builder.mutation({
+            query: (data) => ({
+                url: `auth/${data._id}`,
+                method: "put",
+                body: data
+            })
+        }),
         logout: builder.mutation({
             query: () => ({
                 url: '/auth/logout',
@@ -36,6 +46,8 @@ export const injectEndpoints = api.injectEndpoints({
 });
 
 export const {
+    useFetchuserQuery,
+    useUpdateuserMutation,
     useActivateMutation,
     useSignupMutation,
     useLoginMutation,

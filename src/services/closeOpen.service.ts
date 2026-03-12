@@ -45,6 +45,7 @@ export const createPaymentsTable = async () => {
               sale_id TEXT,
               method TEXT,
               amount REAL,
+              createdBy TEXT,
               created_at TEXT,
               synced INTEGER DEFAULT 0,
               updatedAt TEXT
@@ -57,26 +58,31 @@ export const createPaymentsTable = async () => {
 };
 
 
-export const calculateExpectedCash = async () => {
-    const db = await getDBConnection()
-    await createPaymentsTable()
+export const calculateExpectedCash = async (userRole: string, userId?: string) => {
+    const db = await getDBConnection();
+    await createPaymentsTable();
+
+    // Role condition
+    let roleCondition = '';
+    if (userRole === 'sales' && userId) {
+        roleCondition = ` AND createdBy = '${userId}'`;
+    }
+
     const [cashSales] = await db.executeSql(
         `SELECT SUM(amount) as total
      FROM Payments
-     WHERE method='CASH'`
+     WHERE method='CASH' ${roleCondition}`
     );
 
     return cashSales.rows.item(0).total || 0;
-
 };
-
 export const closeRegister = async (
-    db: SQLiteDatabase,
+    role: string,
     registerId: string,
     actualCash: number
 ) => {
-
-    const expectedCash = await calculateExpectedCash();
+    const db = await getDBConnection();
+    const expectedCash = await calculateExpectedCash(role, registerId);
 
     const difference = actualCash - expectedCash;
 

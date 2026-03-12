@@ -281,8 +281,8 @@ export const finalizeSale = async (
 
         tx.executeSql(
           `INSERT INTO Payments
-          (payment_id,sale_id,method,amount,synced,created_at,updatedAt)
-          VALUES (?,?,?,?,?,?,?)`,
+          (payment_id,sale_id,method,amount,synced,created_at,updatedAt,createdBy)
+          VALUES (?,?,?,?,?,?,?,?)`,
           [
             paymentId,
             saleId,
@@ -290,7 +290,8 @@ export const finalizeSale = async (
             total,
             0,
             now,
-            now
+            now,
+            createdBy
           ],
           () => console.log("💳 Payment inserted"),
           (_, error) => {
@@ -394,26 +395,26 @@ export const createRefund = async (
 // -------------------------------
 // FETCH RECENT SALES
 // -------------------------------
-export const fetchSales = async (): Promise<any[]> => {
-  const db = await getDBConnection();
+// export const fetchSales = async (): Promise<any[]> => {
+//   const db = await getDBConnection();
 
-  return new Promise((resolve, reject) => {
-    db.transaction(tx => {
-      tx.executeSql(
-        `SELECT * FROM Inventory_log`,
-        [],
-        (_, { rows }) => {
-          const sales = rows.raw();
+//   return new Promise((resolve, reject) => {
+//     db.transaction(tx => {
+//       tx.executeSql(
+//         `SELECT * FROM Inventory_log`,
+//         [],
+//         (_, { rows }) => {
+//           const sales = rows.raw();
 
-          console.log("Sales from DB:", sales); // 👈 log here
+//           console.log("Sales from DB:", sales); // 👈 log here
 
-          resolve(sales);
-        },
-        (_, error) => {
-          reject(error);
-          return false;
-        }
-      );
-    });
-  });
-};
+//           resolve(sales);
+//         },
+//         (_, error) => {
+//           reject(error);
+//           return false;
+//         }
+//       );
+//     });
+//   });
+// };

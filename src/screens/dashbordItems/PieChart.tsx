@@ -4,6 +4,7 @@ import Svg, { Path, Circle } from "react-native-svg";
 import { useSettings } from "../../context/SettingsContext";
 import { Theme } from "../../utils/theme";
 import { useSelector } from "react-redux";
+import { getThemeAwareColor } from "./lineGraph";
 
 interface PieData {
     key: string;
@@ -51,11 +52,11 @@ const PieChart: React.FC<PieChartProps> = ({ data = [], title }) => {
     }
 
     const total = data.reduce((acc, item) => acc + item.value, 0);
-    const size = 200;
+    const size = 150;
     const radius = size / 2;
     const center = radius;
 
-    const sliceColors = data.map((item) => item.color ?? getRandomColor());
+    const sliceColors = data.map((item) => item.color ?? getThemeAwareColor(isDarkMode));
     let cumulativeAngle = 0;
 
     const createSlice = (value: number) => {
