@@ -121,23 +121,21 @@ export const updateProduct = async (product: any) => {
   const db = await getDBConnection();
   const now = new Date().toISOString();
 
-  await db.executeSql(
-    `
-    UPDATE Product
-    SET 
-      product_name = ?,
-      barcode = ?,
-      business = ?,
-      price = ?,
-      Bprice = ?,
-      soldprice = ?,
-      category_id = ?,
-      description = ?,
-      expiryDate = ?,
-      updatedAt = ?,
-      synced = 0
-    WHERE product_id = ?
-    `,
+  const result = await db.executeSql(
+    `UPDATE Product
+     SET 
+       product_name = ?,
+       barcode = ?,
+       business_id = ?,
+       price = ?,
+       Bprice = ?,
+       soldprice = ?,
+       category_id = ?,
+       description = ?,
+       expiryDate = ?,
+       updatedAt = ?,
+       synced = 0
+     WHERE product_id = ?`,
     [
       product.product_name,
       product.barcode || "",
@@ -147,11 +145,13 @@ export const updateProduct = async (product: any) => {
       product.soldprice || 0,
       product.category_id || "",
       product.description || "",
-      product.expiryDate || "",
+      product.expiryDate || null,
       now,
       product.product_id
     ]
   );
+
+  console.log("Updated rows:", result[0].rowsAffected);
 };
 
 /* =========================================================
@@ -252,9 +252,6 @@ export const createSale = async (
   });
 
 };
-
-
-
 
 
 
