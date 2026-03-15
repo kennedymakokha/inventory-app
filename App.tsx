@@ -42,6 +42,8 @@ import { createUserTable } from './src/services/users.service';
 import { CartProvider } from './src/context/CartContext';
 import { BusinessProvider } from './src/context/BusinessContext';
 import { UserProvider } from './src/context/UserContext';
+import { SocketProvider } from './src/context/socketContext';
+
 
 /* -------------------------------- */
 /* Global Guards */
@@ -250,7 +252,18 @@ function App(): React.JSX.Element {
   /* -------------------------------- */
   /* UI */
   /* -------------------------------- */
+  // socket.on("connection", (socket) => {
+  //     console.log(socket.id); // x8WIv7-mJelg7on_ALbx
+  //   });
 
+  //   // client-side
+  //   socket.on("connect", () => {
+  //     console.log(socket.id); // x8WIv7-mJelg7on_ALbx
+  //   });
+
+  //   socket.on("disconnect", () => {
+  //     console.log(socket.id); // undefined
+  //   });
   return (
 
 
@@ -263,24 +276,26 @@ function App(): React.JSX.Element {
 
           <Provider store={store}>
             <BusinessProvider>
-              <UserProvider>
-                <SettingsProvider>
-                  <PersistGate
-                    persistor={persistor}
-                    loading={
-                      <View style={styles.center}>
-                        <ActivityIndicator size="large" color="#ffffff" />
-                        <Text style={styles.loadingText}>Loading app...</Text>
-                      </View>
-                    }
-                  >
+              <SocketProvider>
+                <UserProvider>
+                  <SettingsProvider>
+                    <PersistGate
+                      persistor={persistor}
+                      loading={
+                        <View style={styles.center}>
+                          <ActivityIndicator size="large" color="#ffffff" />
+                          <Text style={styles.loadingText}>Loading app...</Text>
+                        </View>
+                      }
+                    >
 
-                    <AppWithAuth />
+                      <AppWithAuth />
 
-                  </PersistGate>
+                    </PersistGate>
 
-                </SettingsProvider>
-              </UserProvider>
+                  </SettingsProvider>
+                </UserProvider>
+              </SocketProvider>
             </BusinessProvider>
           </Provider>
 

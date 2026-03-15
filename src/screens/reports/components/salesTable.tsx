@@ -38,7 +38,7 @@ const SalesReportTable: React.FC<Props> = ({
     <View style={{ flexDirection: "row", backgroundColor: "#1e293b" }}>
       {headers.map((h) => (
         <View
-          key={h.key} // ✅ use unique header key
+          key={h.key} //  use unique header key
           style={{
             width: h.width || DEFAULT_COLUMN_WIDTH,
             paddingVertical: 12,
@@ -61,7 +61,7 @@ const SalesReportTable: React.FC<Props> = ({
       <View style={{ flexDirection: "row", backgroundColor: rowColor }}>
         {headers.map((h) => (
           <View
-            key={h.key} // ✅ safe unique key per column
+            key={h.key} //  safe unique key per column
             style={{
               width: h.width || DEFAULT_COLUMN_WIDTH,
               paddingVertical: 12,

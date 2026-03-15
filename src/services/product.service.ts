@@ -39,7 +39,7 @@ export const createProductTable = async () => {
       );`
     );
   } catch (err) {
-    console.error('❌ createProductTable failed:', err);
+    console.error(' createProductTable failed:', err);
     throw err;
   }
 };
@@ -126,7 +126,7 @@ export const updateProduct = async (product: any) => {
      SET 
        product_name = ?,
        barcode = ?,
-       business_id = ?,
+       business = ?,
        price = ?,
        Bprice = ?,
        soldprice = ?,
@@ -283,7 +283,7 @@ export const getProducts = async (
 
     return products;
   } catch (error) {
-    console.log("❌ getProducts error:", error);
+    console.log(" getProducts error:", error);
     return [];
   }
 };
@@ -316,7 +316,7 @@ export const getProductsByCategoryName = async (
 
     return products;
   } catch (error) {
-    console.log("❌ getProductsByCategoryName error:", error);
+    console.log(" getProductsByCategoryName error:", error);
     return [];
   }
 };
@@ -357,7 +357,7 @@ export const getProductsGroupedByCategory = async (
 
     return grouped;
   } catch (error) {
-    console.log("❌ getProductsGroupedByCategory error:", error);
+    console.log(" getProductsGroupedByCategory error:", error);
     return {};
   }
 };
@@ -381,7 +381,7 @@ WHERE product_name LIKE '%milk%'`,
 
     return products;
   } catch (error) {
-    console.log("❌ getProducts error:", error);
+    console.log(" getProducts error:", error);
     return [];
   }
 };
@@ -421,7 +421,7 @@ export const reduceStock = async (
     );
 
     if (result.rowsAffected === 0) {
-      console.log("❌ Not enough stock");
+      console.log(" Not enough stock");
       return false;
     }
 

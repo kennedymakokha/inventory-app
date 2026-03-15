@@ -30,7 +30,7 @@ export const authorizedFetch = async (
       data = JSON.parse(text);
     } catch (err) {
 
-      console.error("❌ Server returned NON JSON");
+      console.error(" Server returned NON JSON");
       console.error("URL:", url);
       console.error("Response:", text);
 
@@ -38,7 +38,7 @@ export const authorizedFetch = async (
     }
 
     if (!response.ok) {
-      console.error("❌ API Error:", data);
+      console.error(" API Error:", data);
       throw new Error(data?.message || "API request failed");
     }
 

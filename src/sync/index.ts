@@ -34,7 +34,7 @@ export const globalSync = async (
 
       await pushUnsynced(db, table);
 
-      // console.log(`✅ PUSH DONE: ${table.tableName}`);
+      // console.log(` PUSH DONE: ${table.tableName}`);
 
       completed++;
       onProgress?.(Math.floor((completed / totalSteps) * 100));
@@ -43,7 +43,7 @@ export const globalSync = async (
 
       await pullUpdates(db, table);
 
-      // console.log(`✅ PULL DONE: ${table.tableName}`);
+      // console.log(` PULL DONE: ${table.tableName}`);
 
       completed++;
       onProgress?.(Math.floor((completed / totalSteps) * 100));
@@ -56,7 +56,7 @@ export const globalSync = async (
 
   } catch (error) {
 
-    console.error("❌ Global sync failed:", error);
+    console.error(" Global sync failed:", error);
     return false;
 
   } finally {
@@ -87,14 +87,14 @@ export const globalSync = async (
 //       completed++;
 //       onProgress?.(Math.floor((completed / totalSteps) * 100));
 
-//       console.log(`✅ ${table.tableName} synced`);
+//       console.log(` ${table.tableName} synced`);
 //     }
 
 //     console.log("🎉 GLOBAL SYNC COMPLETE");
 //     return true;
 //   } catch (error) {
 //     console.log(error)
-//     console.log("❌ Global sync failed:", error);
+//     console.log(" Global sync failed:", error);
 //     return false;
 //   }
 // };

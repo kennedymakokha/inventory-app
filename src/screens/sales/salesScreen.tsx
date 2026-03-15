@@ -101,7 +101,7 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
             return;
         }
 
-        addToCart(product, qty, customPrice); // ✅ global cart
+        addToCart(product, qty, customPrice); //  global cart
         setQuantities(prev => ({ ...prev, [product.id]: '' }));
         setSellingPrices(prev => ({ ...prev, [product.id]: '' }));
         setState(prev => ({ ...prev, [product.id]: true }));
@@ -119,17 +119,17 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
                 if (foundProduct.quantity > 0) {
                     const customPrice = foundProduct.price;
                     addToCart(foundProduct, 1, customPrice);
-                    setMsg({ msg: `✅ ${foundProduct.product_name} added to cart`, state: 'success' });
+                    setMsg({ msg: ` ${foundProduct.product_name} added to cart`, state: 'success' });
                     setIsScannerOpen(false);
                 } else {
-                    setMsg({ msg: '❌ Item out of stock', state: 'error' });
+                    setMsg({ msg: ' Item out of stock', state: 'error' });
                 }
             } else {
                 setMsg({ msg: `🔍 Found: ${foundProduct.product_name}`, state: 'success' });
                 setIsScannerOpen(false);
             }
         } else {
-            setMsg({ msg: '❌ Barcode not recognized', state: 'error' });
+            setMsg({ msg: ' Barcode not recognized', state: 'error' });
         }
     };
 
@@ -145,10 +145,10 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
             setQuantities({});
             setState({});
             setSellingPrices({});
-            clearCart(); // ✅ clear global cart after checkout
-            setMsg({ msg: '✅ Sale Posted Successfully!', state: 'success' });
+            clearCart(); //  clear global cart after checkout
+            setMsg({ msg: ' Sale Posted Successfully!', state: 'success' });
         } catch (error: any) {
-            setMsg({ msg: error.message || '❌ Sale failed.', state: 'error' });
+            setMsg({ msg: error.message || ' Sale failed.', state: 'error' });
         }
     };
 
@@ -231,7 +231,7 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
                     ) : (
                         <TouchableOpacity
                             onPress={() => handleAddToCart(item)}
-                            className="bg-blue-600 px-6 py-3 rounded-2xl"
+                            className="bg-blue-600 px-6 py-3 rounded-sm"
                         >
                             <Text className="text-white font-bold">Add to Cart</Text>
                         </TouchableOpacity>
@@ -295,7 +295,7 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
             />
 
             {cart.length > 0 && (
-                <View className="absolute bottom-6 left-4 right-4 p-5 rounded-3xl border"
+                <View className="absolute bottom-6 left-4 right-4 p-5 rounded-sm border"
                     style={{ backgroundColor: theme.elevated, borderColor: theme.border }}>
                     <View className="flex-row justify-between items-center">
                         <View>
@@ -308,7 +308,7 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
                         </View>
 
                         <TouchableOpacity onPress={() => setModalVisible(true)}
-                            className="bg-green-500 px-8 py-4 rounded-2xl">
+                            className="bg-green-500 px-8 py-4 rounded-sm">
                             <Text className="text-slate-900 font-black text-lg">
                                 CHECKOUT ({cart.length})
                             </Text>

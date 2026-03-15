@@ -54,7 +54,7 @@ const LoginScreen = ({ navigation }: any) => {
                 await AsyncStorage.setItem("accessToken", data.token);
                 await AsyncStorage.setItem("userId", data.user._id);
 
-                // ✅ Update context with logged-in user
+                //  Update context with logged-in user
                 await setUser(data.user);
 
                 if (data.exp) {

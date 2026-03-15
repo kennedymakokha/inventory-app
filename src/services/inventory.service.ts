@@ -33,7 +33,7 @@ export const createInventorylogTable = async () => {
     `);
 
     } catch (err) {
-        console.error('❌ createInventorylogTable failed:', err);
+        console.error(' createInventorylogTable failed:', err);
         throw err;
     }
 };

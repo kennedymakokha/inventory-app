@@ -28,7 +28,7 @@ export const createCashRegisterTable = async () => {
           ) `
         );
     } catch (err) {
-        console.error('❌ createProductTable failed:', err);
+        console.error(' createProductTable failed:', err);
         throw err;
     }
 };
@@ -52,7 +52,7 @@ export const createPaymentsTable = async () => {
              ) `
         );
     } catch (err) {
-        console.error('❌ createProductTable failed:', err);
+        console.error(' createProductTable failed:', err);
         throw err;
     }
 };

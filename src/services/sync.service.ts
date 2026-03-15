@@ -36,9 +36,9 @@ export const syncData = async () => {
         //     }
         // }
 
-        console.log('✅ Sync completed.');
+        console.log(' Sync completed.');
     } catch (err) {
-        console.error('❌ Sync failed:', err);
+        console.error(' Sync failed:', err);
     }
 };
 

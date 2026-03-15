@@ -103,7 +103,7 @@ const ProductScreen = () => {
             setCategories(cats);
 
         } catch (err) {
-            console.log("❌ loadProducts error:", err);
+            console.log(" loadProducts error:", err);
         }
 
         setLoading(false);
@@ -147,7 +147,7 @@ const ProductScreen = () => {
             await onRefresh();
 
         } catch (error: any) {
-            setMsg({ msg: error.message || "❌ Error saving product.", state: "error" });
+            setMsg({ msg: error.message || " Error saving product.", state: "error" });
         } finally {
             setSaving(false);
         }
@@ -226,37 +226,7 @@ const ProductScreen = () => {
             console.log(error)
         }
     };
-    const renderRightActions = (prod: any) => (
-        <View style={styles.swipeContainer}>
-            <TouchableOpacity
-                onPress={() => {
-                    swipeRefs.current[prod.product_id]?.close(); // 👈 close swipe first
 
-                    setItem({
-                        ...initialState,
-                        ...prod
-                    });
-
-                    setModalVisible(true);
-                }}
-                style={[styles.swipeBtn, { backgroundColor: Theme.primary }]}
-            >
-                <Icon name="edit" size={20} color="#fff" />
-                <Text style={styles.swipeText}>Edit</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-                onPress={() => {
-                    swipeRefs.current[prod.product_id]?.close();
-                    handleDelete(prod);
-                }}
-                style={[styles.swipeBtn, { backgroundColor: Theme.danger }]}
-            >
-                <Icon name="trash" size={20} color="#fff" />
-                <Text style={styles.swipeText}>Delete</Text>
-            </TouchableOpacity>
-        </View>
-    );
     useEffect(() => {
         loadProducts();
     }, []);
@@ -295,7 +265,7 @@ const ProductScreen = () => {
                     {/* TOP ROW */}
                     <View style={styles.rowBetween}>
                         <Text style={[styles.productName, { color: theme.text }]}>
-                            {item.product_name}
+                            {item.product_name} 
                         </Text>
 
                         <Text style={[styles.priceText, { color: theme.text }]}>

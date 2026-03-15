@@ -30,7 +30,7 @@ export const createSalesTable = async () => {
       );`
     );
   } catch (err) {
-    console.error('❌ createSalesTable failed:', err);
+    console.error(' createSalesTable failed:', err);
     throw err;
   }
 };
@@ -56,7 +56,7 @@ export const createSalesItemTable = async () => {
       );`
     );
   } catch (err) {
-    console.error('❌ createSalesTable failed:', err);
+    console.error(' createSalesTable failed:', err);
     throw err;
   }
 };
@@ -83,7 +83,7 @@ export const createRefundsTable = async () => {
       );`
     );
   } catch (err) {
-    console.error('❌ createSalesTable failed:', err);
+    console.error(' createSalesTable failed:', err);
     throw err;
   }
 };
@@ -109,7 +109,7 @@ export const createRefundItemsTable = async () => {
       );`
     );
   } catch (err) {
-    console.error('❌ createSalesTable failed:', err);
+    console.error(' createSalesTable failed:', err);
     throw err;
   }
 };
@@ -133,7 +133,7 @@ export const finalizeSale = async (
   console.log("🛒 finalizeSale called");
 
   if (!cartItems || cartItems.length === 0) {
-    console.log("❌ Cart is empty");
+    console.log(" Cart is empty");
     return;
   }
 
@@ -174,10 +174,10 @@ export const finalizeSale = async (
             if (result.rowsAffected === 0) {
               throw new Error("Sale insert failed");
             }
-            console.log("✅ Sale inserted");
+            console.log(" Sale inserted");
           },
           (_, error) => {
-            console.log("❌ Sale insert error", error);
+            console.log(" Sale insert error", error);
             throw error;
           }
         );
@@ -205,9 +205,9 @@ export const finalizeSale = async (
               now,
               now
             ],
-            () => console.log("✅ SaleItem inserted"),
+            () => console.log(" SaleItem inserted"),
             (_, error) => {
-              console.log("❌ SaleItem error", error);
+              console.log(" SaleItem error", error);
               throw error;
             }
           );
@@ -226,7 +226,7 @@ export const finalizeSale = async (
             (_, res) => {
 
               if (res.rowsAffected === 0) {
-                console.log("❌ Not enough stock for", item.product_id);
+                console.log(" Not enough stock for", item.product_id);
                 throw new Error("Insufficient stock");
               }
 
@@ -234,7 +234,7 @@ export const finalizeSale = async (
 
             },
             (_, error) => {
-              console.log("❌ Stock update error", error);
+              console.log(" Stock update error", error);
               throw error;
             }
           );
@@ -269,7 +269,7 @@ export const finalizeSale = async (
             ],
             () => console.log("📒 Inventory log inserted"),
             (_, error) => {
-              console.log("❌ Inventory log error", error);
+              console.log(" Inventory log error", error);
               throw error;
             }
           );
@@ -295,7 +295,7 @@ export const finalizeSale = async (
           ],
           () => console.log("💳 Payment inserted"),
           (_, error) => {
-            console.log("❌ Payment insert error", error);
+            console.log(" Payment insert error", error);
             throw error;
           }
         );
@@ -303,7 +303,7 @@ export const finalizeSale = async (
       },
 
       (error) => {
-        console.log("❌ Transaction error:", error);
+        console.log(" Transaction error:", error);
         reject(error);
       },
 

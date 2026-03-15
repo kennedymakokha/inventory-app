@@ -40,7 +40,7 @@ export const createUserTable = async () => {
       );`
     );
   } catch (err) {
-    console.error('❌ createUserTable failed:', err);
+    console.error(' createUserTable failed:', err);
     throw err;
   }
 };
@@ -77,9 +77,9 @@ export const updateUser = async (
         email, user_id]
     );
 
-    console.log("✅ User updated locally");
+    console.log(" User updated locally");
   } catch (error) {
-    console.log("❌ updateUser failed:", error);
+    console.log(" updateUser failed:", error);
     throw error;
   }
 };

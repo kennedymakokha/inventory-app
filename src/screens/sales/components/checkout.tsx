@@ -17,6 +17,7 @@ import { CartItem } from '../../../../models';
 import { printToPrinter as printToPrinter } from '../../../services/printerService';
 import { getNextReceiptNumber } from '../../../utils/recieptNo';
 import Icon from 'react-native-vector-icons/FontAwesome5';
+import Ionicons from 'react-native-vector-icons/Ionicons'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PrinterSelectionModal } from '../../printerSelection';
 import { useSettings } from '../../../context/SettingsContext';
@@ -24,6 +25,7 @@ import { Theme } from '../../../utils/theme';
 import { Animated } from 'react-native';
 import { useBusiness } from '../../../context/BusinessContext';
 import { useUser } from '../../../context/UserContext';
+import { ScrollView } from 'react-native';
 
 interface CheckoutModalProps {
   modalVisible: boolean;
@@ -35,6 +37,61 @@ interface CheckoutModalProps {
   setModalVisible: (v: boolean) => void;
 }
 
+
+const POSKeypad = ({ value, onChange }: any) => {
+
+  const handlePress = (key: string) => {
+
+    if (key === "C") {
+      onChange("");
+      return;
+    }
+
+    if (key === "⌫") {
+      onChange(value.slice(0, -1));
+      return;
+    }
+
+    const newValue = value + key;
+    onChange(newValue);
+  };
+
+  const keys = [
+    ["1", "2", "3"],
+    ["4", "5", "6"],
+    ["7", "8", "9"],
+    ["0", ".", "⌫"],
+  ];
+
+  return (
+    <View className="mt-6">
+
+      {keys.map((row, i) => (
+        <View key={i} className="flex-row justify-between mb-3">
+
+          {row.map((key) => (
+            <TouchableOpacity
+              key={key}
+              onPress={() => handlePress(key)}
+              className="bg-slate-800 w-[30%] py-6 rounded-lg items-center"
+            >
+              <Text className="text-white text-xl font-bold">{key}</Text>
+            </TouchableOpacity>
+          ))}
+
+        </View>
+      ))}
+
+      <TouchableOpacity
+        onPress={() => handlePress("C")}
+        className="bg-red-600 py-5 rounded-lg items-center mt-2"
+      >
+        <Text className="text-white font-bold text-lg">CLEAR</Text>
+      </TouchableOpacity>
+
+    </View>
+  );
+};
 const CheckoutModal: React.FC<CheckoutModalProps> = ({
   modalVisible,
   cartItems,
@@ -43,7 +100,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   setMsg,
   setModalVisible,
 }) => {
-  const { user} = useUser();
+  const { user } = useUser();
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'MPESA'>('CASH');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [amountGiven, setAmountGiven] = useState(''); // Cash input
@@ -221,194 +278,182 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
       <SafeAreaView className="flex-1 bg-slate-900 pt-20">
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          className="flex-1 px-6"
+          className="flex-1"
         >
-          {/* SUMMARY CARD */}
-          <View className="bg-slate-900 border border-slate-800 rounded-[32px] p-6 mb-6">
-            <View className="flex-row justify-between items-end my-4 px-4 py-6">
-              <View>
-                <Text className="text-slate-500 font-bold uppercase text-xs tracking-widest">
-                  Total Payable
-                </Text>
-                <Text className="text-green-400 text-4xl font-black">
-                  Ksh {grandTotal.toLocaleString()}
-                </Text>
-              </View>
-              <Icon name="file-invoice-dollar" size={30} color="#1e293b" />
-            </View>
-
-            <View className="h-[1px] bg-slate-800 w-full my-4" />
-
-            <FlatList
-              data={adjustedCart}
-              scrollEnabled={true}
-              style={{ maxHeight: 150 }}
-              keyExtractor={(item) => item.id.toString()}
-              renderItem={({ item, index }: any) => (
-                <View className="flex-row justify-between mb-2 px-4 items-center">
-                  <Text className="text-slate-400 font-medium">
-                    {item.product_name} <Text className="text-slate-600">x{item.quantity}</Text>
+          <ScrollView
+            className="flex-1 px-6"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 120 }}
+          >
+            {/* SUMMARY CARD */}
+            <View className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6">
+              <View className="flex-row justify-between items-end my-4 px-4 py-6">
+                <View>
+                  <Text className="text-slate-500 font-bold uppercase text-xs tracking-widest">
+                    Total Payable
                   </Text>
-                  <TextInput
-                    value={item.price.toString()}
-                    keyboardType="numeric"
-                    onChangeText={(val) => {
-                      const newVal = parseFloat(val) || 0;
-                      if (newVal < item.cost_price) {
-                        Alert.alert(
-                          'Invalid Price',
-                          `Price cannot be lower than the cost price (${item.cost_price})`
-                        );
-                        return;
-                      }
-                      const updated = [...adjustedCart];
-                      updated[index].price = newVal;
-                      setAdjustedCart(updated);
-                    }}
-                    className="text-slate-300 font-bold w-16 text-right"
-                  />
+                  <Text className="text-green-400 text-4xl font-black">
+                    Ksh {grandTotal.toLocaleString()}
+                  </Text>
                 </View>
-              )}
-            />
-          </View>
-
-          {/* PAYMENT SELECTOR */}
-          <Text className="text-slate-500 font-black mb-4 uppercase text-[10px] tracking-[2px]">
-            Choose Method
-          </Text>
-          <View className="flex-row w-full items-center justify-center gap-x-3 space-x-3 mb-8">
-            <TouchableOpacity
-              onPress={() => setPaymentMethod('CASH')}
-              className={` w-1/3 py-5 rounded-3xl items-center border-2 ${paymentMethod === 'CASH'
-                ? 'border-green-500 bg-green-500/10'
-                : 'border-slate-800 bg-slate-900'
-                }`}
-            >
-              <Icon name="wallet" color={paymentMethod === 'CASH' ? '#22c55e' : '#475569'} size={24} />
-              <Text
-                className={`mt-2 font-bold ${paymentMethod === 'CASH' ? 'text-white' : 'text-slate-500'
-                  }`}
-              >
-                CASH
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setPaymentMethod('MPESA')}
-              className={`w-1/3 py-5 rounded-3xl items-center border-2 ${paymentMethod === 'MPESA'
-                ? 'border-green-500 bg-green-500/10'
-                : 'border-slate-800 bg-slate-900'
-                }`}
-            >
-              <Icon
-                name="mobile-alt"
-                color={paymentMethod === 'MPESA' ? '#22c55e' : '#475569'}
-                size={24}
-              />
-              <Text
-                className={`mt-2 font-bold ${paymentMethod === 'MPESA' ? 'text-white' : 'text-slate-500'
-                  }`}
-              >
-                M-PESA
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* DYNAMIC INPUT AREA */}
-          <View className="flex-1">
-            {paymentMethod === 'MPESA' ? (
-              <View className="animate-in slide-in-from-bottom">
-                <Text className="text-slate-400 font-bold mb-2 ml-1">Customer Phone Number</Text>
-                <View className="bg-slate-900 border border-slate-700 rounded-2xl flex-row items-center px-4">
-                  <Text className="text-slate-500 font-bold text-lg mr-2">+254</Text>
-                  <TextInput
-                    placeholder="712345678"
-                    placeholderTextColor="#475569"
-                    keyboardType="phone-pad"
-                    value={phoneNumber}
-                    onChangeText={setPhoneNumber}
-                    className="flex-1 text-white py-4 font-black text-xl"
-                  />
-                </View>
+                <Icon name="file-invoice-dollar" size={30} color="#1e293b" />
               </View>
-            ) : (
-              <View className="animate-in slide-in-from-bottom">
-                <Text className="text-slate-400 font-bold mb-2 ml-1">Amount Given (Ksh)</Text>
-                <View className="bg-slate-900 border border-slate-700 rounded-2xl flex-row items-center px-4">
-                  <TextInput
-                    placeholder="0.00"
-                    placeholderTextColor="#475569"
-                    keyboardType="numeric"
-                    value={amountGiven}
-                    onChangeText={setAmountGiven}
-                    className="flex-1 text-white py-4 font-black text-2xl text-center"
-                  />
-                </View>
-                {parseFloat(amountGiven) > 0 && (
-                  <View className="mt-4 flex-row justify-between px-2">
-                    <Text className="text-slate-500 font-bold">CHANGE DUE:</Text>
-                    <Text className="text-green-400 font-black text-lg">
-                      Ksh {changeDue.toLocaleString()}
+
+              <View className="h-[1px] bg-slate-800 w-full my-4" />
+
+              <FlatList
+                data={adjustedCart}
+                scrollEnabled={true}
+                nestedScrollEnabled
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={({ item, index }: any) => (
+                  <View className="flex-row justify-between mb-2 px-4 items-center">
+                    <Text className="text-slate-400 font-medium">
+                      {item.product_name} <Text className="text-slate-600">x{item.quantity}</Text>
                     </Text>
+                    <TextInput
+                      value={item.price.toString()}
+                      keyboardType="numeric"
+                      onChangeText={(val) => {
+                        const newVal = parseFloat(val) || 0;
+                        if (newVal < item.cost_price) {
+                          Alert.alert(
+                            'Invalid Price',
+                            `Price cannot be lower than the cost price (${item.cost_price})`
+                          );
+                          return;
+                        }
+                        const updated = [...adjustedCart];
+                        updated[index].price = newVal;
+                        setAdjustedCart(updated);
+                      }}
+                      className="text-slate-300 font-bold w-16 text-right"
+                    />
                   </View>
                 )}
-              </View>
-            )}
-          </View>
+              />
+            </View>
 
-          {/* ACTION BUTTONS */}
-          <View className="pb-10 space-y-4">
-            <TouchableOpacity
-              onPress={() =>
-                paymentMethod === 'MPESA'
-                  ? finalizeCheckout('MPESA', grandTotal)
-                  : finalizeCheckout('CASH', parseFloat(amountGiven))
-              }
-              disabled={processing || (paymentMethod === 'CASH' && !amountGiven)}
-              className={`py-6 rounded-3xl items-center justify-center shadow-xl ${processing || (paymentMethod === 'CASH' && !amountGiven)
-                ? 'bg-slate-700'
-                : 'bg-green-600'
-                }`}
-            >
-              <Text className="text-white font-black text-lg uppercase tracking-widest">
-                {processing
-                  ? 'Processing...'
-                  : paymentMethod === 'MPESA'
-                    ? 'Send STK & Print'
-                    : 'Confirm & Print Receipt'}
-              </Text>
-            </TouchableOpacity>
+            {/* PAYMENT SELECTOR */}
+            <Text className="text-slate-500 font-black mb-4 uppercase text-[10px] tracking-[2px]">
+              Choose Method
+            </Text>
+            <View className="flex-row w-full items-center justify-center gap-x-3 space-x-3 mb-8">
+              <TouchableOpacity
+                onPress={() => setPaymentMethod("CASH")}
+                className={`w-[48%] py-4 rounded items-center ${paymentMethod === "CASH" ? "bg-green-600" : "bg-slate-800"
+                  }`}
+              >
+                <Text className="text-white font-bold">CASH</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => setModalVisible(false)}
-              disabled={processing}
-              className="py-2 items-center"
-            >
-              <Text className="text-slate-500 font-bold">Cancel Transaction</Text>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                onPress={() => setPaymentMethod("MPESA")}
+                className={`w-[48%] py-4 rounded items-center ${paymentMethod === "MPESA" ? "bg-green-600" : "bg-slate-800"
+                  }`}
+              >
+                <Text className="text-white font-bold">MPESA</Text>
+              </TouchableOpacity>
+
+            </View>
+
+            {/* DYNAMIC INPUT AREA */}
+            <View className="flex-1">
+              {paymentMethod === 'MPESA' ? (
+                <View className="animate-in slide-in-from-bottom">
+                  <Text className="text-slate-400 font-bold mb-2 ml-1">Customer Phone Number</Text>
+                  <View className="bg-slate-900 border border-slate-700 rounded-sm flex-row items-center px-4">
+                    <Text className="text-slate-500 font-bold text-lg mr-2">+254</Text>
+                    <TextInput
+                      placeholder="712345678"
+                      placeholderTextColor="#475569"
+                      keyboardType="phone-pad"
+                      value={phoneNumber}
+                      maxLength={9}
+                      onChangeText={(text) => {
+                        const cleaned = text.replace(/[^0-9]/g, "");
+                        setPhoneNumber(cleaned);
+                      }}
+                      className="flex-1 text-white py-4 font-black text-xl"
+                    />
+                  </View>
+                </View>
+              ) : (
+                <View className="animate-in slide-in-from-bottom">
+                  <Text className="text-slate-400 font-bold mb-2 ml-1">Amount Given (Ksh)</Text>
+                  <View className="bg-slate-900 border border-slate-700 rounded-sm flex-col items-center py-4 px-4">
+                    <View className="bg-slate-900 border border-slate-700 rounded-lg py-3 px-4" >
+                      <Text className="text-white text-4xl font-black text-center">
+                        Ksh {amountGiven || "0"}
+                      </Text>
+                    </View>
+
+                    <POSKeypad
+                      value={amountGiven}
+                      onChange={setAmountGiven}
+                    />
+                  </View>
+                  {parseFloat(amountGiven) > 0 && (
+                    <View className="mt-4 flex-row justify-between px-2">
+                      <Text className="text-slate-500 font-bold">CHANGE DUE:</Text>
+                      <Text className="text-green-400 font-black text-lg">
+                        Ksh {changeDue.toLocaleString()}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              )}
+            </View>
+
+            {/* ACTION BUTTONS */}
+          </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
 
       {/* PRINTER LINK */}
 
 
-      <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-        <View className='flex items-center justify-center b' style={{ backgroundColor: theme.background }}>
 
-          <TouchableOpacity
-            onPress={() => setShowPrinterModal(true)}
-            className={`p-2 rounded w-1/2 justify-center flex-row items-center ${selectedPrinterMac ? "bg-slate-700" : "bg-red-600 "
-              }`}
-          >
+      <View className="flex flex-row w-full h-20 gap-x-1" style={{ backgroundColor: theme.background }}>
+        <Animated.View style={{ transform: [{ scale: pulseAnim }] }} className={`flex justify-center items-center h-full  ${selectedPrinterMac ? "bg-slate-700  w-[0%]" : "bg-red-600 w-[20%] "} `}>
+          <TouchableOpacity onPress={() => setShowPrinterModal(true)}>
             <Text className="text-white text-center">
-              🖨 {selectedPrinterMac ? "Printer Linked" : "No Printer Linked"}
+              {selectedPrinterMac ? <Icon name="print" size={30} color="#1e293b" /> : "No Printer Linked"}
             </Text>
           </TouchableOpacity>
+        </Animated.View>
+
+        <TouchableOpacity
+          onPress={() =>
+            paymentMethod === 'MPESA'
+              ? finalizeCheckout('MPESA', grandTotal)
+              : finalizeCheckout('CASH', parseFloat(amountGiven))
+          }
+          disabled={processing || (paymentMethod === 'CASH' && !amountGiven)}
+          className={`flex justify-center rounded-sm shadow-xl ${selectedPrinterMac ? " w-[78%]" : "w-[58%] "}   items-center h-full ${processing || (paymentMethod === 'CASH' && !amountGiven)
+            ? 'bg-slate-700'
+            : 'bg-green-600'
+            } `}>
+
+          <Text className="text-white font-black text-sm text-center uppercase tracking-widest">
+            {processing
+              ? 'Processing...'
+              : paymentMethod === 'MPESA'
+                ? 'Send STK & Print'
+                : 'Confirm & Print Receipt'}
+          </Text>
+        </TouchableOpacity>
+
+        <View style={{ backgroundColor: Theme.danger }} className="flex justify-center items-center h-full w-[20%] ">
+          <TouchableOpacity
+            onPress={() => setModalVisible(false)}
+            disabled={processing}
+            className="flex items-center w-full h-full justify-center"
+          >
+            <Text className="text-slate-500 text-center font-bold"><Ionicons name="close-sharp" size={30} color="#1e293b" style={{ backgroundColor: Theme.danger }} /> </Text>
+          </TouchableOpacity>
         </View>
-
-      </Animated.View>
-
+      </View>
 
 
       <PrinterSelectionModal

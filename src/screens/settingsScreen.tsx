@@ -19,7 +19,7 @@ const SettingsScreen = () => {
                 <Text className={`mb-4 font-bold uppercase ${theme.subText}`}>Inventory & Sales</Text>
                 
                 {/* Scan to Cart Toggle */}
-                <View className={`${theme.card} p-5 rounded-3xl flex-row justify-between items-center mb-4 shadow-sm`}>
+                <View className={`${theme.card} p-5 rounded-sm flex-row justify-between items-center mb-4 shadow-sm`}>
                     <View className="flex-1 pr-4">
                         <View className="flex-row items-center mb-1">
                             <Icon name="barcode" size={18} color="#22c55e" className="mr-2" />
@@ -38,7 +38,7 @@ const SettingsScreen = () => {
                 <Text className={`mb-4 mt-4 font-bold uppercase ${theme.subText}`}>Appearance</Text>
 
                 {/* Dark Mode Toggle */}
-                <View className={`${theme.card} p-5 rounded-3xl flex-row justify-between items-center mb-4 shadow-sm`}>
+                <View className={`${theme.card} p-5 rounded-sm flex-row justify-between items-center mb-4 shadow-sm`}>
                     <View className="flex-1 pr-4">
                         <View className="flex-row items-center mb-1">
                             <Icon name="moon" size={18} color="#3b82f6" className="mr-2" />

@@ -40,7 +40,7 @@ export const createCategoryTable = async () => {
       );`
     );
   } catch (err) {
-    console.error('❌ createCategoryTable failed:', err);
+    console.error(' createCategoryTable failed:', err);
     throw err;
   }
 };
@@ -66,9 +66,9 @@ export const updateCategory = async (
       [category_name, description, expiryDate ?? null, category_id]
     );
 
-    console.log("✅ Category updated locally");
+    console.log(" Category updated locally");
   } catch (error) {
-    console.log("❌ updateCategory failed:", error);
+    console.log(" updateCategory failed:", error);
     throw error;
   }
 };
@@ -129,7 +129,7 @@ export const syncUnsyncedCategories = async (db: SQLiteDatabase) => {
       );
     }
   } catch (err) {
-    console.error("❌ Sync push error:", err);
+    console.error(" Sync push error:", err);
   }
 };
 
@@ -184,9 +184,9 @@ export const pullUpdatedCategories = async (
       ]);
     }
 
-    console.log("✅ Categories pulled successfully");
+    console.log(" Categories pulled successfully");
   } catch (error) {
-    console.error("❌ Pull error:", error);
+    console.error(" Pull error:", error);
   }
 };
 
@@ -203,7 +203,7 @@ export const syncAllCategories = async (db: SQLiteDatabase) => {
   const newSync = new Date().toISOString();
   await saveLastSyncTime(newSync);
 
-  console.log("✅ Sync completed");
+  console.log(" Sync completed");
 };
 
 /* -------------------------- */

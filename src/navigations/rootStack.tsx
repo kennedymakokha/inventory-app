@@ -32,7 +32,7 @@ export function RootStack() {
       <RootStackNav.Screen
         name="products"
         component={ProductScreen}
-        options={{ header: () => <CustomHeaderWithSearch noSearch title="Products" /> }}
+        options={{ header: () => <CustomHeader  title="Products" /> }}
       />
       <RootStackNav.Screen
         name="inventory"
@@ -47,7 +47,7 @@ export function RootStack() {
       <RootStackNav.Screen
         name="sales"
         component={SalesStack}
-        options={{ header: () => <CustomHeaderWithSearch noSearch title="Sales" /> }}
+        options={{ header: () => <CustomHeader  title="Sales" /> }}
       />
       <RootStackNav.Screen
         name="salesreport"
@@ -57,17 +57,17 @@ export function RootStack() {
       <RootStackNav.Screen
         name="business"
         component={BusinessProfileScreen}
-        options={{ header: () => <CustomHeaderWithSearch noSearch title="My Business" /> }}
+        options={{ header: () => <CustomHeader  title="My Business" /> }}
       />
       <RootStackNav.Screen
         name="profile"
         component={UserProfileScreen}
-        options={{ header: () => <CustomHeaderWithSearch noSearch title="My Profile" /> }}
+        options={{ header: () => <CustomHeader  title="My Profile" /> }}
       />
       <RootStackNav.Screen
         name="settings"
         component={SettingsScreen}
-        options={{ header: () => <CustomHeaderWithSearch noSearch title="Settings" /> }}
+        options={{ header: () => <CustomHeader  title="Settings" /> }}
       />
     </RootStackNav.Navigator>
   );

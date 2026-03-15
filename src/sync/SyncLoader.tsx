@@ -12,9 +12,9 @@ export const SyncLoader = ({ onDone }: any) => {
       const success = await globalSync(syncTables, setProgress);
 
       if (success) {
-        setStatus("✅ Sync Successful");
+        setStatus(" Sync Successful");
       } else {
-        setStatus("❌ Sync Failed");
+        setStatus(" Sync Failed");
       }
 
       setTimeout(() => {

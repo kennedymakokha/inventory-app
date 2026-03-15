@@ -78,7 +78,7 @@ const UsersScreen = () => {
             setItem(initialState);
             setModalVisible(false);
         } catch (err: any) {
-            setMsg({ msg: err.message || '❌ Could not save user.', state: 'error' });
+            setMsg({ msg: err.message || ' Could not save user.', state: 'error' });
         }
     };
 

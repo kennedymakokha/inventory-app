@@ -59,7 +59,7 @@ const CategoryScreen = () => {
             const storedCategories = await getCategories(db);
             setCategories(storedCategories);
         } catch (err) {
-            console.log("❌ loadCategories error:", err);
+            console.log(" loadCategories error:", err);
         }
         setLoading(false);
     };
@@ -93,7 +93,7 @@ const CategoryScreen = () => {
             setModalVisible(false);
             await onRefresh();
         } catch (err: any) {
-            setMsg({ msg: err.message || "❌ Error saving category.", state: "error" });
+            setMsg({ msg: err.message || " Error saving category.", state: "error" });
         }
     };
 
@@ -130,7 +130,7 @@ const CategoryScreen = () => {
             </TouchableOpacity>
         </SwipeableCard>
     );
-
+    console.log("New Cat", item)
     return (
         <View style={{ flex: 1, backgroundColor: theme.background, paddingTop: 16 }}>
             <PageHeader
@@ -161,6 +161,7 @@ const CategoryScreen = () => {
             <AddCategoryModal
                 isDarkMode={isDarkMode}
                 setMsg={setMsg}
+                item={item}
                 msg={msg}
                 PostLocally={handleAddCategory}
                 modalVisible={modalVisible}
@@ -174,7 +175,7 @@ const CategoryScreen = () => {
                 isDarkMode={isDarkMode}
                 setMsg={setMsg}
                 msg={msg}
-                PostLocally={() => {}}
+                PostLocally={() => { }}
                 modalVisible={uploadModalVisible}
                 setItem={setItem}
                 fetchProducts={onRefresh}

@@ -35,7 +35,7 @@ export const createTableIfNotExists = async (db: any, tableName: string, createS
             resolve(true);
           },
           (_tx: any, err: any) => {
-            console.log(`❌ Failed to create table ${tableName}:`, err);
+            console.log(` Failed to create table ${tableName}:`, err);
             reject(err);
             return true;
           }

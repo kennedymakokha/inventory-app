@@ -30,10 +30,10 @@ export const startGlobalAutoSync = (tables: SyncTableConfig[]) => {
 
         await globalSync(tables);
 
-        console.log("✅ Global sync finished");
+        console.log(" Global sync finished");
 
       } catch (err) {
-        console.error("❌ Global sync error:", err);
+        console.error(" Global sync error:", err);
       } finally {
         isSyncing = false;
       }
