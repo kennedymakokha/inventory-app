@@ -27,6 +27,8 @@ interface Dataset {
 interface LineGraphProps {
   datasets: Dataset[];
   title: string;
+  startHour?: number; // optional business start hour
+  endHour?: number;   // optional business end hour
 }
 
 const { width: screenWidth } = Dimensions.get("window");
@@ -41,7 +43,12 @@ export const getThemeAwareColor = (isDarkMode: boolean) => {
   return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 };
 
-const MultiLineChart: React.FC<LineGraphProps> = ({ datasets = [], title }) => {
+const MultiLineChart: React.FC<LineGraphProps> = ({
+  datasets = [],
+  title,
+  startHour,
+  endHour
+}) => {
   const { isDarkMode } = useSettings();
   const theme = isDarkMode ? Theme.dark : Theme.light;
 
@@ -53,14 +60,12 @@ const MultiLineChart: React.FC<LineGraphProps> = ({ datasets = [], title }) => {
 
   const width = screenWidth - 10;
   const height = 220;
-  const padding = 20;
+  const padding = 40; // extra space for Y labels
 
-  // Always call hooks here
   const datasetColors = useMemo(() => {
     return datasets.map(ds => ds.color ?? getThemeAwareColor(isDarkMode));
   }, [datasets, isDarkMode]);
 
-  // Now conditionally render chart or "No data"
   if (!datasets.length) {
     return (
       <View style={{ padding: 20 }}>
@@ -70,14 +75,16 @@ const MultiLineChart: React.FC<LineGraphProps> = ({ datasets = [], title }) => {
     );
   }
 
-
-
   const allValues = datasets.flatMap(ds => ds.data.map(d => d.value));
-
   const maxValue = Math.max(...allValues);
   const minValue = Math.min(...allValues);
 
-  const labels = datasets[0].data.map(d => d.key);
+  // Dynamic X-axis hours
+  const start = startHour ?? 0;
+  const end = endHour ?? 23;
+  const labels = Array.from({ length: end - start + 1 }, (_, i) =>
+    (start + i).toString().padStart(2, "0")
+  );
 
   const stepX = (width - padding * 2) / (labels.length - 1);
 
@@ -85,11 +92,11 @@ const MultiLineChart: React.FC<LineGraphProps> = ({ datasets = [], title }) => {
     height -
     padding -
     ((value - minValue) / (maxValue - minValue || 1)) *
-    (height - padding * 2);
+      (height - padding * 2);
 
   const buildSmoothPath = (points: any[]) => {
     if (!points.length) return "";
-    if (points.some(p => isNaN(p.x) || isNaN(p.y))) return ""; // skip invalid points
+    if (points.some(p => isNaN(p.x) || isNaN(p.y))) return "";
 
     let d = `M ${points[0].x} ${points[0].y}`;
     for (let i = 0; i < points.length - 1; i++) {
@@ -107,6 +114,13 @@ const MultiLineChart: React.FC<LineGraphProps> = ({ datasets = [], title }) => {
     return `${linePath} L ${lastPoint.x} ${height - padding} L ${firstPoint.x} ${height - padding} Z`;
   };
 
+  // Y-axis ticks
+  const ySteps = 5;
+  const yAxisValues = Array.from({ length: ySteps + 1 }, (_, i) => {
+    const value = minValue + ((maxValue - minValue) / ySteps) * i;
+    return Math.round(value);
+  });
+
   return (
     <View
       style={{
@@ -115,7 +129,6 @@ const MultiLineChart: React.FC<LineGraphProps> = ({ datasets = [], title }) => {
         borderRadius: 10
       }}
     >
-
       <Text
         style={{
           color: theme.text,
@@ -129,7 +142,6 @@ const MultiLineChart: React.FC<LineGraphProps> = ({ datasets = [], title }) => {
       </Text>
 
       <Svg width={width} height={height}>
-
         {/* gradients */}
         <Defs>
           {datasetColors.map((color, index) => (
@@ -147,18 +159,31 @@ const MultiLineChart: React.FC<LineGraphProps> = ({ datasets = [], title }) => {
           ))}
         </Defs>
 
-        {/* grid */}
-        {[0.25, 0.5, 0.75, 1].map((g, i) => (
-          <Line
-            key={i}
-            x1={padding}
-            x2={width - padding}
-            y1={padding + (height - padding * 2) * g}
-            y2={padding + (height - padding * 2) * g}
-            stroke={theme.border}
-            strokeDasharray="4"
-          />
-        ))}
+        {/* Y-axis grid + labels */}
+        {yAxisValues.map((value, index) => {
+          const y = scaleY(value);
+          return (
+            <React.Fragment key={index}>
+              <Line
+                x1={padding}
+                x2={width - padding}
+                y1={y}
+                y2={y}
+                stroke={theme.border}
+                strokeDasharray="4"
+              />
+              <SvgText
+                x={padding - 6}
+                y={y + 3}
+                fontSize="10"
+                fill={theme.text}
+                textAnchor="end"
+              >
+                {value}
+              </SvgText>
+            </React.Fragment>
+          );
+        })}
 
         {/* axes */}
         <Line
@@ -177,15 +202,16 @@ const MultiLineChart: React.FC<LineGraphProps> = ({ datasets = [], title }) => {
           stroke={theme.border}
         />
 
+        {/* lines and points */}
         {datasets.map((dataset, dsIndex) => {
-
-          const points = dataset.data.map((item, index) => {
+          const points = labels.map((hour, index) => {
+            const dataPoint = dataset.data.find(d => d.key === hour);
+            const value = dataPoint ? dataPoint.value : 0;
 
             const x = padding + index * stepX;
-            const y = scaleY(item.value);
+            const y = scaleY(value);
 
-            return { x, y, value: item.value, key: item.key };
-
+            return { x, y, value, key: hour };
           });
 
           const linePath = buildSmoothPath(points);
@@ -197,22 +223,13 @@ const MultiLineChart: React.FC<LineGraphProps> = ({ datasets = [], title }) => {
 
           return (
             <React.Fragment key={dsIndex}>
-
-              {/* gradient area */}
-              <Path
-                d={areaPath}
-                fill={`url(#gradient${dsIndex})`}
-              />
-
-              {/* line */}
+              <Path d={areaPath} fill={`url(#gradient${dsIndex})`} />
               <Path
                 d={linePath}
                 fill="none"
                 stroke={datasetColors[dsIndex]}
                 strokeWidth={isDarkMode ? 3.5 : 3}
               />
-
-              {/* points */}
               {points.map((p, i) => (
                 <Circle
                   key={i}
@@ -220,28 +237,24 @@ const MultiLineChart: React.FC<LineGraphProps> = ({ datasets = [], title }) => {
                   cy={p.y}
                   r={4}
                   fill={datasetColors[dsIndex]}
-                  onPress={() => {
+                  onPress={() =>
                     setTooltip({
                       x: p.x,
                       y: p.y,
                       value: p.value,
                       label: dataset.label,
                       key: p.key
-                    });
-                  }}
+                    })
+                  }
                 />
               ))}
-
             </React.Fragment>
           );
-
         })}
 
         {/* x labels */}
         {labels.map((label, index) => {
-
           const x = padding + index * stepX;
-
           return (
             <SvgText
               key={index}
@@ -255,7 +268,6 @@ const MultiLineChart: React.FC<LineGraphProps> = ({ datasets = [], title }) => {
             </SvgText>
           );
         })}
-
       </Svg>
 
       {/* tooltip */}
@@ -273,7 +285,6 @@ const MultiLineChart: React.FC<LineGraphProps> = ({ datasets = [], title }) => {
           <Text style={{ color: theme.text, fontSize: 12 }}>
             {tooltip.label}
           </Text>
-
           <Text style={{ color: theme.text, fontSize: 12 }}>
             {tooltip.key}: {role === "admin" ? tooltip.value : ""}
           </Text>
@@ -282,7 +293,6 @@ const MultiLineChart: React.FC<LineGraphProps> = ({ datasets = [], title }) => {
 
       {/* legend */}
       <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 12 }}>
-
         {datasets.map((ds, index) => (
           <View
             key={index}
@@ -302,15 +312,10 @@ const MultiLineChart: React.FC<LineGraphProps> = ({ datasets = [], title }) => {
                 borderRadius: 2
               }}
             />
-
-            <Text style={{ color: theme.text, fontSize: 12 }}>
-              {ds.label}
-            </Text>
+            <Text style={{ color: theme.text, fontSize: 12 }}>{ds.label}</Text>
           </View>
         ))}
-
       </View>
-
     </View>
   );
 };

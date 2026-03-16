@@ -16,10 +16,10 @@ import {
 import DataGraph from "./dashbordItems/DataGraph";
 import PieChart from "./dashbordItems/PieChart";
 import MultiLineChart from "./dashbordItems/lineGraph";
-
+import Icon from 'react-native-vector-icons/FontAwesome'
 import { formatNumber } from "../../utils/formatNumbers";
 import { useSocket } from "../context/socketContext";
-import { useBusiness } from "../context/BusinessContext";
+import { Business, useBusiness } from "../context/BusinessContext";
 
 const Dashboard = () => {
   const { user } = useSelector((state: any) => state.auth);
@@ -27,7 +27,7 @@ const Dashboard = () => {
   const theme = isDarkMode ? Theme.dark : Theme.light;
 
   const { socket } = useSocket();
-  const { updateBusiness } = useBusiness();
+  const { business, updateBusiness, isLoading } = useBusiness();
 
   const [sales, setSales] = useState<any[]>([]);
   const [lowstcks, setlowstcks] = useState<any[]>([]);
@@ -70,12 +70,8 @@ const Dashboard = () => {
   useEffect(() => {
     if (!socket) return;
 
-    const handleNotification = (data: any) => {
-      updateBusiness({
-                ...data, headers: {
-                    "x-source": "socket"
-                }
-            });
+    const handleNotification = (data: Business) => {
+      updateBusiness(data);
     };
 
     socket.on("notification", handleNotification);
@@ -85,17 +81,31 @@ const Dashboard = () => {
     };
   }, [socket]);
 
+  const [startHour, endHour] = (() => {
+    if (business?.working_hrs) {
+      // Example format: "8-17"
+      const parts = business.working_hrs.split("-");
+      if (parts.length === 2) {
+        const start = parseInt(parts[0], 10);
+        const end = parseInt(parts[1], 10);
+        if (!isNaN(start) && !isNaN(end)) {
+          return [start, end];
+        }
+      }
+    }
+    return [8, 17]; // default
+  })();
   return (
     <ScrollView style={{ flex: 1, backgroundColor: theme.background }}>
-      
+
       {lowstcks.length > 0 && (
         <PageHeader
           component={() => (
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={{ flexDirection: "row", gap: 12 }}>
+              <View style={{ flexDirection: "row", gap: 12, marginBottom: 6 }}>
                 {lowstcks.map((item, i) => (
-                  <View key={i}>
-                    <Text>{item.product_name}</Text>
+                  <View style={{ backgroundColor: Theme.danger }} className="px-3 py-1 rounded-sm" key={i}>
+                    <Text style={{ color: theme.text }}>{item.product_name}</Text>
                   </View>
                 ))}
               </View>
@@ -105,24 +115,25 @@ const Dashboard = () => {
       )}
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={{ flexDirection: "row", gap: 12 }}>
-          
-          <View>
-            <Text>Total Sales</Text>
-            <Text>{formatNumber(sales) || 0}</Text>
-          </View>
-
-          <View>
-            <Text>Transactions</Text>
-            <Text>{transactions || 0}</Text>
-          </View>
-
+        <View style={{ flexDirection: "row", gap: 12, padding: 20 }}>
+          {[{ icon: "dollar", title: "Total Sales", value: `${formatNumber(sales) || 0}` },
+          { icon: "money", title: "Transactions", value: `${transactions || 0}` },
+          { icon: "thumbs-o-up", title: "Best Perfoming", value: `${TopProducts[0]?.value}` },
+          { icon: "thumbs-o-down", title: "Worst Perfoming", value: "" }
+          ].map((stat) => (
+            <View style={{ backgroundColor: theme.card, borderColor: theme.border }} key={stat.title} className="flex  px-10 max-w-[175px] h-32 bg-white rounded items-center justify-center">
+              <Icon name={stat.icon} style={{ color: theme.subText }} size={30} className="size-10 text-center" />
+              <Text style={{ fontWeight: "bold", color: theme.text }} className="text-xl text-center">{stat.title}</Text>
+              <Text style={{ color: theme.subText }}>{stat.value}</Text>
+            </View>
+          ))}
         </View>
       </ScrollView>
 
       <DataGraph title="Top Performing Products" data={TopProducts} />
 
-      <MultiLineChart title="Hourly Sales" datasets={datasets || []} />
+      <MultiLineChart startHour={startHour} // optional business start hour
+        endHour={endHour} title="Hourly Sales" datasets={datasets || []} />
 
       <PieChart title="Monthly sales" data={monthlySales} />
 

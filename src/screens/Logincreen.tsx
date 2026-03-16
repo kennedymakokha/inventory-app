@@ -12,6 +12,7 @@ import { setCredentials } from '../features/auth/authSlice';
 import { useDispatch } from 'react-redux';
 import { useLoginMutation } from '../services/authApi';
 import { useUser } from '../context/UserContext';
+import { useBusiness } from '../context/BusinessContext';
 
 const LoginScreen = ({ navigation }: any) => {
     const [msg, setMsg] = useState({ msg: "", state: "" });
@@ -22,6 +23,7 @@ const LoginScreen = ({ navigation }: any) => {
     const dispatch = useDispatch()
     const { login } = useAuthContext();
     const { setUser } = useUser();
+    const { business, updateBusiness, isLoading } = useBusiness();
     const handleChange = (key: keyof User, value: string) => {
         setMsg({ msg: "", state: "" });
 
@@ -56,7 +58,7 @@ const LoginScreen = ({ navigation }: any) => {
 
                 //  Update context with logged-in user
                 await setUser(data.user);
-
+                 updateBusiness(data.user.business);
                 if (data.exp) {
                     await AsyncStorage.setItem("tokenExpiry", data.exp.toString());
                     await login(data.token);
@@ -87,7 +89,7 @@ const LoginScreen = ({ navigation }: any) => {
                         resizeMode="cover" // or 'contain', 'stretch'
                     />
                 </View>
-                <Text className='text-white'>{progress}</Text>
+                
                 <Input
                     label="Phone Number"
                     placeholder="Phone nunber"

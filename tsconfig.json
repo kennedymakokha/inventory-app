@@ -24,7 +24,7 @@
     "App.tsx", 
     "src/**/*.ts", 
     "src/**/*.tsx"
-  ],
+, "src/services/geofenceService.ts"  ],
   "exclude": [
     "node_modules",
     "Pods",

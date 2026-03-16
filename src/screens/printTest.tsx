@@ -4,9 +4,7 @@ import { printReceipt as printToPrinter } from '../services/printerService';
 const PrintTest = () => {
     const buildReceiptText = (visitId:string) => {
     const line = '--------------------------------\n';
-
     let text = '';
-
     text += `<C> 'CLINIC NAME'}</C>\n`;
     text += `<C>VISIT RECEIPT</C>\n`;
     text += line;
@@ -16,13 +14,7 @@ const PrintTest = () => {
     text += line;
 
     text += 'TRIAGE\n';
-  
-
-   
-   
-
-  
-    
+ 
     text += `Subtotal`.padEnd(24) + `\n`;
     text += `VAT (16%)`.padEnd(24) + `6\n`;
     text += line;

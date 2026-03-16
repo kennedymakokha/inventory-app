@@ -1,247 +1,317 @@
 import { SQLiteDatabase } from "react-native-sqlite-storage";
 import { getDBConnection } from "./db-service";
-import { createSalesItemTable } from "./sales.service";
-import { createProductTable } from "./product.service";
 
+
+/**
+ * Today's total sales
+ */
 export const getTodaySales = async (userRole: string, userId?: string) => {
-    const db = await getDBConnection();
 
-    // Role-based condition
-    let roleCondition = '';
-    if (userRole === 'sales' && userId) {
-        roleCondition = `AND createdBy = '${userId}'`; // only this sales user's sales
-    }
-    // Admin sees all → no additional filter
+  const db = await getDBConnection();
 
-    const [result] = await db.executeSql(
-        `SELECT SUM(total) as total
+  let roleCondition = "";
+  const params: any[] = [];
+
+  if (userRole === "sales" && userId) {
+    roleCondition = `AND createdBy = ?`;
+    params.push(userId);
+  }
+
+  const [result] = await db.executeSql(
+    `SELECT SUM(total) as total
      FROM Sale
-     WHERE date(created_at) = date('now') ${roleCondition}`
-    );
+     WHERE date(created_at,'localtime') = date('now','localtime')
+     ${roleCondition}`,
+    params
+  );
 
-    // Return 0 if null
-    return Number(result.rows.item(0).total) || 0;
+  return Number(result.rows.item(0)?.total ?? 0);
 };
+
+
+
+/**
+ * Today's transactions count
+ */
 export const getTodayTransactions = async (userRole: string, userId?: string) => {
-    const db = await getDBConnection();
 
-    // Role-based filter
-    let roleCondition = '';
-    if (userRole === 'sales' && userId) {
-        roleCondition = `AND createdBy = '${userId}'`; // only count this user's transactions
-    }
-    // Admin sees all → no extra filter
+  const db = await getDBConnection();
 
-    const [result] = await db.executeSql(
-        `SELECT COUNT(*) as count
+  let roleCondition = "";
+  const params: any[] = [];
+
+  if (userRole === "sales" && userId) {
+    roleCondition = `AND createdBy = ?`;
+    params.push(userId);
+  }
+
+  const [result] = await db.executeSql(
+    `SELECT COUNT(*) as count
      FROM Sale
-     WHERE date(created_at) = date('now') ${roleCondition}`
-    );
+     WHERE date(created_at,'localtime') = date('now','localtime')
+     ${roleCondition}`,
+    params
+  );
 
-    return Number(result.rows.item(0).count) || 0;
+  return Number(result.rows.item(0)?.count ?? 0);
 };
+
+
+
+/**
+ * Top selling products
+ */
 export const getTopProducts = async (userRole: string, userId?: string) => {
-    const db = await getDBConnection();
 
-    let query = `
-        SELECT 
-            p.product_name AS key,
-            SUM(si.quantity) AS value
-        FROM SaleItems si
-        JOIN Product p ON si.product_id = p.product_id
-        JOIN Sale s ON si.sale_id = s.sale_id
-    `;
+  const db = await getDBConnection();
 
-    const params: any[] = [];
+  let query = `
+    SELECT 
+      p.product_name AS key,
+      SUM(si.quantity) AS value
+    FROM SaleItems si
+    JOIN Product p ON si.product_id = p.product_id
+    JOIN Sale s ON si.sale_id = s.sale_id
+  `;
 
-    // Role filter
-    if (userRole === "sales" && userId) {
-        query += ` WHERE s.createdBy = ? `;
-        params.push(userId);
-    }
+  const params: any[] = [];
 
-    query += `
-        GROUP BY si.product_id
-        ORDER BY value DESC
-        LIMIT 10
-    `;
+  if (userRole === "sales" && userId) {
+    query += ` WHERE s.createdBy = ? `;
+    params.push(userId);
+  }
 
-    const [result] = await db.executeSql(query, params);
+  query += `
+    GROUP BY si.product_id
+    ORDER BY value DESC
+    LIMIT 10
+  `;
 
-    const products: { key: string; value: number }[] = [];
+  const [result] = await db.executeSql(query, params);
 
-    for (let i = 0; i < result.rows.length; i++) {
-        const row = result.rows.item(i);
-        products.push({
-            key: row.key,
-            value: Number(row.value),
-        });
-    }
+  const products: { key: string; value: number }[] = [];
 
-    return products;
+  for (let i = 0; i < result.rows.length; i++) {
+    const row = result.rows.item(i);
+
+    products.push({
+      key: row.key,
+      value: Number(row.value),
+    });
+  }
+
+  return products;
 };
 
+
+
+/**
+ * Hourly sales by product
+ */
 export const getHourlySalesByProduct = async (
-    userRole: string,
-    userId?: string
+  userRole: string,
+  userId?: string
 ) => {
-    const db = await getDBConnection();
 
-    let roleCondition = '';
-    if (userRole === 'sales' && userId) {
-        roleCondition = `AND s.createdBy = '${userId}'`;
-    }
+  const db = await getDBConnection();
 
-    const [result] = await db.executeSql(
-        `SELECT 
-       p.product_name as productName,
-       strftime('%H', s.created_at) as hour,
-       SUM(si.total) as sales
+  let roleCondition = "";
+  const params: any[] = [];
+
+  if (userRole === "sales" && userId) {
+    roleCondition = `AND s.createdBy = ?`;
+    params.push(userId);
+  }
+
+  const [result] = await db.executeSql(
+    `SELECT 
+        p.product_name as productName,
+        strftime('%H', s.created_at,'localtime') as hour,
+        SUM(si.quantity) as salesCount
      FROM Sale s
      JOIN SaleItems si ON si.sale_id = s.sale_id
      JOIN Product p ON p.product_id = si.product_id
-     WHERE date(s.created_at) = date('now')
-       ${roleCondition}
+     WHERE date(s.created_at,'localtime') = date('now','localtime')
+     ${roleCondition}
      GROUP BY productName, hour
-     ORDER BY productName, hour`
-    );
+     ORDER BY productName, hour`,
+    params
+  );
 
-    const productMap: Record<string, { key: string; value: number }[]> = {};
+  const productMap: Record<string, { key: string; value: number }[]> = {};
 
-    for (let i = 0; i < result.rows.length; i++) {
-        const row = result.rows.item(i);
-        const productName = row.productName;
-        if (!productMap[productName]) productMap[productName] = [];
-        productMap[productName].push({
-            key: row.hour,
-            value: Number(row.sales),
-        });
+  for (let i = 0; i < result.rows.length; i++) {
+
+    const row = result.rows.item(i);
+    const productName = row.productName;
+
+    if (!productMap[productName]) {
+      productMap[productName] = [];
     }
 
-    // fill missing hours 00-23
-    const allHours = Array.from({ length: 24 }, (_, i) =>
-        i.toString().padStart(2, '0')
-    );
-
-    const datasets = Object.entries(productMap).map(([productName, data]) => {
-        const filledData = allHours.map(hour => {
-            const existing = data.find(d => d.key === hour);
-            return { key: hour, value: existing ? existing.value : 0 };
-        });
-        return {
-            label: productName,
-            data: filledData,
-        };
+    productMap[productName].push({
+      key: row.hour,
+      value: Number(row.salesCount),
     });
 
-    return datasets;
-};
-export const getLowStockProducts = async (
+  }
 
-) => {
-    const db = await getDBConnection();
-    const [result] = await db.executeSql(
-        `SELECT product_name, quantity
+  const allHours = Array.from({ length: 24 }, (_, i) =>
+    i.toString().padStart(2, "0")
+  );
+
+  const datasets = Object.entries(productMap).map(([productName, data]) => {
+
+    const map = Object.fromEntries(data.map(d => [d.key, d.value]));
+
+    const filledData = allHours.map(hour => ({
+      key: hour,
+      value: map[hour] ?? 0
+    }));
+
+    return {
+      label: productName,
+      data: filledData,
+    };
+
+  });
+
+  return datasets;
+};
+
+
+
+/**
+ * Low stock products
+ */
+export const getLowStockProducts = async () => {
+
+  const db = await getDBConnection();
+
+  const [result] = await db.executeSql(
+    `SELECT product_name, quantity
      FROM Product
      WHERE quantity <= 5
      ORDER BY quantity ASC`
-    );
+  );
 
-    const products = [];
+  const products: any[] = [];
 
-    for (let i = 0; i < result.rows.length; i++) {
-        products.push(result.rows.item(i));
-    }
+  for (let i = 0; i < result.rows.length; i++) {
+    products.push(result.rows.item(i));
+  }
 
-    return products;
-
+  return products;
 };
 
+
+
+/**
+ * Monthly sales
+ */
 export const getMonthlySales = async (userRole: string, userId?: string) => {
-    const db = await getDBConnection();
 
-    // Role-based filter
-    let roleCondition = '';
-    if (userRole === 'sales' && userId) {
-        roleCondition = `WHERE createdBy = '${userId}'`;
-    }
-    // Admin sees all → roleCondition remains empty
+  const db = await getDBConnection();
 
-    const [result] = await db.executeSql(
-        `SELECT 
-        strftime('%Y-%m', created_at) as key,
+  let roleCondition = "";
+  const params: any[] = [];
+
+  if (userRole === "sales" && userId) {
+    roleCondition = `WHERE createdBy = ?`;
+    params.push(userId);
+  }
+
+  const [result] = await db.executeSql(
+    `SELECT 
+        strftime('%Y-%m', created_at,'localtime') as key,
         SUM(total) as value
      FROM Sale
      ${roleCondition}
      GROUP BY key
-     ORDER BY key DESC`
-    );
+     ORDER BY key DESC`,
+    params
+  );
 
-    const months: { key: string; value: number }[] = [];
-    for (let i = 0; i < result.rows.length; i++) {
-        const row = result.rows.item(i);
-        months.push({
-            key: row.key,
-            value: Number(row.value),
-        });
-    }
+  const months: { key: string; value: number }[] = [];
 
-    return months;
+  for (let i = 0; i < result.rows.length; i++) {
+
+    const row = result.rows.item(i);
+
+    months.push({
+      key: row.key,
+      value: Number(row.value ?? 0),
+    });
+
+  }
+
+  return months;
 };
 
+
+
 interface ProductSalesReportParams {
-    userRole?: 'admin' | 'sales';
-    userId?: string | null;
-    filterId?: number;
-    page?: number;
-    pageSize?: number;
+  userRole?: "admin" | "sales";
+  userId?: string | null;
+  filterId?: number;
+  page?: number;
+  pageSize?: number;
 }
 
+
+
+/**
+ * Product sales report with pagination
+ */
 export const getProductSalesReport = async ({
-    userRole = 'sales', // 'admin' | 'sales'
-    userId = null,
-    filterId = 1,
-    page = 1,
-    pageSize = 20,
+  userRole = "sales",
+  userId = null,
+  filterId = 1,
+  page = 1,
+  pageSize = 20,
 }: ProductSalesReportParams) => {
 
-    const db = await getDBConnection();
+  const db = await getDBConnection();
 
-    // --- Date filter ---
-    let dateCondition = '';
-    switch (filterId) {
-        case 1: // Today
-            dateCondition = "DATE(s.created_at, 'localtime') = DATE('now', 'localtime')";
-            break;
-        case 2: // Last 7 days
-            dateCondition = "s.created_at >= datetime('now', '-7 days', 'localtime')";
-            break;
-        case 3: // Last month
-            dateCondition = "s.created_at >= datetime('now', '-1 month', 'localtime')";
-            break;
-        case 4: // Last 3 months
-            dateCondition = "s.created_at >= datetime('now', '-3 months', 'localtime')";
-            break;
-        default:
-            dateCondition = "1=1";
-    }
+  let dateCondition = "";
 
-    // --- Role filter ---
-    let roleCondition = '';
-    if (userRole === 'sales' && userId) {
-        roleCondition = `AND s.createdBy = ?`;
-    }
+  switch (filterId) {
 
-    const offset = (page - 1) * pageSize;
+    case 1:
+      dateCondition = "DATE(s.created_at,'localtime') = DATE('now','localtime')";
+      break;
 
-    // --- Execute SQL ---
-    const params: any[] = [pageSize, offset];
-    if (roleCondition) {
-        params.unshift(userId); // bind userId first if used
-    }
+    case 2:
+      dateCondition = "s.created_at >= datetime('now','-7 days','localtime')";
+      break;
 
-    const [result] = await db.executeSql(
-        `
+    case 3:
+      dateCondition = "s.created_at >= datetime('now','-1 month','localtime')";
+      break;
+
+    case 4:
+      dateCondition = "s.created_at >= datetime('now','-3 months','localtime')";
+      break;
+
+    default:
+      dateCondition = "1=1";
+
+  }
+
+  let roleCondition = "";
+  const params: any[] = [];
+
+  if (userRole === "sales" && userId) {
+    roleCondition = `AND s.createdBy = ?`;
+    params.push(userId);
+  }
+
+  const offset = (page - 1) * pageSize;
+
+  params.push(pageSize, offset);
+
+  const [result] = await db.executeSql(
+    `
     SELECT 
       p.product_id,
       p.product_name,
@@ -255,75 +325,74 @@ export const getProductSalesReport = async ({
     ORDER BY quantity_sold DESC
     LIMIT ? OFFSET ?
     `,
-        params
-    );
+    params
+  );
 
-    const report = [];
-    for (let i = 0; i < result.rows.length; i++) {
-        const row = result.rows.item(i);
-        report.push({
-            product_id: row.product_id,
-            product_name: row.product_name,
-            quantity_sold: Number(row.quantity_sold ?? 0),
-            total_sales: Number(row.total_sales ?? 0),
-        });
-    }
+  const report: any[] = [];
 
-    return report;
+  for (let i = 0; i < result.rows.length; i++) {
+
+    const row = result.rows.item(i);
+
+    report.push({
+      product_id: row.product_id,
+      product_name: row.product_name,
+      quantity_sold: Number(row.quantity_sold ?? 0),
+      total_sales: Number(row.total_sales ?? 0),
+    });
+
+  }
+
+  return report;
 };
 
+
+
+/**
+ * Sales report by date range
+ */
 export const getSalesByDateRange = async (
-    db: SQLiteDatabase,
-    startDate: string,
-    endDate: string,
-    userRole: string,
-    userId?: string
+  db: SQLiteDatabase,
+  startDate: string,
+  endDate: string,
+  userRole: string,
+  userId?: string
 ) => {
 
-    // Role condition
-    let roleCondition = '';
-    let params: any[] = [startDate, endDate];
+  let roleCondition = "";
+  const params: any[] = [startDate, endDate];
 
-    if (userRole === 'sales' && userId) {
-        roleCondition = `AND createdBy = ?`;
-        params.push(userId);
-    }
+  if (userRole === "sales" && userId) {
+    roleCondition = `AND createdBy = ?`;
+    params.push(userId);
+  }
 
-    const [result] = await db.executeSql(
-        `SELECT 
-        date(created_at) as date,
+  const [result] = await db.executeSql(
+    `SELECT 
+        date(created_at,'localtime') as date,
         SUM(total) as total_sales,
         COUNT(*) as transactions
      FROM Sale
-     WHERE date(created_at) BETWEEN ? AND ?
+     WHERE date(created_at,'localtime') BETWEEN ? AND ?
      ${roleCondition}
      GROUP BY date
      ORDER BY date`,
-        params
-    );
+    params
+  );
 
-    const sales: {
-        date: string;
-        total_sales: number;
-        transactions: number;
-    }[] = [];
+  const sales: any[] = [];
 
-    for (let i = 0; i < result.rows.length; i++) {
-        const row = result.rows.item(i);
-        sales.push({
-            date: row.date,
-            total_sales: Number(row.total_sales),
-            transactions: Number(row.transactions),
-        });
-    }
+  for (let i = 0; i < result.rows.length; i++) {
 
-    return sales;
+    const row = result.rows.item(i);
+
+    sales.push({
+      date: row.date,
+      total_sales: Number(row.total_sales ?? 0),
+      transactions: Number(row.transactions ?? 0),
+    });
+
+  }
+
+  return sales;
 };
-
-// const report = await getSalesByDateRange(
-//   db,
-//   "2026-03-01",
-//   "2026-03-09",
-//   user.role,
-//   user.id
-// );

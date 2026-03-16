@@ -1,6 +1,8 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { API_URL } from '@env';
-const baseUrl = `${API_URL}/api`;
+// const baseUrl = `${API_URL}/api`;
+const baseUrl = `https://84b2-41-209-9-114.ngrok-free.app/api`;
+
 export const api = createApi({
     reducerPath: 'api',
     baseQuery: fetchBaseQuery({

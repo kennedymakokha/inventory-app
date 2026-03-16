@@ -1,67 +1,45 @@
-import { enablePromise, openDatabase, SQLiteDatabase } from 'react-native-sqlite-storage';
-import { ProductItem, ToDoItem } from '../../models/index';
+import SQLite from 'react-native-sqlite-storage';
 
-const tableName = 'todoData';
+// 1. Correctly enable promises on the base object
+SQLite.enablePromise(true);
 
-enablePromise(true);
+// Use the library's types via the SQLite namespace
+let dbInstance: SQLite.SQLiteDatabase | null = null;
+let connectionPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
-export const getDBConnection = async () => {
-    return openDatabase({ name: 'todo-data.db',  location: 'Documents'});
-};
+export const getDBConnection = async (): Promise<SQLite.SQLiteDatabase> => {
+  if (dbInstance) return dbInstance;
+  if (connectionPromise) return connectionPromise;
 
-
-export const createTable = async (db: SQLiteDatabase) => {
-    // create table if not exists
-    const query = `CREATE TABLE IF NOT EXISTS ${tableName}(
-        value TEXT NOT NULL
-    );`;
-
-    await db.executeSql(query);
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-export const getTodoItems = async (db: SQLiteDatabase): Promise<ToDoItem[]> => {
+  connectionPromise = (async () => {
     try {
-        const todoItems: ToDoItem[] = [];
-        const results = await db.executeSql(`SELECT rowid as id,value FROM ${tableName}`);
-        results.forEach(result => {
-            for (let index = 0; index < result.rows.length; index++) {
-                todoItems.push(result.rows.item(index))
-            }
-        });
-        return todoItems;
-    } catch (error) {
-        console.error(error);
-        throw Error('Failed to get todoItems !!!');
+      // 2. Access openDatabase through the SQLite object
+      const db = await SQLite.openDatabase({ 
+        name: 'todo-data.db', 
+        location: 'default' 
+      });
+      dbInstance = db;
+      return db;
+    } finally {
+      connectionPromise = null;
     }
+  })();
+
+  return connectionPromise;
 };
 
-export const saveTodoItems = async (db: SQLiteDatabase, todoItems: ToDoItem[]) => {
-    const insertQuery =
-        `INSERT OR REPLACE INTO ${tableName}(rowid, value) values` +
-        todoItems.map(i => `(${i.id}, '${i.value}')`).join(',');
+export const closeAndDeleteDatabase = async (): Promise<void> => {
+  if (dbInstance) {
+    try {
+      await dbInstance.close();
+      dbInstance = null;
+    } catch (e) {
+      console.error("Close failed, but proceeding to delete...", e);
+    }
+  }
 
-    return db.executeSql(insertQuery);
-};
+  await new Promise(resolve => setTimeout(resolve, 100));
 
-export const deleteTodoItem = async (db: SQLiteDatabase, id: number) => {
-    const deleteQuery = `DELETE from ${tableName} where rowid = ${id}`;
-    await db.executeSql(deleteQuery);
-};
-
-export const deleteTable = async (db: SQLiteDatabase) => {
-    const query = `drop table ${tableName}`;
-
-    await db.executeSql(query);
+  // 3. Ensure this is also called from the SQLite object
+  await SQLite.deleteDatabase({ name: 'todo-data.db', location: 'default' });
 };

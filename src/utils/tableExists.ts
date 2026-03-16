@@ -1,49 +1,34 @@
-import { openDatabase } from 'react-native-sqlite-storage';
+import SQLite from 'react-native-sqlite-storage';
 
-// Utility to check if a table exists
-export const tableExists = async (db: any, tableName: string): Promise<boolean> => {
-  return new Promise((resolve, reject) => {
-    db.transaction((tx: any) => {
-      tx.executeSql(
-        `SELECT name FROM sqlite_master WHERE type='table' AND name=?;`,
-        [tableName],
-        (_tx: any, results: any) => {
-          resolve(results.rows.length > 0);
-        },
-        (_tx: any, err: any) => {
-          console.log(`Error checking table ${tableName}:`, err);
-          resolve(false); // Treat error as table missing
-          return true;
-        }
-      );
-    });
-  });
+// 1. Check if table exists (Promise version)
+export const tableExists = async (db: SQLite.SQLiteDatabase, tableName: string): Promise<boolean> => {
+  try {
+    // In promise mode, executeSql returns [ResultSet]
+    const [results] = await db.executeSql(
+      `SELECT name FROM sqlite_master WHERE type='table' AND name=?;`,
+      [tableName]
+    );
+    return results.rows.length > 0;
+  } catch (err) {
+    console.error(`Error checking table ${tableName}:`, err);
+    return false;
+  }
 };
 
-// Safe table creation
-export const createTableIfNotExists = async (db: any, tableName: string, createSQL: string) => {
-  const exists = await tableExists(db, tableName);
-  // console.log(tableName, "exists")
-  if (!exists) {
-    return new Promise((resolve, reject) => {
-      db.transaction((tx: any) => {
-        tx.executeSql(
-          createSQL,
-          [],
-          () => {
-            // console.log(tableName, "created")
-            resolve(true);
-          },
-          (_tx: any, err: any) => {
-            console.log(` Failed to create table ${tableName}:`, err);
-            reject(err);
-            return true;
-          }
-        );
-      });
-    });
-  } else {
-
+// 2. Create table (Simplified Promise version)
+export const createTableIfNotExists = async (db: SQLite.SQLiteDatabase, tableName: string, createSQL: string) => {
+  try {
+    const exists = await tableExists(db, tableName);
+    
+    if (!exists) {
+      // Execute the creation SQL directly
+      await db.executeSql(createSQL);
+      console.log(`✅ Table ${tableName} created successfully.`);
+    }
     return true;
+  } catch (err) {
+    console.error(`❌ Failed to create table ${tableName}:`, err);
+    // CRITICAL: Rethrow so App.tsx knows setup failed
+    throw err; 
   }
 };

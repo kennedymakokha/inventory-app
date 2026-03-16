@@ -14,12 +14,24 @@ import { useSettings } from "../context/SettingsContext";
 import { Theme } from "../utils/theme";
 import { calculateExpectedCash, closeRegister } from "../services/closeOpen.service";
 import { formatNumber } from "../../utils/formatNumbers";
+import { useNavigation } from "@react-navigation/native";
+import { closeAndDeleteDatabase } from "../services/db-service";
 
 const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
   navigation,
 }) => {
+
   const { logout } = useAuthContext();
   const { user } = useSelector((state: any) => state.auth);
+
+  const handleLogout = async () => {
+    await closeRegister(user.role, user._id, 40);
+    await logout();
+    await AsyncStorage.clear();
+    await closeAndDeleteDatabase()
+   
+  };
+
 
   const { isDarkMode } = useSettings();
   const theme = isDarkMode ? Theme.dark : Theme.light;
@@ -27,18 +39,6 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
   const [expected, setExpected] = useState<any>("0");
   const [message, setMessage] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
-
-
-
-
-  const logoutUser = async () => {
-    await closeRegister(user.role, user._id, 40)
-    await logout();
-
-    await AsyncStorage.clear();
-  };
-
-
 
   const menuItem = (
     label: string,
@@ -137,7 +137,7 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
         style={{ borderTopColor: theme.border }}
         className="mt-auto mb-20 border-t pt-5"
       >
-        <TouchableOpacity onPress={logoutUser}>
+        <TouchableOpacity onPress={handleLogout}>
           <Text
             style={{ color: theme.text }}
             className="text-center text-2xl font-bold"
