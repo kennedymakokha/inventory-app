@@ -33,6 +33,14 @@ export const syncTables = [
         payloadKey: "sales",
     },
     {
+        tableName: "Payments",
+        primaryKey: "payment_id",
+        bulkEndpoint: "/api/payments/bulk",
+        updatedSinceEndpoint: "/api/payments/updated-since",
+        lastSyncKey: "payments_last_sync",
+        payloadKey: "payments",
+    },
+    {
         tableName: "CashRegister",
         primaryKey: "register_id",
         bulkEndpoint: "/api/cash-registrations/bulk",

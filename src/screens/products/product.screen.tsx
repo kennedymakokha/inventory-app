@@ -134,6 +134,8 @@ const ProductScreen = () => {
             setSaving(true);
 
             if (item.product_id) {
+                
+                item.business_id = business._id
                 await updateProduct(item);
                 swipeRefs.current[item.product_id]?.close();
                 setMsg({ msg: "Product updated!", state: "success" });
@@ -265,7 +267,7 @@ const ProductScreen = () => {
                     {/* TOP ROW */}
                     <View style={styles.rowBetween}>
                         <Text style={[styles.productName, { color: theme.text }]}>
-                            {item.product_name} 
+                            {item.product_name}
                         </Text>
 
                         <Text style={[styles.priceText, { color: theme.text }]}>

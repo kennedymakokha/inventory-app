@@ -23,7 +23,7 @@ export const createTableIfNotExists = async (db: SQLite.SQLiteDatabase, tableNam
     if (!exists) {
       // Execute the creation SQL directly
       await db.executeSql(createSQL);
-      console.log(`✅ Table ${tableName} created successfully.`);
+      console.log(` Table ${tableName} created successfully.`);
     }
     return true;
   } catch (err) {

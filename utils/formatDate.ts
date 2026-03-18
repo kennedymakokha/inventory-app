@@ -19,6 +19,22 @@ export function FormatDate(dateInput: any, locale = "en-US") {
   });
 }
 
+export const FineDate = (timestamp: any) => {
+  // Extract parts
+  const year = timestamp.slice(0, 4);
+  const month = timestamp.slice(4, 6) - 1; // JS months are 0-based
+  const day = timestamp.slice(6, 8);
+  const hour = timestamp.slice(8, 10);
+  const minute = timestamp.slice(10, 12);
+  const second = timestamp.slice(12, 14);
+
+  // Create Date object
+  const date = new Date(year, month, day, hour, minute, second);
+  return date.toString()
+  // Format it
+  console.log(date.toString());
+}
+
 export function getDurationFromNow(createdAt: any) {
   const now = new Date();
   const created = new Date(createdAt);

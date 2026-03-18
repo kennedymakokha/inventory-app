@@ -39,7 +39,7 @@ const BusinessProfileScreen = () => {
 
     const [isEditing, setIsEditing] = useState(false);
     const [showKey, setShowKey] = useState(false);
-    const [printQr, setPrintQr] = useState(false); // ✅ toggle state
+    const [printQr, setPrintQr] = useState(false); //  toggle state
     const [data, setData] = useState<Business>({
         _id: "",
         business_name: "",
@@ -85,7 +85,7 @@ const BusinessProfileScreen = () => {
     };
 
     useEffect(() => {
-        if (business && JSON.stringify(data) !== JSON.stringify(business)) {
+        if (business && !isEditing && JSON.stringify(data) !== JSON.stringify(business)) {
             setData(business);
         }
     }, [business]);
@@ -159,7 +159,7 @@ const BusinessProfileScreen = () => {
                     renderField(field.label, field.key as keyof Business, field.icon, field.secure, field.locked)
                 )}
 
-                {/* ✅ Working Hours Picker */}
+                {/*  Working Hours Picker */}
                 <View style={[styles.fieldCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
                     <View style={styles.fieldHeader}>
                         <Ionicons name="time-outline" size={18} color={Theme.primary} />
@@ -186,7 +186,7 @@ const BusinessProfileScreen = () => {
                     )}
                 </View>
 
-                {/* ✅ Toggle for Print QR Code */}
+                {/*  Toggle for Print QR Code */}
                 <View style={[styles.fieldCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
                     <View style={styles.fieldHeader}>
                         <Ionicons name="qr-code-outline" size={18} color={Theme.primary} />

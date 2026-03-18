@@ -29,7 +29,6 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
     await logout();
     await AsyncStorage.clear();
     await closeAndDeleteDatabase()
-   
   };
 
 

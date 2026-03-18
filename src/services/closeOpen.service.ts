@@ -81,25 +81,32 @@ export const closeRegister = async (
     registerId: string,
     actualCash: number
 ) => {
-    const db = await getDBConnection();
-    const expectedCash = await calculateExpectedCash(role, registerId);
+    try {
+        console.log("Closing register:", registerId, "for role:", role);
+        console.log("Actual cash reported:", actualCash);
 
-    const difference = actualCash - expectedCash;
+        const db = await getDBConnection();
 
-    await db.executeSql(
-        `UPDATE CashRegister
-     SET closing_cash=?,
-         expected_cash=?,
-         difference=?,
-         status='CLOSED',
-         closed_at=datetime('now')
-     WHERE register_id=?`,
-        [
-            actualCash,
-            expectedCash,
-            difference,
-            registerId
-        ]
-    );
+        const expectedCash = await calculateExpectedCash(role, registerId);
+        console.log("Expected cash calculated:", expectedCash);
 
+        const difference = actualCash - expectedCash;
+        console.log("Difference (actual - expected):", difference);
+
+        const result = await db.executeSql(
+            `UPDATE CashRegister
+             SET closing_cash=?,
+                 expected_cash=?,
+                 difference=?,
+                 status='CLOSED',
+                 closed_at=datetime('now')
+             WHERE register_id=?`,
+            [actualCash, expectedCash, difference, registerId]
+        );
+
+        console.log("Database update result:", result);
+        console.log("Register successfully closed.");
+    } catch (err) {
+        console.error("Error closing register:", err);
+    }
 };

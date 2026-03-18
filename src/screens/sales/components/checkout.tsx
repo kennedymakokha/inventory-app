@@ -26,6 +26,8 @@ import { Animated } from 'react-native';
 import { useBusiness } from '../../../context/BusinessContext';
 import { useUser } from '../../../context/UserContext';
 import { ScrollView } from 'react-native';
+import { FineDate, FormatDate } from '../../../../utils/formatDate';
+import Keypad from './keypad';
 
 interface CheckoutModalProps {
   modalVisible: boolean;
@@ -38,60 +40,7 @@ interface CheckoutModalProps {
 }
 
 
-const POSKeypad = ({ value, onChange }: any) => {
 
-  const handlePress = (key: string) => {
-
-    if (key === "C") {
-      onChange("");
-      return;
-    }
-
-    if (key === "⌫") {
-      onChange(value.slice(0, -1));
-      return;
-    }
-
-    const newValue = value + key;
-    onChange(newValue);
-  };
-
-  const keys = [
-    ["1", "2", "3"],
-    ["4", "5", "6"],
-    ["7", "8", "9"],
-    ["0", ".", "⌫"],
-  ];
-
-  return (
-    <View className="mt-6">
-
-      {keys.map((row, i) => (
-        <View key={i} className="flex-row justify-between mb-3">
-
-          {row.map((key) => (
-            <TouchableOpacity
-              key={key}
-              onPress={() => handlePress(key)}
-              className="bg-slate-800 w-[30%] py-6 rounded-lg items-center"
-            >
-              <Text className="text-white text-xl font-bold">{key}</Text>
-            </TouchableOpacity>
-          ))}
-
-        </View>
-      ))}
-
-      <TouchableOpacity
-        onPress={() => handlePress("C")}
-        className="bg-red-600 py-5 rounded-lg items-center mt-2"
-      >
-        <Text className="text-white font-bold text-lg">CLEAR</Text>
-      </TouchableOpacity>
-
-    </View>
-  );
-};
 const CheckoutModal: React.FC<CheckoutModalProps> = ({
   modalVisible,
   cartItems,
@@ -107,11 +56,61 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [processing, setProcessing] = useState(false);
   const [selectedPrinterMac, setSelectedPrinterMac] = useState<string | null>(null);
   const [showPrinterModal, setShowPrinterModal] = useState(false);
+  const [printCount, setPrintCount] = useState(0);
   const [adjustedCart, setAdjustedCart] = useState<CartItem[]>([...cartItems]);
+
   const { isDarkMode } = useSettings();
   const theme = isDarkMode ? Theme.dark : Theme.light;
   const { business } = useBusiness();
+  const [mpesa, setMpesa] = useState({
+    checkoutRequestId: "",
+    merchantRequestId: "",
+    receiptNumber: "",
+    transactionDate: "",
+  })
+  const [retrying, setRetrying] = useState(false);
 
+  const autoRetryPendingReceipts = async () => {
+    if (retrying) return; // جلوگیری duplicate runs
+
+    try {
+      setRetrying(true);
+
+      const data = await AsyncStorage.getItem("PENDING_RECEIPTS");
+      const receipts = data ? JSON.parse(data) : [];
+
+      if (!receipts.length || !selectedPrinterMac) return;
+
+      const remaining: any[] = [];
+
+      for (const r of receipts) {
+        try {
+          await printToPrinter(
+            selectedPrinterMac,
+            r.receiptText,
+            `https://mtandao.app`,
+            business?.printQr ?? false
+          );
+
+          //  Post after successful print
+          PostLocally(r.receiptNo, r.method, r.phone, r.amount);
+
+        } catch (err) {
+          remaining.push(r);
+        }
+      }
+
+      await AsyncStorage.setItem("PENDING_RECEIPTS", JSON.stringify(remaining));
+
+      //  Update UI
+      setPrintCount(remaining.length);
+
+    } catch (e) {
+      console.error("Auto retry error:", e);
+    } finally {
+      setRetrying(false);
+    }
+  };
   useEffect(() => {
     // Load saved printer
     const loadPrinter = async () => {
@@ -125,7 +124,21 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   useEffect(() => {
     setAdjustedCart([...cartItems]);
   }, [cartItems]);
+  useEffect(() => {
+    const init = async () => {
+      const data: any = await AsyncStorage.getItem("PENDING_RECEIPTS");
+      const receipts = data ? JSON.parse(data) : [];
 
+      setPrintCount(receipts.length);
+
+      //  AUTO RETRY when printer is available
+      if (selectedPrinterMac && receipts.length > 0) {
+        autoRetryPendingReceipts();
+      }
+    };
+
+    init();
+  }, [selectedPrinterMac]);
   // Grand total based on adjusted prices
   const grandTotal = adjustedCart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -135,15 +148,150 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
       ? parseFloat(amountGiven) - grandTotal
       : 0;
 
+  const handleSTK = async (receiptNo: string, phoneNumber: string) => {
+    try {
+      console.log("Initiating STK for phone:", phoneNumber);
+
+      // 1️⃣ Initiate STK push
+      const response = await fetch(
+        "https://84b2-41-209-9-114.ngrok-free.app/v1/payments/stk",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": "1234567ss8bcer6",
+            "Idempotency-Key": receiptNo,
+            "X-Master-Key": "k3f9Jq8sT1vQmZ0uLx7Y2pV+5A1bF4Hq0r9N2wT+6GQ="
+          },
+          body: JSON.stringify({
+            amount: 1, // replace with actual amount if needed
+            phone: `254${phoneNumber}`,
+            accountReference: business?.business_name,
+            description: "Payment"
+          })
+        }
+      );
+
+      const data = await response.json();
+      console.log("STK initiated:", data);
+
+      // 2️⃣ Poll transaction status
+      let status = "pending";
+      let attempts = 0;
+      const maxAttempts = 12; // 12 × 5s = 1 minute
+
+      while (status === "pending" && attempts < maxAttempts) {
+        // wait 5 seconds
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        attempts++;
+
+        const statusRes = await fetch(
+          `https://84b2-41-209-9-114.ngrok-free.app/callbacks/stk/status/${receiptNo}`,
+          {
+            headers: {
+              "x-api-key": "1234567ss8bcer6",
+              "X-Master-Key": "k3f9Jq8sT1vQmZ0uLx7Y2pV+5A1bF4Hq0r9N2wT+6GQ="
+            }
+          }
+        );
+
+        const statusData = await statusRes.json();
+        status = statusData.status;
+        console.log(`Polling attempt ${attempts}:`, status);
+
+        if (status === "success") {
+          setMpesa(statusData.mpesa);
+          return "success";
+        }
+
+        if (status === "failed") {
+          setMsg({ msg: "Transaction did not complete", state: "error" });
+          return "failed";
+        }
+
+        // If still pending → continue polling
+      }
+
+      // ⏱️ Timeout if still pending after max attempts
+      if (status === "pending") {
+        setMsg({ msg: "Transaction timed out", state: "error" });
+        return "timeout";
+      }
+
+    } catch (error) {
+      console.error("handleSTK error:", error);
+      setMsg({ msg: "STK Push failed", state: "error" });
+      return "failed";
+    }
+  };
+  const savePendingReceipt = async (receipt: any) => {
+    try {
+      const existing = await AsyncStorage.getItem("PENDING_RECEIPTS");
+      const receipts = existing ? JSON.parse(existing) : [];
+
+      const updatedReceipts = [...receipts, receipt];
+
+      await AsyncStorage.setItem(
+        "PENDING_RECEIPTS",
+        JSON.stringify(updatedReceipts)
+      );
+
+      //  UPDATE UI IMMEDIATELY
+      setPrintCount(updatedReceipts.length);
+
+    } catch (e) {
+      console.error("Error saving pending receipt", e);
+    }
+  };
+
+  const retryPendingReceipts = async () => {
+    try {
+      const data = await AsyncStorage.getItem("PENDING_RECEIPTS");
+      const receipts = data ? JSON.parse(data) : [];
+
+      if (!receipts.length) {
+        Alert.alert("Info", "No pending receipts.");
+        return;
+      }
+
+      const remaining: any[] = [];
+
+      for (const r of receipts) {
+        try {
+          await printToPrinter(
+            selectedPrinterMac!,
+            r.receiptText,
+            `https://mtandao.app`,
+            business?.printQr ?? false
+          );
+
+          //  Post ONLY after successful print
+          PostLocally(r.receiptNo, r.method, r.phone, r.amount);
+
+        } catch (err) {
+          remaining.push(r); // still failed
+        }
+      }
+
+      await AsyncStorage.setItem("PENDING_RECEIPTS", JSON.stringify(remaining));
+
+      Alert.alert(
+        "Done",
+        remaining.length
+          ? "Some receipts still failed to print."
+          : "All pending receipts printed successfully."
+      );
+    } catch (e) {
+      console.error(e);
+    }
+  };
   // Finalize checkout
   const finalizeCheckout = async (
-    method: string,
-    paidAmount: number,
-    transId?: string | null,
-    maskedPhone?: string | null
+    method: "CASH" | "MPESA",
+    paidAmount: number
   ) => {
-    if (method === 'CASH' && paidAmount < grandTotal) {
-      Alert.alert('Insufficient Cash', 'Amount given is less than the total payable.');
+    if (method === "CASH" && paidAmount < grandTotal) {
+      Alert.alert("Insufficient Cash", "Amount given is less than total.");
       return;
     }
 
@@ -154,16 +302,20 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
     try {
       setProcessing(true);
 
-      const receiptData = {
-        items: adjustedCart,
-        receiptNo,
-        invoiceId,
-        paymentMethod: method,
-        transaction_id: transId,
-        total: grandTotal,
-        timestamp: new Date().toISOString(),
-      };
-      PostLocally(receiptNo, method, phoneNumber, paidAmount); // Clear cart
+      //  STEP 1: MPESA must succeed FIRST
+      if (method === "MPESA") {
+        const status = await handleSTK(receiptNo, phoneNumber);
+
+        if (status === "timeout") {
+          Alert.alert("Timeout", "Customer did not complete payment in time.");
+          return;
+        }
+
+        if (status !== "success") {
+          Alert.alert("Payment Failed", "MPESA transaction failed.");
+          return;
+        }
+      }
       const buildReceiptText = ({
         receiptNo,
         invoiceId,
@@ -186,12 +338,10 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
           text += center(`Tel: ${business.phone_number}`);
         }
         text += line;
-
-        const now = new Date();
         text += `Receipt No: ${receiptNo}\nInvoice ID: ${invoiceId}\nPayment: ${paymentMethod}\n`;
-        if (transId) text += `Trans ID: ${transId}\n`;
-        if (maskedPhone) text += `Paid via: ${maskedPhone}\n`;
-        text += `Date: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}\n${line}ITEMS\n`;
+        if (mpesa.receiptNumber) text += `Trans ID: ${mpesa.receiptNumber}\n`;
+        if (mpesa.receiptNumber) text += `Paid via: ${phoneNumber}\n`;
+        text += `Date: ${FineDate(`${mpesa.transactionDate}`)} \n${line}ITEMS\n`;
 
         let totalInclusive = 0;
         cartItems.forEach((item: any) => {
@@ -224,7 +374,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
         return text;
       };
-
+      //  STEP 2: Build receipt
       const receiptText = buildReceiptText({
         receiptNo: displayReceiptNo,
         invoiceId,
@@ -234,26 +384,67 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
         amountPaid: paidAmount,
       });
 
-      if (selectedPrinterMac) {
-        printToPrinter(selectedPrinterMac, receiptText, `https://mtandao.app`).catch((e: any) => {
-          Alert.alert('Print Error', 'Transaction saved, but printer is offline.');
-        });
+      const receiptPayload = {
+        receiptNo,
+        method,
+        phone: phoneNumber,
+        amount: paidAmount,
+        receiptText,
+      };
+
+      // ❗ Ensure printer exists
+      if (!selectedPrinterMac) {
+        Alert.alert("Printer Error", "No printer selected.");
+        return;
       }
 
+      //  STEP 3: PRINT FIRST
+      try {
+        await printToPrinter(
+          selectedPrinterMac,
+          receiptText,
+          `https://mtandao.app`,
+          business?.printQr ?? false
+        );
 
-      setPhoneNumber('');
-      setAmountGiven('');
+        //  ONLY AFTER PRINT SUCCESS → POST
+        PostLocally(receiptNo, method, phoneNumber, paidAmount);
+
+      } catch (printErr) {
+        console.error(printErr);
+
+        //  Save for retry
+        await savePendingReceipt(receiptPayload);
+
+        Alert.alert(
+          "Printer Error",
+          "Payment successful, but printing failed.\nYou can reprint from pending receipts."
+        );
+
+        return;
+      }
+
+      //  CLEANUP
+      setPhoneNumber("");
+      setAmountGiven("");
       setModalVisible(false);
+
     } catch (err) {
-      console.error('Checkout System Error:', err);
-      Alert.alert('Database Error', 'Could not save transaction. Please try again.');
+      console.error("Checkout Error:", err);
+      Alert.alert("Error", "Something went wrong.");
     } finally {
       setProcessing(false);
     }
   };
   const pulseAnim = useRef(new Animated.Value(1)).current;
-
+  // const 
   useEffect(() => {
+    const findPending = async () => {
+      const data: any = await AsyncStorage.getItem("PENDING_RECEIPTS");
+      const receipts = data ? JSON.parse(data) : [];
+      setPrintCount(receipts?.length)
+    }
+    findPending()
     if (!selectedPrinterMac) {
       Animated.loop(
         Animated.sequence([
@@ -273,6 +464,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
       pulseAnim.setValue(1);
     }
   }, [selectedPrinterMac]);
+  console.log(mpesa)
   return (
     <Modal animationType="fade" transparent={false} visible={modalVisible}>
       <SafeAreaView className="flex-1 bg-slate-900 pt-20">
@@ -388,7 +580,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       </Text>
                     </View>
 
-                    <POSKeypad
+                    <Keypad
                       value={amountGiven}
                       onChange={setAmountGiven}
                     />
@@ -404,7 +596,13 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 </View>
               )}
             </View>
-
+            {printCount > 0 && <TouchableOpacity
+              onPress={retryPendingReceipts}
+              className="bg-yellow-600 py-3 flex-row  rounded items-center justify-between px-10 mt-2"
+            >
+              <Text className="text-white font-bold">Retry Pending Receipts</Text>
+              <View className='flex rounded-md px-1 w-10  items-center ' style={{ borderColor: theme.border }}><Text>{printCount}</Text></View>
+            </TouchableOpacity>}
             {/* ACTION BUTTONS */}
           </ScrollView>
         </KeyboardAvoidingView>
@@ -459,7 +657,14 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
       <PrinterSelectionModal
         visible={showPrinterModal}
         onClose={() => setShowPrinterModal(false)}
-        onSelect={(mac) => setSelectedPrinterMac(mac)}
+        onSelect={(mac) => {
+          setSelectedPrinterMac(mac);
+
+          //  trigger retry immediately
+          setTimeout(() => {
+            autoRetryPendingReceipts();
+          }, 500);
+        }}
       />
     </Modal>
   );

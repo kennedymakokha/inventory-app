@@ -118,7 +118,7 @@ const AppWithAuth = () => {
 
       interval = setInterval(() => {
         safeSync();
-      }, 120000);
+      }, 3600000);
     };
 
     startSync();
@@ -143,7 +143,6 @@ const AppWithProviders = () => {
   const { business } = useBusiness();
   const [dbReady, setDbReady] = React.useState(false);
   const { user } = useSelector((state: any) => state.auth);
-  console.log(user)
   // Parse working hours from business context, default to 8–17
   const [startHour, endHour] = (() => {
     if (business?.working_hrs) {
