@@ -3,52 +3,44 @@ import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import SalesReportTable from '../components/salesTable';
 import PageHeader from '../../../components/pageHeader';
-import { getProductSalesReport, getTopProducts } from '../../../services/analytics.service';
+import { getProductSalesReport } from '../../../services/analytics.service';
 import { adminFilter, salesFilter } from '../../../../utils/getsalesdata';
-import { useSettings } from '../../../context/SettingsContext';
-import { Theme } from '../../../utils/theme';
 import PieChart from '../../dashbordItems/PieChart';
 import RadialFab from '../../../components/multiFab';
-import { getDBConnection } from '../../../services/db-service';
+import { useTheme } from '../../../context/themeContext';
 
 const PAGE_SIZE = 10;
 
 const SalesReport = () => {
   const { user } = useSelector((state: any) => state.auth);
-  const { isDarkMode } = useSettings();
-  const theme = isDarkMode ? Theme.dark : Theme.light;
+  const { colors } = useTheme();
 
   const [sales, setSales] = useState<any[]>([]);
-  const [sale, setSale] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [filter, setFilter] = useState('All');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [state, setState] = useState<Record<string, boolean>>({});
-  const [showPie, setShowPie] = useState(false); // toggle state
+  const [showPie, setShowPie] = useState(false);
 
-  const filterData = user?.role === 'superAdmin' || user?.role === 'admin' ? adminFilter : salesFilter;
+  const filterData =
+    user?.role === 'superAdmin' || user?.role === 'admin'
+      ? adminFilter
+      : salesFilter;
 
   const fetchSales = async (pageNumber = 1, append = false) => {
     try {
-      if (pageNumber === 1) setLoading(true);
-      else setLoadingMore(true);
-     
+      pageNumber === 1 ? setLoading(true) : setLoadingMore(true);
+
       const selectedFilter = filterData.find((f) => f.title === filter);
       const filterId = selectedFilter ? selectedFilter.id : 0;
 
-      const report = await getProductSalesReport({
-        userRole: user.role === 'sales' ? 'sales' : 'admin',
-        userId: user._id,
-        filterId,
-        page: pageNumber,
-        pageSize: PAGE_SIZE,
-      });
 
-      if (append) setSales((prev) => [...prev, ...report]);
-      else setSales(report);
+      const report = await getProductSalesReport( undefined, selectedFilter as any, undefined, undefined, undefined, pageNumber,  PAGE_SIZE);
 
+   
+
+      setSales(prev => (append ? [...prev, ...report] : report));
       setHasMore(report.length === PAGE_SIZE);
     } catch (err) {
       console.error('Error fetching sales report:', err);
@@ -63,24 +55,23 @@ const SalesReport = () => {
     fetchSales(1, false);
   }, [filter]);
 
-
-
   const loadMore = () => {
     if (!hasMore || loadingMore) return;
+
     const nextPage = page + 1;
     setPage(nextPage);
     fetchSales(nextPage, true);
   };
 
-  // Format sales data for pie chart: [{ key, value }]
   const pieData = sales.map((item) => ({
     key: item.product_name,
     value: Number(item.total_sales || 0),
   }));
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.background }}>
-      {/* Filter Tabs */}
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+
+      {/* FILTER HEADER */}
       <PageHeader
         component={() => (
           <View
@@ -88,33 +79,32 @@ const SalesReport = () => {
               flexDirection: 'row',
               flexWrap: 'wrap',
               justifyContent: 'space-around',
-              gap: 4,
               paddingVertical: 12,
             }}
           >
             {filterData.map((tab: any) => {
-              const isActive = state[tab.id] && filter === tab.title;
+              const isActive = filter === tab.title;
+
               return (
                 <TouchableOpacity
                   key={tab.id}
-                  onPress={() => {
-                    setState((prev) => ({ ...prev, [tab.id]: true }));
-                    setFilter(tab.title);
-                  }}
+                  onPress={() => setFilter(tab.title)}
                   style={{
-                    paddingHorizontal: 8,
-                    paddingVertical: 4,
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
                     borderRadius: 8,
+                    margin: 4,
                     borderWidth: isActive ? 1 : 0,
-                    borderColor: theme.border,
-                    backgroundColor: isActive ? theme.elevated : theme.card,
+                    borderColor: colors.border,
+                    backgroundColor: isActive
+                      ? colors.elevated
+                      : colors.card,
                   }}
                 >
                   <Text
                     style={{
-                      textAlign: 'center',
                       fontWeight: '600',
-                      color: isActive ? theme.text : theme.subText,
+                      color: isActive ? colors.text : colors.subText,
                       textTransform: 'capitalize',
                     }}
                   >
@@ -127,18 +117,29 @@ const SalesReport = () => {
         )}
       />
 
-
-      <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
         {showPie ? (
-          <PieChart title={` ${filter} Sales Report`} data={pieData.length ? pieData : []} />
+          pieData.length ? (
+            <PieChart
+              title={`${filter}jj Sales Report`}
+              data={pieData}
+            />
+          ) : (
+            <Text
+              style={{
+                textAlign: 'center',
+                marginTop: 40,
+                color: colors.subText,
+              }}
+            >
+              No data for chart
+            </Text>
+          )
         ) : (
           <>
-            {/* Report Header */}
+            {/* HEADER */}
             <View
               style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
                 paddingHorizontal: 20,
                 marginVertical: 8,
               }}
@@ -148,14 +149,15 @@ const SalesReport = () => {
                   fontSize: 18,
                   fontWeight: 'bold',
                   textTransform: 'uppercase',
-                  color: Theme.success,
+                  textAlign: "center",
+                  color: colors.primary,
                 }}
               >
                 {filter} Sales Report
               </Text>
             </View>
 
-            {/* Sales Table */}
+            {/* TABLE */}
             <SalesReportTable
               headers={[
                 { key: 'product_name', label: 'Name', width: 180 },
@@ -170,16 +172,30 @@ const SalesReport = () => {
           </>
         )}
       </ScrollView>
+
+      {/* FAB */}
       <RadialFab
-        mainColor={Theme.primary}
-        mainIcon={showPie ? "list" : "menu"}
+        mainColor={colors.primary}
+        mainIcon={showPie ? 'list' : 'menu'}
         radius={120}
         angle={90}
         mainAction={() => setShowPie(!showPie)}
-        actions={showPie ? [] : [
-          { icon: 'pie-chart-outline', label: 'Pie Chart ', onPress: () => setShowPie(!showPie) },
-          { icon: 'cloud-download-outline', label: 'Download', onPress: () => console.log(true) },
-        ]}
+        actions={
+          showPie
+            ? []
+            : [
+              {
+                icon: 'pie-chart-outline',
+                label: 'Pie Chart',
+                onPress: () => setShowPie(true),
+              },
+              {
+                icon: 'cloud-download-outline',
+                label: 'Download',
+                onPress: () => console.log(true),
+              },
+            ]
+        }
       />
     </View>
   );

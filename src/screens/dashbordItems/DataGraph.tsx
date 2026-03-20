@@ -1,11 +1,11 @@
-import { View, Text, StyleSheet, Animated, ScrollView } from "react-native";
+import { View, Text, StyleSheet, Animated, ScrollView, TouchableOpacity } from "react-native";
 import React, { useEffect, useRef } from "react";
 import { useSettings } from "../../context/SettingsContext";
 import { Theme } from "../../utils/theme";
 import { getThemeAwareColor } from "./lineGraph";
 import { useTheme } from "../../context/themeContext";
 
-const DataGraph = ({ data = [], title }: any) => {
+const DataGraph = ({ data = [], title, pressed }: any) => {
 
   const chartHeight = 220;
   const { colors, isDarkMode } = useTheme();
@@ -36,7 +36,7 @@ const DataGraph = ({ data = [], title }: any) => {
   const maxValue = Math.max(...data.map((item: any) => item?.value || 0), 1);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <TouchableOpacity activeOpacity={1} onPress={pressed} style={[styles.container, { backgroundColor: colors.background }]}>
       <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
 
       {(!data || data.length === 0) ? (
@@ -106,7 +106,7 @@ const DataGraph = ({ data = [], title }: any) => {
           </ScrollView>
         </View>
       )}
-    </View>
+    </TouchableOpacity>
   );
 };
 

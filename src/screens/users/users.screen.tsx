@@ -18,10 +18,10 @@ import { LayoutAnimation } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { UsersStackParamList } from '../../../models/navigationTypes';
+import { useTheme } from '../../context/themeContext';
 
 const UsersScreen = () => {
-    const { isDarkMode } = useSettings();
-    const theme = isDarkMode ? Theme.dark : Theme.light;
+    const { colors, isDarkMode } = useTheme();
     const { query } = useSearch();
     const swipeRefs = useRef<any>({});
     const currentlyOpenSwipe = useRef<any>(null);
@@ -35,7 +35,7 @@ const UsersScreen = () => {
         role: "",
         business_id: business._id || ""
     };
-   
+
 
     type NavigationProp = NativeStackNavigationProp<
         UsersStackParamList,
@@ -55,6 +55,7 @@ const UsersScreen = () => {
             const db = await getDBConnection();
             const storedItems = await getUsers(db);
             setUsers(storedItems);
+            console.log(storedItems)
         } catch (err) {
             console.error(err);
         }
@@ -108,20 +109,23 @@ const UsersScreen = () => {
             onPress={() => navigation.navigate("User_Dashboard", { user: item })}
         >
             <View style={{
-                backgroundColor: '#1e293b', padding: 16, borderRadius: 5, marginBottom: 12,
+                backgroundColor: colors.card, padding: 16, borderRadius: 5, marginBottom: 12,
                 shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 5
             }}>
-                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{item.name}</Text>
+                <Text style={{ color: colors.text, fontWeight: '700', fontSize: 16 }}>{item.name}</Text>
                 <View className="flex flex-row items-center justify-between px-2">
-                    <Text style={{ color: '#9ca3af', fontSize: 12, marginTop: 6 }}>{item.phone_number}</Text>
-                    <Text style={{ color: '#9ca3af', fontSize: 12, marginTop: 6 }}>{item.role}</Text>
+                    <Text style={{ color: colors.text, fontSize: 12, marginTop: 6 }}>{item.phone_number}</Text>
+                    <View className="flex px-3 py-1 justify-center items-center" style={{ borderColor: colors.border }}>
+                        <Text style={{ color: colors.subText, fontSize: 12, marginTop: 6 }}>{item.role}</Text>
+                    </View>
+
                 </View>
             </View>
         </SwipeableCard>
     );
 
     return (
-        <View style={{ flex: 1, backgroundColor: theme.background, paddingTop: 16 }}>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
             <PageHeader />
             <FlatList
                 data={users.filter(u => u.name.toLowerCase().includes(query.toLowerCase()))}
@@ -132,18 +136,18 @@ const UsersScreen = () => {
             />
 
             <AddUserModal
-                setMsg={setMsg} isDarkMode={isDarkMode} theme={theme} msg={msg}
+                setMsg={setMsg} isDarkMode={isDarkMode} theme={colors} msg={msg}
                 PostLocally={handleSaveUser} modalVisible={modalVisible} setItem={setItem}
                 onClose={() => { setModalVisible(false); setItem(initialState); }} item={item}
             />
 
             <CSVUploadModal
-                setMsg={setMsg} msg={msg} isDarkMode={isDarkMode} theme={theme}
+                setMsg={setMsg} msg={msg} isDarkMode={isDarkMode} theme={colors}
                 PostLocally={handleSaveUser} modalVisible={uploadModalVisible} setItem={setItem}
                 item={item} setModalVisible={setUploadModalVisible}
             />
             <RadialFab
-                mainColor={Theme.primary}
+                mainColor={colors.primary}
                 mainIcon="menu"
                 radius={120}
                 angle={90}

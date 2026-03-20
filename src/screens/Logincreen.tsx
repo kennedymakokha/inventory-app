@@ -13,6 +13,8 @@ import { useDispatch } from 'react-redux';
 import { useLoginMutation } from '../services/authApi';
 import { useUser } from '../context/UserContext';
 import { useBusiness } from '../context/BusinessContext';
+import { useTheme } from '../context/themeContext';
+import { createTheme } from '../utils/theme';
 
 const LoginScreen = ({ navigation }: any) => {
     const [msg, setMsg] = useState({ msg: "", state: "" });
@@ -24,7 +26,7 @@ const LoginScreen = ({ navigation }: any) => {
     const { login } = useAuthContext();
     const { setUser } = useUser();
     const { business, updateBusiness, isLoading } = useBusiness();
-    const { setColors } = useTheme();
+
 
 
     const handleChange = (key: keyof User, value: string) => {
@@ -62,8 +64,8 @@ const LoginScreen = ({ navigation }: any) => {
                 if (data.exp) {
                     await AsyncStorage.setItem("tokenExpiry", data.exp.toString());
                     await login(data.token);
-                    setColors(data.user.business.primaryColor ?? "#22c55e", data.user.business.primaryColor ?? "#000000");
-                     setUser(data.user);
+                    createTheme(data.user.business.primaryColor ?? "#22c55e", data.user.business.primaryColor ?? "#000000");
+                    setUser(data.user);
                     updateBusiness(data.user.business);
                 }
 

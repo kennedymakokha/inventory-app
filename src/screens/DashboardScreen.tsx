@@ -5,9 +5,11 @@ import { useSettings } from "../context/SettingsContext";
 import { Theme } from "../utils/theme";
 import PageHeader from "../components/pageHeader";
 import {
+  getDetailedUserStats,
   getHourlySalesByProduct,
   getLowStockProducts,
   getMonthlySales,
+  getSalesByCategory,
   getTodaySales,
   getTodayTransactions,
   getTopProducts,
@@ -21,14 +23,16 @@ import { formatNumber } from "../../utils/formatNumbers";
 import { useSocket } from "../context/socketContext";
 import { Business, useBusiness } from "../context/BusinessContext";
 import { useTheme } from "../context/themeContext";
+import StartCard from "../components/startCard";
 
 const Dashboard = () => {
   const { user } = useSelector((state: any) => state.auth);
-const { colors, isDarkMode } = useTheme();
-
+  const { colors, isDarkMode } = useTheme();
+  const [stats, setStats] = useState({ totalTransactions: 0, totalSales: 0, cashTotal: 0, mpesaTotal: 0, cashCount: 0, mpesaCount: 0 });
+  const [showbyCategory, setShowbyCategory] = useState(false);
   const { socket } = useSocket();
   const { business, updateBusiness, isLoading } = useBusiness();
-
+  const [topCategoryProducts, setTopCategoryProducts] = useState([]);
   const [sales, setSales] = useState<any[]>([]);
   const [lowstcks, setlowstcks] = useState<any[]>([]);
   const [monthlySales, setMonthlySales] = useState<any[]>([]);
@@ -40,7 +44,7 @@ const { colors, isDarkMode } = useTheme();
     try {
       const productDatasets = await getHourlySalesByProduct(
         user.role,
-        user._id
+        user.user_id
       );
       setDatasets(productDatasets);
     } catch (error) {
@@ -50,13 +54,15 @@ const { colors, isDarkMode } = useTheme();
 
   const loadDashboard = useCallback(async () => {
     const totalToday: any = await getTodaySales(user.role, user._id);
-    const tp: any = await getTopProducts(user.role, user._id);
+
+    const topProducts: any = await getTopProducts(user.user_id, `${user.role === "admin" ? "month" : "today"}`);
+    setTopProducts(topProducts);
     const mS = await getMonthlySales(user.role, user._id);
     const todayTx = await getTodayTransactions(user.role, user._id);
     const stcks = await getLowStockProducts();
 
     setMonthlySales(mS);
-    setTopProducts(tp);
+
     setlowstcks(stcks);
     setSales(totalToday);
     setTransactions(todayTx);
@@ -65,6 +71,7 @@ const { colors, isDarkMode } = useTheme();
   useEffect(() => {
     fetchHourlySales();
     loadDashboard();
+    fetchAnalytics()
   }, []);
 
   useEffect(() => {
@@ -95,6 +102,20 @@ const { colors, isDarkMode } = useTheme();
     }
     return [8, 17]; // default
   })();
+  const fetchAnalytics = async () => {
+    // Ensure you use the correct ID property from your user object
+    const id = user.user_id || user._id;
+
+    // Fetch Transaction Count (Quantity of sales)
+    const totalTransactions = await getDetailedUserStats(
+      id,
+      "today",
+
+    );
+    setStats(totalTransactions);
+    const productsByCategoryResult: any = await getSalesByCategory(id);
+    setTopCategoryProducts(productsByCategoryResult);
+  };
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
 
@@ -115,22 +136,11 @@ const { colors, isDarkMode } = useTheme();
       )}
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={{ flexDirection: "row", gap: 12, padding: 20 }}>
-          {[{ icon: "dollar", title: "Total Sales", value: `${formatNumber(sales) || 0}` },
-          { icon: "money", title: "Transactions", value: `${transactions || 0}` },
-          { icon: "thumbs-o-up", title: "Best Perfoming", value: `${TopProducts[0]?.value}` },
-          { icon: "thumbs-o-down", title: "Worst Perfoming", value: "" }
-          ].map((stat) => (
-            <View style={{ backgroundColor: colors.card, borderColor: colors.border }} key={stat.title} className="flex  px-10 max-w-[175px] h-32 bg-white rounded items-center justify-center">
-              <Icon name={stat.icon} style={{ color: colors.subText }} size={30} className="size-10 text-center" />
-              <Text style={{ fontWeight: "bold", color: colors.text }} className="text-xl text-center">{stat.title}</Text>
-              <Text style={{ color: colors.subText }}>{stat.value}</Text>
-            </View>
-          ))}
-        </View>
+        <StartCard {...stats} />
       </ScrollView>
 
-      <DataGraph title="Top Performing Products" data={TopProducts} />
+      <DataGraph pressed={() => setShowbyCategory(!showbyCategory)} title={`Top Performing ${showbyCategory ? "Categories" : "Products"}`} data={showbyCategory ? topCategoryProducts ?? topCategoryProducts : TopProducts ?? TopProducts} />
+
 
       <MultiLineChart startHour={startHour} // optional business start hour
         endHour={endHour} title="Hourly Sales" datasets={datasets || []} />

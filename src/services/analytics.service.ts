@@ -37,7 +37,7 @@ type SalesFilter =
   | "range";
 
 export const getSales = async (
-  
+
   userId?: string,
   filter: SalesFilter = "today",
   customDate?: string,
@@ -51,12 +51,13 @@ export const getSales = async (
 
 
   // Role-based filter
-  let condition = "";
+
   const params: any[] = [];
 
   // Apply filter ONLY if userId is provided
+  let userCondition = "";
   if (userId) {
-    condition = "AND createdBy = ?";
+    userCondition = " AND createdBy = ?";
     params.push(userId);
   }
 
@@ -92,18 +93,95 @@ export const getSales = async (
     default:
       dateCondition = `date(created_at,'localtime') = date('now','localtime')`;
   }
+  const query = `
+    SELECT SUM(total) as total 
+    FROM Sale 
+    WHERE ${dateCondition} ${userCondition}
+  `;
+  // const [result] = await db.executeSql(
+  //   `SELECT SUM(total) as total
+  //    FROM Sale
+  //    WHERE ${dateCondition}
+  //    ${userCondition}`,
+  //   params
+  // );
+  console.log("Executing Query:", query, params); // Debug log
 
-  const [result] = await db.executeSql(
-    `SELECT SUM(total) as total
-     FROM Sale
-     WHERE ${dateCondition}
-     ${condition}`,
-    params
-  );
-
+  const [result] = await db.executeSql(query, params);
   return Number(result.rows.item(0)?.total ?? 0);
 };
 
+
+export const getDetailedUserStats = async (
+  userId?: string,
+  filter: SalesFilter = "today",
+  customDate?: string,
+  startDate?: string,
+  endDate?: string
+) => {
+  const db = await getDBConnection();
+  const params: any[] = [];
+  let dateCondition = "";
+
+  // 1. Date filter logic
+  switch (filter) {
+    case "today":
+      dateCondition = `date(created_at,'localtime') = date('now','localtime')`;
+      break;
+    case "week":
+      dateCondition = `strftime('%Y-%W', created_at) = strftime('%Y-%W', 'now')`;
+      break;
+    case "month":
+      dateCondition = `strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')`;
+      break;
+    case "year":
+      dateCondition = `strftime('%Y', created_at) = strftime('%Y', 'now')`;
+      break;
+    case "custom":
+      dateCondition = `date(created_at) = date(?)`;
+      params.push(customDate);
+      break;
+    case "range":
+      dateCondition = `date(created_at) BETWEEN date(?) AND date(?)`;
+      params.push(startDate, endDate);
+      break;
+    default:
+      dateCondition = `date(created_at,'localtime') = date('now','localtime')`;
+  }
+
+  // 2. User Filter (If no userId, userCondition stays empty -> fetches all)
+  let userCondition = "";
+  if (userId) {
+    userCondition = " AND createdBy = ?";
+    params.push(userId);
+  }
+
+  // 3. The "Power Query"
+  // We use UPPER() to ensure 'cash' or 'mpesa' strings match regardless of case
+  const query = `
+    SELECT 
+      COUNT(*) as totalTransactions,
+      SUM(total) as totalSales,
+      SUM(CASE WHEN UPPER(payment_method) = 'CASH' THEN total ELSE 0 END) as cashTotal,
+      SUM(CASE WHEN UPPER(payment_method) = 'MPESA' THEN total ELSE 0 END) as mpesaTotal,
+      COUNT(CASE WHEN UPPER(payment_method) = 'CASH' THEN 1 END) as cashCount,
+      COUNT(CASE WHEN UPPER(payment_method) = 'MPESA' THEN 1 END) as mpesaCount
+    FROM Sale 
+    WHERE ${dateCondition} ${userCondition}
+  `;
+
+  const [result] = await db.executeSql(query, params);
+  const data = result.rows.item(0);
+
+  return {
+    totalTransactions: Number(data.totalTransactions ?? 0),
+    totalSales: Number(data.totalSales ?? 0),
+    cashTotal: Number(data.cashTotal ?? 0),
+    mpesaTotal: Number(data.mpesaTotal ?? 0),
+    cashCount: Number(data.cashCount ?? 0),
+    mpesaCount: Number(data.mpesaCount ?? 0),
+  };
+};
 /**
  * Today's transactions count
  */
@@ -135,39 +213,71 @@ export const getTodayTransactions = async (userRole: string, userId?: string) =>
 /**
  * Top selling products
  */
-export const getTopProducts = async (userRole: string, userId?: string) => {
-
+export const getTopProducts = async (
+  userId?: string,
+  filter: SalesFilter = "today",
+  customDate?: string,
+  startDate?: string,
+  endDate?: string
+) => {
   const db = await getDBConnection();
+  const params: any[] = [];
+  let dateCondition = "";
 
-  let query = `
+  // 1. Date filter logic (Consistent with getDetailedUserStats)
+  switch (filter) {
+    case "today":
+      dateCondition = `date(s.created_at,'localtime') = date('now','localtime')`;
+      break;
+    case "week":
+      dateCondition = `strftime('%Y-%W', s.created_at) = strftime('%Y-%W', 'now')`;
+      break;
+    case "month":
+      dateCondition = `strftime('%Y-%m', s.created_at) = strftime('%Y-%m', 'now')`;
+      break;
+    case "year":
+      dateCondition = `strftime('%Y', s.created_at) = strftime('%Y', 'now')`;
+      break;
+    case "custom":
+      dateCondition = `date(s.created_at) = date(?)`;
+      params.push(customDate);
+      break;
+    case "range":
+      dateCondition = `date(s.created_at) BETWEEN date(?) AND date(?)`;
+      params.push(startDate, endDate);
+      break;
+    default:
+      dateCondition = `date(s.created_at,'localtime') = date('now','localtime')`;
+  }
+
+  // 2. User Filter (Fetches all if userId is null/undefined)
+  let userCondition = "";
+  if (userId) {
+    userCondition = " AND s.createdBy = ?";
+    params.push(userId);
+  }
+
+  // 3. The Top Products Query
+  const query = `
     SELECT 
       p.product_name AS key,
       SUM(si.quantity) AS value
     FROM SaleItems si
     JOIN Product p ON si.product_id = p.product_id
     JOIN Sale s ON si.sale_id = s.sale_id
-  `;
-
-  const params: any[] = [];
-
-  if (userRole === "sales" && userId) {
-    query += ` WHERE s.createdBy = ? `;
-    params.push(userId);
-  }
-
-  query += `
+    WHERE ${dateCondition} ${userCondition}
     GROUP BY si.product_id
     ORDER BY value DESC
     LIMIT 10
   `;
 
-  const [result] = await db.executeSql(query, params);
+  // console.log("Executing Top Products Query:", query, params);
 
+  const [result] = await db.executeSql(query, params);
   const products: { key: string; value: number }[] = [];
 
   for (let i = 0; i < result.rows.length; i++) {
     const row = result.rows.item(i);
-
     products.push({
       key: row.key,
       value: Number(row.value),
@@ -176,8 +286,78 @@ export const getTopProducts = async (userRole: string, userId?: string) => {
 
   return products;
 };
+export const getSalesByCategory = async (
+  userId?: string,
+  filter: SalesFilter = "today",
+  customDate?: string,
+  startDate?: string,
+  endDate?: string
+) => {
+  const db = await getDBConnection();
+  const params: any[] = [];
+  let dateCondition = "";
 
+  // 1. Date filter logic (Consistent with your other services)
+  switch (filter) {
+    case "today":
+      dateCondition = `date(s.created_at,'localtime') = date('now','localtime')`;
+      break;
+    case "week":
+      dateCondition = `strftime('%Y-%W', s.created_at) = strftime('%Y-%W', 'now')`;
+      break;
+    case "month":
+      dateCondition = `strftime('%Y-%m', s.created_at) = strftime('%Y-%m', 'now')`;
+      break;
+    case "year":
+      dateCondition = `strftime('%Y', s.created_at) = strftime('%Y', 'now')`;
+      break;
+    case "custom":
+      dateCondition = `date(s.created_at) = date(?)`;
+      params.push(customDate);
+      break;
+    case "range":
+      dateCondition = `date(s.created_at) BETWEEN date(?) AND date(?)`;
+      params.push(startDate, endDate);
+      break;
+    default:
+      dateCondition = `date(s.created_at,'localtime') = date('now','localtime')`;
+  }
 
+  // 2. User Filter (Fetches all if userId is null/undefined)
+  let userCondition = "";
+  if (userId) {
+    userCondition = " AND s.createdBy = ?";
+    params.push(userId);
+  }
+
+  // 3. The Category Query
+  // Note: We JOIN SaleItems -> Product -> Category
+  const query = `
+    SELECT 
+      c.category_name AS key,
+      SUM(si.total) AS value
+    FROM SaleItems si
+    JOIN Sale s ON si.sale_id = s.sale_id
+    JOIN Product p ON si.product_id = p.product_id
+    JOIN Category c ON p.category_id = c.category_id
+    WHERE ${dateCondition} ${userCondition}
+    GROUP BY c.category_id
+    ORDER BY value DESC
+  `;
+
+  const [result] = await db.executeSql(query, params);
+  const categories: { key: string; value: number }[] = [];
+
+  for (let i = 0; i < result.rows.length; i++) {
+    const row = result.rows.item(i);
+    categories.push({
+      key: row.key,
+      value: Number(row.value ?? 0),
+    });
+  }
+
+  return categories;
+};
 
 /**
  * Hourly sales by product
@@ -337,84 +517,86 @@ interface ProductSalesReportParams {
 /**
  * Product sales report with pagination
  */
-export const getProductSalesReport = async ({
-  userRole = "sales",
-  userId = null,
-  filterId = 1,
-  page = 1,
-  pageSize = 20,
-}: ProductSalesReportParams) => {
-
+export const getProductSalesReport = async (
+  userId?: string,
+  filter: SalesFilter = "today",
+  customDate?: string,
+  startDate?: string,
+  endDate?: string,
+  page: number = 1,
+  pageSize: number = 20
+) => {
   const db = await getDBConnection();
-
+  const params: any[] = [];
   let dateCondition = "";
 
-  switch (filterId) {
-
-    case 1:
-      dateCondition = "DATE(s.created_at,'localtime') = DATE('now','localtime')";
+  // 1. Date filter logic (Consistent with getDetailedUserStats)
+  switch (filter) {
+    case "today":
+      dateCondition = `date(s.created_at,'localtime') = date('now','localtime')`;
       break;
-
-    case 2:
-      dateCondition = "s.created_at >= datetime('now','-7 days','localtime')";
+    case "week":
+      dateCondition = `strftime('%Y-%W', s.created_at) = strftime('%Y-%W', 'now')`;
       break;
-
-    case 3:
-      dateCondition = "s.created_at >= datetime('now','-1 month','localtime')";
+    case "month":
+      dateCondition = `strftime('%Y-%m', s.created_at) = strftime('%Y-%m', 'now')`;
       break;
-
-    case 4:
-      dateCondition = "s.created_at >= datetime('now','-3 months','localtime')";
+    case "year":
+      dateCondition = `strftime('%Y', s.created_at) = strftime('%Y', 'now')`;
       break;
-
+    case "custom":
+      dateCondition = `date(s.created_at) = date(?)`;
+      params.push(customDate);
+      break;
+    case "range":
+      dateCondition = `date(s.created_at) BETWEEN date(?) AND date(?)`;
+      params.push(startDate, endDate);
+      break;
     default:
-      dateCondition = "1=1";
-
+      dateCondition = `date(s.created_at,'localtime') = date('now','localtime')`;
   }
 
-  let roleCondition = "";
-  const params: any[] = [];
-
-  if (userRole === "sales" && userId) {
-    roleCondition = `AND s.createdBy = ?`;
+  // 2. User Filter (Fetches all if userId is null/undefined)
+  let userCondition = "";
+  if (userId) {
+    userCondition = " AND s.createdBy = ?";
     params.push(userId);
   }
 
+  // 3. Pagination Logic
   const offset = (page - 1) * pageSize;
 
-  params.push(pageSize, offset);
-
-  const [result] = await db.executeSql(
-    `
+  const query = `
     SELECT 
       p.product_id,
       p.product_name,
       SUM(si.quantity) AS quantity_sold,
-      SUM(si.quantity * si.price) AS total_sales
+      SUM(si.total) AS total_sales
     FROM SaleItems si
     JOIN Product p ON si.product_id = p.product_id
     JOIN Sale s ON si.sale_id = s.sale_id
-    WHERE ${dateCondition} ${roleCondition}
-    GROUP BY si.product_id
+    WHERE ${dateCondition} ${userCondition}
+    GROUP BY p.product_id
     ORDER BY quantity_sold DESC
     LIMIT ? OFFSET ?
-    `,
-    params
-  );
+  `;
 
+  // Add pagination params at the end of the array
+  params.push(pageSize, offset);
+
+
+
+  const [result] = await db.executeSql(query, params);
   const report: any[] = [];
 
   for (let i = 0; i < result.rows.length; i++) {
-
     const row = result.rows.item(i);
-
     report.push({
       product_id: row.product_id,
       product_name: row.product_name,
       quantity_sold: Number(row.quantity_sold ?? 0),
       total_sales: Number(row.total_sales ?? 0),
     });
-
   }
 
   return report;
@@ -469,4 +651,15 @@ export const getSalesByDateRange = async (
   }
 
   return sales;
+};
+
+export const getSalesNOW = async (
+
+): Promise<any[]> => {
+
+  const db = await getDBConnection();
+  const result = await db.executeSql(
+    `SELECT * FROM Sale`
+  );
+  return result[0].rows.raw();
 };

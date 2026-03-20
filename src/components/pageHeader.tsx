@@ -35,7 +35,7 @@ const POSHeader = ({ component, title }: { component?: () => React.ReactNode, ti
     <View style={{ backgroundColor: colors.background }} className="px-5 pt-0 mb-0 ">
 
       <View className="mt-4">
-        {component ? component() : <View className="pt-10">
+        {component ? component() : <View className="pt-1">
           <SearchBar white={isDarkMode} placeholder={`Search ${title ? title : ""}...`} />
         </View>}
       </View>

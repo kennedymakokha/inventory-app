@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, Text, FlatList, TouchableOpacity, Modal, 
-  ActivityIndicator, Alert, Button 
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  Modal,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import RNBluetoothClassic, { BluetoothDevice } from 'react-native-bluetooth-classic';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '../context/themeContext';
+
 
 interface PrinterModalProps {
   visible: boolean;
@@ -12,24 +19,29 @@ interface PrinterModalProps {
   onSelect: (mac: string) => void;
 }
 
-export const PrinterSelectionModal = ({ visible, onClose, onSelect }: PrinterModalProps) => {
+export const PrinterSelectionModal = ({
+  visible,
+  onClose,
+  onSelect,
+}: PrinterModalProps) => {
+  const { colors } = useTheme();
+
   const [devices, setDevices] = useState<BluetoothDevice[]>([]);
   const [loading, setLoading] = useState(false);
 
   const scanDevices = async () => {
     setLoading(true);
     try {
-      // 1. Get already paired devices (Instant)
       const paired = await RNBluetoothClassic.getBondedDevices();
       setDevices(paired);
 
-      // 2. Start discovery for new devices (Takes ~10-15 seconds)
       const unpaired = await RNBluetoothClassic.startDiscovery();
-      
-      // Combine and remove duplicates by address
+
       const all = [...paired, ...unpaired];
-      const unique = all.filter((v, i, a) => a.findIndex(t => t.address === v.address) === i);
-      
+      const unique = all.filter(
+        (v, i, a) => a.findIndex((t) => t.address === v.address) === i
+      );
+
       setDevices(unique);
     } catch (err) {
       Alert.alert("Scan Error", "Check if Bluetooth and Location are ON.");
@@ -50,30 +62,126 @@ export const PrinterSelectionModal = ({ visible, onClose, onSelect }: PrinterMod
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
-      <View className="flex-1 justify-end bg-black/50">
-        <View className="bg-slate-900 p-6 rounded-t-3xl h-3/4">
-          <Text className="text-white text-xl font-bold mb-4">Select Printer</Text>
-          
-          {loading && <ActivityIndicator color="#3b82f6" className="mb-4" />}
+      {/* BACKDROP */}
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'flex-end',
+          backgroundColor: 'rgba(0,0,0,0.5)',
+        }}
+      >
+        {/* MODAL CARD */}
+        <View
+          style={{
+            backgroundColor: colors.card,
+            padding: 20,
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            height: '75%',
+          }}
+        >
+          <Text
+            style={{
+              color: colors.text,
+              fontSize: 18,
+              fontWeight: 'bold',
+              marginBottom: 16,
+            }}
+          >
+            Select Printer
+          </Text>
+
+          {loading && (
+            <ActivityIndicator
+              color={colors.primary}
+              style={{ marginBottom: 16 }}
+            />
+          )}
 
           <FlatList
             data={devices}
             keyExtractor={(item) => item.address}
-            ListEmptyComponent={<Text className="text-slate-400 text-center mt-10">No printers found...</Text>}
-            renderItem={({ item }) => (
-              <TouchableOpacity 
-                onPress={() => handleSelect(item)}
-                className="bg-slate-800 p-4 rounded-xl mb-3 border border-slate-700"
+            ListEmptyComponent={
+              <Text
+                style={{
+                  color: colors.subText,
+                  textAlign: 'center',
+                  marginTop: 40,
+                }}
               >
-                <Text className="text-white font-semibold">{item.name || 'Unknown Device'}</Text>
-                <Text className="text-slate-500 text-xs">{item.address}</Text>
+                No printers found...
+              </Text>
+            }
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                onPress={() => handleSelect(item)}
+                style={{
+                  backgroundColor: colors.elevated,
+                  padding: 16,
+                  borderRadius: 12,
+                  marginBottom: 12,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                }}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={{
+                    color: colors.text,
+                    fontWeight: '600',
+                  }}
+                >
+                  {item.name || 'Unknown Device'}
+                </Text>
+
+                <Text
+                  style={{
+                    color: colors.subText,
+                    fontSize: 12,
+                    marginTop: 4,
+                  }}
+                >
+                  {item.address}
+                </Text>
               </TouchableOpacity>
             )}
           />
 
-          <View className="flex-row justify-between mt-4">
-            <Button title="Cancel" color="#ef4444" onPress={onClose} />
-            <Button title="Refresh" onPress={scanDevices} />
+          {/* ACTION BUTTONS */}
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              marginTop: 16,
+            }}
+          >
+            <TouchableOpacity
+              onPress={onClose}
+              style={{
+                backgroundColor: colors.danger,
+                paddingVertical: 10,
+                paddingHorizontal: 20,
+                borderRadius: 8,
+              }}
+            >
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={scanDevices}
+              style={{
+                backgroundColor: colors.primary,
+                paddingVertical: 10,
+                paddingHorizontal: 20,
+                borderRadius: 8,
+              }}
+            >
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>
+                Refresh
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>

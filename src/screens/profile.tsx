@@ -12,6 +12,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { useSettings } from "../context/SettingsContext";
 import { Theme } from "../utils/theme";
 import { useUser } from "../context/UserContext";
+import { useTheme } from "../context/themeContext";
 
 const fields = [
     { label: "Name", key: "name", icon: "person-outline" },
@@ -20,9 +21,8 @@ const fields = [
 ];
 
 const UserProfileScreen = () => {
-    const { isDarkMode } = useSettings();
-    const theme = isDarkMode ? Theme.dark : Theme.light;
 
+    const { colors } = useTheme();
     const { user, updateUser, isLoading, isUpdating } = useUser();
 
     const [isEditing, setIsEditing] = useState(false);
@@ -60,23 +60,23 @@ const UserProfileScreen = () => {
         locked?: boolean
     ) => (
         <View
-            style={[styles.fieldCard, { borderColor: theme.border, backgroundColor: theme.card }]}
+            style={[styles.fieldCard, { borderColor: colors.border, backgroundColor: colors.card }]}
             key={key}
         >
             <View style={styles.fieldHeader}>
-                <Ionicons name={icon} size={18} color={Theme.primary} />
-                <Text style={[styles.label, { color: Theme.primary }]}>{label}</Text>
+                <Ionicons name={icon} size={18} color={colors.primary} />
+                <Text style={[styles.label, { color: colors.primary }]}>{label}</Text>
             </View>
 
             {isEditing && !locked ? (
                 <TextInput
-                    style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]}
+                    style={[styles.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
                     value={data[key]}
                     onChangeText={(text) => handleChange(key, text)}
                 />
             ) : (
                 <View style={styles.valueRow}>
-                    <Text style={[styles.value, { color: theme.text }]}>{data[key]}</Text>
+                    <Text style={[styles.value, { color: colors.text }]}>{data[key]}</Text>
                 </View>
             )}
         </View>
@@ -84,29 +84,27 @@ const UserProfileScreen = () => {
 
     if (isLoading) {
         return (
-            <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
-                <ActivityIndicator size="large" color={Theme.primary} />
-                <Text style={{ marginTop: 10, color: theme.text }}>Loading User Profile...</Text>
+            <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={{ marginTop: 10, color: colors.text }}>Loading User Profile...</Text>
             </View>
         );
     }
 
     return (
-        <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
+        <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
             {fields.map(field =>
                 renderField(field.label, field.key as keyof typeof data, field.icon, field.locked)
             )}
-
             {isUpdating && (
                 <View style={styles.overlay}>
                     <ActivityIndicator size="large" color="#fff" />
                     <Text style={styles.overlayText}>Saving changes...</Text>
                 </View>
             )}
-
             <TouchableOpacity
                 disabled={isUpdating}
-                style={[styles.button, { backgroundColor: Theme.primary, borderColor: theme.border, opacity: isUpdating ? 0.7 : 1 }]}
+                style={[styles.button, { backgroundColor: colors.primary, borderColor: colors.border, opacity: isUpdating ? 0.7 : 1 }]}
                 onPress={isEditing ? handleSave : startEditing}
             >
                 <Ionicons name={isEditing ? "save-outline" : "create-outline"} size={18} color="#fff" />

@@ -304,31 +304,12 @@ export const saveCategoryItems = async (
 /* DELETE */
 /* -------------------------- */
 
-export const softDeleteCategory = async (
-  id: any
-) => {
-  const db = await getDBConnection();
-  await db.executeSql(
-    `UPDATE Category 
-     SET deleted_at = datetime('now'),  synced = 0, updatedAt = datetime('now') 
-     WHERE category_id = ?`,
-    [id]
-  );
-};
+
 
 /* -------------------------- */
 /* MARK SYNCED */
 /* -------------------------- */
 
-export const markCategoryAsSynced = async (
-  id: number,
-  db: SQLiteDatabase
-) => {
-  await db.executeSql(
-    `UPDATE Category SET synced = 1 WHERE id = ?`,
-    [id]
-  );
-};
 
 /* -------------------------- */
 /* INVENTORY */

@@ -34,6 +34,7 @@ const LIMIT = 30;
 const SalesScreen: React.FC = ({ route, navigation }: any) => {
     const { category } = route.params;
     const { user } = useSelector((state: any) => state.auth);
+    console.log(user)
     const { business } = user;
     const { isScanToCartEnabled } = useSettings();
     const { query } = useSearch();
@@ -131,7 +132,7 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
         console.log("RECIT", receiptNo)
         try {
             const db = await getDBConnection();
-            await finalizeSale(db, cart, { receiptNo, method, phone, paidAmount, business_id: business._id });
+            await finalizeSale(db, cart, { receiptNo, method, phone, paidAmount, business_id: business._id, createdBy: user.user_id });
             await loadData();
             setModalVisible(false);
             setQuantities({});
@@ -309,7 +310,6 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
                     </View>
                 </View>
             )}
-
             <CheckoutModal
                 setMsg={setMsg}
                 msg={msg}
@@ -317,12 +317,10 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
                 PostLocally={PostSale}
                 modalVisible={modalVisible}
                 setModalVisible={setModalVisible}
-
             />
         </KeyboardAvoidingView>
     );
 };
-
 const styles = StyleSheet.create({
     closeScanner: {
         position: 'absolute',

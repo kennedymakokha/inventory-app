@@ -127,6 +127,7 @@ export const finalizeSale = async (
     phone?: string;
     paidAmount?: string;
     business_id?: string,
+    createdBy: string,
   }
 ): Promise<void> => {
 
@@ -136,8 +137,6 @@ export const finalizeSale = async (
     console.log(" Cart is empty");
     return;
   }
-
-  const createdBy = (await AsyncStorage.getItem("userId")) ?? "local-user";
   const now = new Date().toISOString();
   const saleId = uuidv4();
 
@@ -162,7 +161,7 @@ export const finalizeSale = async (
           [
             saleId,
             total,
-            createdBy,
+            data.createdBy,
             data.receiptNo,
             data.method,
             data.phone ?? null,
@@ -262,7 +261,7 @@ export const finalizeSale = async (
               item.quantity,
               saleId,
               "SALE",
-              createdBy,
+              data.createdBy,
               0,
               now,
               now
@@ -291,7 +290,7 @@ export const finalizeSale = async (
             0,
             now,
             now,
-            createdBy
+            data.createdBy
           ],
           () => console.log("💳 Payment inserted"),
           (_, error) => {
