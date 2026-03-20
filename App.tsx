@@ -215,7 +215,7 @@ const AppWithProviders = () => {
   const { colors } = useTheme();
   return (
     <View style={{ flex: 1 }}>
-      <StatusBar animated backgroundColor={colors.primaryLight} />
+      <StatusBar animated backgroundColor={colors.primary} />
       <AppWithAuth />
     </View>
   );

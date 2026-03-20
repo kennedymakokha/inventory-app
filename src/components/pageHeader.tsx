@@ -32,10 +32,12 @@ const POSHeader = ({ component, title }: { component?: () => React.ReactNode, ti
   }, []);
 
   return (
-    <View style={{ backgroundColor: colors.background }} className="px-5 pt-0 pb-0 shadow-lg">
-    
-      <View className="mt-0">
-        {component ? component() : <SearchBar white={isDarkMode} placeholder={`Search ${title ? title : ""}...`} />}
+    <View style={{ backgroundColor: colors.background }} className="px-5 pt-0 mb-0 ">
+
+      <View className="mt-4">
+        {component ? component() : <View className="pt-10">
+          <SearchBar white={isDarkMode} placeholder={`Search ${title ? title : ""}...`} />
+        </View>}
       </View>
     </View>
   );

@@ -42,6 +42,7 @@ import { v4 as uuidv4 } from "uuid";
 import SwipeableCard from '../../components/SwipeableCard';
 import { motobikeParts } from '../../../data';
 import { useTheme } from '../../context/themeContext';
+import { InputContainer } from '../../components/Input';
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
 
@@ -396,18 +397,18 @@ const ProductScreen = () => {
                             Restock {selectedProduct?.product_name}
                         </Text>
 
-                        <TextInput
+                        <InputContainer
+                            label="Stock"
                             placeholder="Enter quantity"
-                            placeholderTextColor={colors.subText}
-                            keyboardType="numeric"
                             value={restockQty}
+                            keyboardType="phone-pad"
                             onChangeText={setRestockQty}
-                            style={[styles.input, { backgroundColor: colors.inputBg, color: colors.text }]}
+                            disabled={false}
+                            isDarkMode={isDarkMode}
                         />
-
                         <TouchableOpacity
                             onPress={() => handleRestock()}
-                            style={styles.confirmBtn}
+                            style={[styles.confirmBtn, { backgroundColor: colors.primary }]}
                         >
                             <Text style={{ color: '#fff', fontWeight: '700' }}>
                                 Confirm Restock
@@ -552,7 +553,7 @@ const styles = StyleSheet.create({
         marginBottom: 20
     },
     confirmBtn: {
-        backgroundColor: '#22c55e',
+
         padding: 12,
         borderRadius: 5,
         alignItems: 'center'

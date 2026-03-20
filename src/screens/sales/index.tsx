@@ -17,6 +17,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SalesStackParamList } from "../../../models/navigationTypes";
 import { getProductsGroupedByCategory } from "../../services/product.service";
+import { useTheme } from "../../context/themeContext";
 
 const LIMIT = 20;
 
@@ -30,7 +31,7 @@ export default function GroupedProductsForSale() {
         useNavigation<NativeStackNavigationProp<SalesStackParamList>>();
 
     const { query } = useSearch();
-
+    const { colors, isDarkMode } = useTheme();
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [page, setPage] = useState(0);
@@ -127,7 +128,7 @@ export default function GroupedProductsForSale() {
         const isOpen = expandedCategory === item;
 
         return (
-            <View className="mt-3">
+            <View style={{ backgroundColor: colors.background }} className="mt-3">
 
                 {/* CATEGORY HEADER */}
 
@@ -181,7 +182,7 @@ export default function GroupedProductsForSale() {
     };
 
     return (
-        <View className="flex-1 bg-secondary-900 px-5">
+        <View style={{ backgroundColor: colors.background }} className="flex-1  px-5">
 
             <PageHeader />
 

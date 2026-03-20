@@ -27,6 +27,7 @@ import { Theme } from '../../utils/theme';
 import { useCart } from '../../context/CartContext';
 import { finalizeSale } from '../../services/sales.service';
 import { useSelector } from 'react-redux';
+import { useTheme } from '../../context/themeContext';
 
 const LIMIT = 30;
 
@@ -34,9 +35,9 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
     const { category } = route.params;
     const { user } = useSelector((state: any) => state.auth);
     const { business } = user;
-    const { isScanToCartEnabled, isDarkMode } = useSettings();
+    const { isScanToCartEnabled } = useSettings();
     const { query } = useSearch();
-    const theme = isDarkMode ? Theme.dark : Theme.light;
+    const { colors, isDarkMode } = useTheme();
 
     const [products, setProducts] = useState<ProductItem[]>([]);
     const [modalVisible, setModalVisible] = useState(false);
@@ -151,11 +152,11 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
 
         return (
             <Pressable onPress={Keyboard.dismiss}>
-                <View style={{ backgroundColor: theme.card, borderColor: theme.border }}
+                <View style={{ backgroundColor: colors.card, borderColor: colors.border }}
                     className="mx-4 my-2 p-4 rounded-xl border"
                 >
                     <View className="flex-row justify-between items-center mb-1">
-                        <Text className="text-lg font-bold" style={{ color: theme.text }}>
+                        <Text className="text-lg font-bold" style={{ color: colors.text }}>
                             {item.product_name}
                         </Text>
                         <View style={{ backgroundColor: item.quantity > 5 ? '#064e3b' : '#7f1d1d' }}
@@ -165,14 +166,14 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
                     </View>
 
                     {item.barcode && (
-                        <Text className="text-xs mb-2 font-mono" style={{ color: theme.subText }}>
+                        <Text className="text-xs mb-2 font-mono" style={{ color: colors.subText }}>
                             {item.barcode}
                         </Text>
                     )}
 
                     <View className="flex-row items-center justify-between mb-4 mt-2">
                         {/* Quantity Input */}
-                        <View style={{ backgroundColor: theme.inputBg }} className="flex-row items-center rounded-xl p-1">
+                        <View style={{ backgroundColor: colors.inputBg }} className="flex-row items-center rounded-xl p-1">
                             <TouchableOpacity
                                 onPress={() => {
                                     if (currentQty > 0) {
@@ -183,12 +184,12 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
                                     }
                                 }}
                                 className="w-10 h-10 items-center justify-center">
-                                <Icon name="minus" size={12} color={theme.text} />
+                                <Icon name="minus" size={12} color={colors.text} />
                             </TouchableOpacity>
 
                             <TextInput
                                 className="w-12 text-center font-bold"
-                                style={{ color: theme.text }}
+                                style={{ color: colors.text }}
                                 keyboardType="numeric"
                                 value={quantities[item.id] || '0'}
                                 onChangeText={text => {
@@ -201,11 +202,11 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
                         </View>
 
                         {/* Selling Price */}
-                        <View style={{ backgroundColor: theme.inputBg }} className="flex-row items-center rounded-xl px-3 h-12">
-                            <Text style={{ color: theme.subText }}>Ksh </Text>
+                        <View style={{ backgroundColor: colors.inputBg }} className="flex-row items-center rounded-xl px-3 h-12">
+                            <Text style={{ color: colors.subText }}>Ksh </Text>
                             <TextInput
                                 className="w-20 font-bold"
-                                style={{ color: theme.text }}
+                                style={{ color: colors.text }}
                                 keyboardType="numeric"
                                 value={sellingPrices[item.id] ?? item.price.toString()}
                                 onChangeText={text => setSellingPrices(prev => ({ ...prev, [item.id]: text }))}
@@ -241,7 +242,7 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
 
     return (
         <KeyboardAvoidingView
-            style={{ flex: 1, backgroundColor: theme.background, paddingTop: 16 }}
+            style={{ flex: 1, backgroundColor: colors.background, paddingTop: 16 }}
             behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
             <Modal visible={isScannerOpen} animationType="slide">
@@ -288,13 +289,13 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
 
             {cart.length > 0 && (
                 <View className="absolute bottom-6 left-4 right-4 p-5 rounded-sm border"
-                    style={{ backgroundColor: theme.elevated, borderColor: theme.border }}>
+                    style={{ backgroundColor: colors.elevated, borderColor: colors.border }}>
                     <View className="flex-row justify-between items-center">
                         <View>
-                            <Text className="text-xs uppercase font-bold tracking-widest" style={{ color: theme.subText }}>
+                            <Text className="text-xs uppercase font-bold tracking-widest" style={{ color: colors.subText }}>
                                 Total Amount
                             </Text>
-                            <Text className="text-2xl font-black" style={{ color: theme.text }}>
+                            <Text className="text-2xl font-black" style={{ color: colors.text }}>
                                 Ksh {total.toLocaleString()}
                             </Text>
                         </View>
@@ -316,7 +317,7 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
                 PostLocally={PostSale}
                 modalVisible={modalVisible}
                 setModalVisible={setModalVisible}
-                isDarkMode={isDarkMode}
+
             />
         </KeyboardAvoidingView>
     );
