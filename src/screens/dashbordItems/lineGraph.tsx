@@ -12,6 +12,7 @@ import Svg, {
 import { useSettings } from "../../context/SettingsContext";
 import { Theme } from "../../utils/theme";
 import { useSelector } from "react-redux";
+import { useTheme } from "../../context/themeContext";
 
 interface DataPoint {
   key: string;
@@ -49,8 +50,7 @@ const MultiLineChart: React.FC<LineGraphProps> = ({
   startHour,
   endHour
 }) => {
-  const { isDarkMode } = useSettings();
-  const theme = isDarkMode ? Theme.dark : Theme.light;
+ const { colors, isDarkMode } = useTheme();
 
   const {
     user: { role }
@@ -69,8 +69,8 @@ const MultiLineChart: React.FC<LineGraphProps> = ({
   if (!datasets.length) {
     return (
       <View style={{ padding: 20 }}>
-        <Text style={{ color: theme.text }}>{title}</Text>
-        <Text style={{ color: theme.text }}>No data available</Text>
+        <Text style={{ color: colors.text }}>{title}</Text>
+        <Text style={{ color: colors.text }}>No data available</Text>
       </View>
     );
   }
@@ -125,13 +125,13 @@ const MultiLineChart: React.FC<LineGraphProps> = ({
     <View
       style={{
         padding: 16,
-        backgroundColor: theme.background,
+        backgroundColor: colors.background,
         borderRadius: 10
       }}
     >
       <Text
         style={{
-          color: theme.text,
+          color: colors.text,
           fontSize: 18,
           fontWeight: "600",
           marginBottom: 10,
@@ -169,14 +169,14 @@ const MultiLineChart: React.FC<LineGraphProps> = ({
                 x2={width - padding}
                 y1={y}
                 y2={y}
-                stroke={theme.border}
+                stroke={colors.border}
                 strokeDasharray="4"
               />
               <SvgText
                 x={padding - 6}
                 y={y + 3}
                 fontSize="10"
-                fill={theme.text}
+                fill={colors.text}
                 textAnchor="end"
               >
                 {value}
@@ -191,7 +191,7 @@ const MultiLineChart: React.FC<LineGraphProps> = ({
           y1={padding}
           x2={padding}
           y2={height - padding}
-          stroke={theme.border}
+          stroke={colors.border}
         />
 
         <Line
@@ -199,7 +199,7 @@ const MultiLineChart: React.FC<LineGraphProps> = ({
           y1={height - padding}
           x2={width - padding}
           y2={height - padding}
-          stroke={theme.border}
+          stroke={colors.border}
         />
 
         {/* lines and points */}
@@ -261,7 +261,7 @@ const MultiLineChart: React.FC<LineGraphProps> = ({
               x={x}
               y={height - 10}
               fontSize="10"
-              fill={theme.text}
+              fill={colors.text}
               textAnchor="middle"
             >
               {label}
@@ -277,15 +277,15 @@ const MultiLineChart: React.FC<LineGraphProps> = ({
             position: "absolute",
             top: tooltip.y + 10,
             left: tooltip.x - 40,
-            backgroundColor: theme.card,
+            backgroundColor: colors.card,
             padding: 6,
             borderRadius: 6
           }}
         >
-          <Text style={{ color: theme.text, fontSize: 12 }}>
+          <Text style={{ color: colors.text, fontSize: 12 }}>
             {tooltip.label}
           </Text>
-          <Text style={{ color: theme.text, fontSize: 12 }}>
+          <Text style={{ color: colors.text, fontSize: 12 }}>
             {tooltip.key}: {role === "admin" ? tooltip.value : ""}
           </Text>
         </View>
@@ -312,7 +312,7 @@ const MultiLineChart: React.FC<LineGraphProps> = ({
                 borderRadius: 2
               }}
             />
-            <Text style={{ color: theme.text, fontSize: 12 }}>{ds.label}</Text>
+            <Text style={{ color: colors.text, fontSize: 12 }}>{ds.label}</Text>
           </View>
         ))}
       </View>

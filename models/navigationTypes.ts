@@ -28,6 +28,7 @@ export type CategoriesStackParamList = {
 };
 export type UsersStackParamList = {
   Users_Dashboard: undefined;
+  User_Dashboard: { user: any }; // ✅ match your item type
 };
 export type SalesStackParamList = {
   Sales_Dashboard: undefined;

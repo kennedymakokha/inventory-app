@@ -2,6 +2,9 @@ import React, { useRef, useState } from 'react';
 import { View, TouchableOpacity, Animated, Easing, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
+// Assuming you might want to pass colors in or use a default
+const DEFAULT_COLOR = '#000fff'; 
+
 export interface ActionButton {
   icon: keyof typeof Ionicons.glyphMap;
   label?: string;
@@ -11,9 +14,9 @@ export interface ActionButton {
 
 interface RadialFabProps {
   actions?: ActionButton[];
-  mainAction?: () => void; // optional main action if no sub-actions
+  mainAction?: () => void;
   mainColor?: string;
-  mainIcon?: keyof typeof Ionicons.glyphMap;
+  mainIcon?: any; // Use specific icon type if preferred
   position?: { bottom: number; right: number };
   radius?: number;
   angle?: number;
@@ -22,26 +25,25 @@ interface RadialFabProps {
 const RadialFab = ({
   actions = [],
   mainAction,
-  mainColor = '#16a34a',
+  mainColor = DEFAULT_COLOR,
   mainIcon = 'menu',
   position = { bottom: 25, right: 25 },
-  radius = 100,
+  radius = 90,
   angle = 90,
 }: RadialFabProps) => {
   const [open, setOpen] = useState(false);
   const animation = useRef(new Animated.Value(0)).current;
 
   const toggleFab = () => {
-    if (!actions || actions.length === 0) {
-      // If no actions, trigger mainAction directly
+    if (actions.length === 0) {
       mainAction?.();
       return;
     }
 
     Animated.timing(animation, {
       toValue: open ? 0 : 1,
-      duration: 260,
-      easing: Easing.out(Easing.exp),
+      duration: 300,
+      easing: Easing.out(Easing.back(1.5)), // Added a slight "bounce" effect
       useNativeDriver: true,
     }).start();
 
@@ -49,66 +51,76 @@ const RadialFab = ({
   };
 
   return (
-    <View style={[styles.container, { bottom: position.bottom, right: position.right }]}>
-      {/* Render sub-actions only if actions exist */}
-      {actions && actions.length > 0 &&
-        actions.map((action, index) => {
-          const step = actions.length > 1 ? angle / (actions.length - 1) : 0;
-          const theta = (step * index * Math.PI) / 180;
+    // Fixed: Added zIndex and ensured container doesn't block touches when closed
+    <View 
+        style={[
+            styles.container, 
+            { bottom: position.bottom, right: position.right }
+        ]}
+        pointerEvents="box-none" 
+    >
+      {actions.map((action, index) => {
+        // Calculate angle: if 3 items and 90 deg, they go 0, 45, 90
+        const step = actions.length > 1 ? angle / (actions.length - 1) : 0;
+        // Start from 0 (Left) to 90 (Up)
+        const theta = (step * index * Math.PI) / 180;
 
-          const translateX = animation.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, -radius * Math.cos(theta)],
-          });
+        const translateX = animation.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, -radius * Math.cos(theta)],
+        });
 
-          const translateY = animation.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, -radius * Math.sin(theta)],
-          });
+        const translateY = animation.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, -radius * Math.sin(theta)],
+        });
 
-          const scale = animation.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0.6, 0.85],
-          });
+        const scale = animation.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, 1],
+        });
 
-          const opacity = animation.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, 1],
-          });
-
-          return (
-            <Animated.View
-              key={index}
-              style={[
-                styles.smallFab,
-                {
-                  transform: [{ translateX }, { translateY }, { scale }],
-                  opacity,
-                  backgroundColor: action.color || '#22c55e',
-                },
-              ]}
+        return (
+          <Animated.View
+            key={index}
+            style={[
+              styles.smallFab,
+              {
+                transform: [{ translateX }, { translateY }, { scale }],
+                opacity: animation, // Direct mapping to animation value
+                backgroundColor: action.color || mainColor,
+              },
+            ]}
+          >
+            <TouchableOpacity
+              onPress={() => {
+                action.onPress();
+                toggleFab();
+              }}
+              style={styles.touchTarget}
             >
-              <TouchableOpacity
-                onPress={() => {
-                  action.onPress();
-                  toggleFab(); // auto close after press
-                }}
-                activeOpacity={0.8}
-                style={styles.actionButton}
-              >
-                <Ionicons name={action.icon} size={20} color="#fff" />
-              </TouchableOpacity>
-            </Animated.View>
-          );
-        })}
+              <Ionicons name={action.icon} size={20} color="#fff" />
+            </TouchableOpacity>
+          </Animated.View>
+        );
+      })}
 
-      {/* Main FAB */}
       <TouchableOpacity
         style={[styles.mainFab, { backgroundColor: mainColor }]}
         onPress={toggleFab}
         activeOpacity={0.85}
       >
-        <Ionicons name={open ? 'close' : mainIcon} size={26} color="#fff" />
+        {/* Added Rotation to the icon itself */}
+        <Animated.View style={{
+            transform: [{
+                rotate: animation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['0deg', '90deg']
+                })
+            }]
+        }}>
+            <Ionicons name={open ? 'close' : mainIcon} size={26} color="#fff" />
+        </Animated.View>
       </TouchableOpacity>
     </View>
   );
@@ -117,41 +129,42 @@ const RadialFab = ({
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    alignItems: 'center',
-  },
-
-  mainFab: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
+    // Important: center these so translate works from middle
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#16a34a',
+    zIndex: 999,
+  },
+  mainFab: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
     elevation: 8,
     shadowColor: '#000',
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 3 },
   },
-
   smallFab: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    position: 'absolute',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    position: 'absolute', // Stacked behind main FAB until animated
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 6,
     shadowColor: '#000',
-    shadowOpacity: 0.35,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 2 },
   },
-
-  actionButton: {
+  touchTarget: {
+    width: '100%',
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-  },
+  }
 });
 
 export default RadialFab;

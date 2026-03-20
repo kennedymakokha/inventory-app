@@ -12,13 +12,12 @@ import {
     Switch
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { Theme } from "../utils/theme";
-import { useSettings } from "../context/SettingsContext";
 import { useBusiness, Business } from "../context/BusinessContext";
 import { useUpdatebusinessMutation } from "../services/businessApi";
 import Geolocation from "react-native-geolocation-service";
 import { PermissionsAndroid } from "react-native";
 import { Picker } from "@react-native-picker/picker";
+import { useTheme } from "../context/themeContext";
 
 const fields = [
     { label: "Business Name", key: "business_name", icon: "business-outline" },
@@ -32,8 +31,7 @@ const fields = [
 ];
 
 const BusinessProfileScreen = () => {
-    const { isDarkMode } = useSettings();
-    const theme = isDarkMode ? Theme.dark : Theme.light;
+    const { colors, isDarkMode } = useTheme();
     const { business, updateBusiness, isLoading } = useBusiness();
     const [updateBusinessRemotely, { isLoading: isUpdating }] = useUpdatebusinessMutation();
 
@@ -116,26 +114,26 @@ const BusinessProfileScreen = () => {
     };
 
     const renderField = (label: string, key: keyof Business, icon: string, secure?: boolean, locked?: boolean) => (
-        <View key={key} style={[styles.fieldCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
+        <View key={key} style={[styles.fieldCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
             <View style={styles.fieldHeader}>
-                <Ionicons name={icon} size={18} color={Theme.primary} />
-                <Text style={[styles.label, { color: Theme.primary }]}>{label}</Text>
+                <Ionicons name={icon} size={18} color={colors.primary} />
+                <Text style={[styles.label, { color: colors.primary }]}>{label}</Text>
             </View>
             {isEditing && !locked ? (
                 <TextInput
-                    style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]}
+                    style={[styles.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
                     value={String(data[key])}
                     onChangeText={text => handleChange(key, text)}
                     secureTextEntry={secure && !showKey}
                 />
             ) : (
                 <View style={styles.valueRow}>
-                    <Text style={[styles.value, { color: theme.text }]}>
+                    <Text style={[styles.value, { color: colors.text }]}>
                         {secure && !showKey ? "••••••••••••••" : data[key]}
                     </Text>
                     {secure && (
                         <TouchableOpacity onPress={() => setShowKey(!showKey)}>
-                            <Ionicons name={showKey ? "eye-off-outline" : "eye-outline"} size={18} color={Theme.primary} />
+                            <Ionicons name={showKey ? "eye-off-outline" : "eye-outline"} size={18} color={colors.primary} />
                         </TouchableOpacity>
                     )}
                 </View>
@@ -145,24 +143,24 @@ const BusinessProfileScreen = () => {
 
     if (isLoading) {
         return (
-            <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
-                <ActivityIndicator size="large" color={Theme.primary} />
-                <Text style={{ marginTop: 10, color: theme.text }}>Loading Business Profile...</Text>
+            <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={{ marginTop: 10, color: colors.text }}>Loading Business Profile...</Text>
             </View>
         );
     }
 
     return (
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
-            <ScrollView contentContainerStyle={{ paddingBottom: 100 }} style={[styles.container, { backgroundColor: theme.background }]}>
+            <ScrollView contentContainerStyle={{ paddingBottom: 100 }} style={[styles.container, { backgroundColor: colors.background }]}>
                 {fields.map(field =>
                     renderField(field.label, field.key as keyof Business, field.icon, field.secure, field.locked)
                 )}
 
                 {/*  Working Hours Picker */}
-                <View style={[styles.fieldCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
+                <View style={[styles.fieldCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
                     <View style={styles.fieldHeader}>
-                        <Ionicons name="time-outline" size={18} color={Theme.primary} />
+                        <Ionicons name="time-outline" size={18} color={colors.primary} />
                         {data.working_hrs === "8-17"
                             ? "8 AM - 5 PM"
                             : data.working_hrs === "9-18"
@@ -175,22 +173,22 @@ const BusinessProfileScreen = () => {
                         <Picker
                             selectedValue={data.working_hrs}
                             onValueChange={(value) => handleChange("working_hrs", value)}
-                            style={{ color: theme.text }}
+                            style={{ color: colors.text }}
                         >
                             <Picker.Item label="8 AM - 5 PM" value="8-17" />
                             <Picker.Item label="9 AM - 6 PM" value="9-18" />
                             <Picker.Item label="24 Hours" value="00-24" />
                         </Picker>
                     ) : (
-                        <Text style={[styles.value, { color: theme.text }]}>{data.working_hrs || "Not set"}</Text>
+                        <Text style={[styles.value, { color: colors.text }]}>{data.working_hrs || "Not set"}</Text>
                     )}
                 </View>
 
                 {/*  Toggle for Print QR Code */}
-                <View style={[styles.fieldCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
+                <View style={[styles.fieldCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
                     <View style={styles.fieldHeader}>
-                        <Ionicons name="qr-code-outline" size={18} color={Theme.primary} />
-                        <Text style={[styles.label, { color: Theme.primary }]}>Print QR Code</Text>
+                        <Ionicons name="qr-code-outline" size={18} color={colors.primary} />
+                        <Text style={[styles.label, { color: colors.primary }]}>Print QR Code</Text>
                     </View>
                     <Switch value={data.printQr} onValueChange={(value) =>
                         setData(prev => ({ ...prev, printQr: value }))
@@ -217,7 +215,7 @@ const BusinessProfileScreen = () => {
 
                 <TouchableOpacity
                     disabled={isUpdating}
-                    style={[styles.button, { backgroundColor: Theme.primary, opacity: isUpdating ? 0.7 : 1 }]}
+                    style={[styles.button, { backgroundColor: colors.primary, opacity: isUpdating ? 0.7 : 1 }]}
                     onPress={isEditing ? handleSave : startEditing}
                 >
                     <Ionicons name={isEditing ? "save-outline" : "create-outline"} size={18} color="#fff" />
@@ -241,7 +239,7 @@ const styles = StyleSheet.create({
     },
     fieldCard: {
         borderWidth: 1,
-        borderRadius: 12,
+        borderRadius: 5,
         padding: 14,
         marginBottom: 16,
     },
@@ -276,7 +274,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         marginTop: 20,
         padding: 14,
-        borderRadius: 12,
+        borderRadius: 5,
         gap: 8,
     },
     buttonText: {

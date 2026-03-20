@@ -8,12 +8,13 @@ interface SwipeableCardProps {
     uniqueId: string;
     children: React.ReactNode;
     onEdit: () => void;
+    onPress?: () => void;
     onDelete: () => void;
     swipeRefs: any;
     currentlyOpenSwipe: any;
 }
 
-const SwipeableCard = ({ uniqueId, children, onEdit, onDelete, swipeRefs, currentlyOpenSwipe }: SwipeableCardProps) => {
+const SwipeableCard = ({ onPress, uniqueId, children, onEdit, onDelete, swipeRefs, currentlyOpenSwipe }: SwipeableCardProps) => {
 
     const handleSwipeOpen = () => {
         if (currentlyOpenSwipe.current && currentlyOpenSwipe.current !== swipeRefs.current[uniqueId]) {
@@ -42,8 +43,11 @@ const SwipeableCard = ({ uniqueId, children, onEdit, onDelete, swipeRefs, curren
             ref={(ref) => { swipeRefs.current[uniqueId] = ref; }}
             renderRightActions={renderRightActions}
             onSwipeableWillOpen={handleSwipeOpen}
+
         >
-            {children}
+            <TouchableOpacity activeOpacity={0.8} onPress={onPress}>
+                {children}
+            </TouchableOpacity>
         </Swipeable>
     );
 };

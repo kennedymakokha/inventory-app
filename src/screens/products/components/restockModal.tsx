@@ -62,7 +62,7 @@ const RestockModal = ({
         style={{
           backgroundColor: Theme.success,
           padding: 12,
-          borderRadius: 12,
+          borderRadius: 5,
           alignItems: 'center'
         }}
       >

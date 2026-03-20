@@ -20,11 +20,11 @@ import Icon from 'react-native-vector-icons/FontAwesome'
 import { formatNumber } from "../../utils/formatNumbers";
 import { useSocket } from "../context/socketContext";
 import { Business, useBusiness } from "../context/BusinessContext";
+import { useTheme } from "../context/themeContext";
 
 const Dashboard = () => {
   const { user } = useSelector((state: any) => state.auth);
-  const { isDarkMode } = useSettings();
-  const theme = isDarkMode ? Theme.dark : Theme.light;
+const { colors, isDarkMode } = useTheme();
 
   const { socket } = useSocket();
   const { business, updateBusiness, isLoading } = useBusiness();
@@ -96,7 +96,7 @@ const Dashboard = () => {
     return [8, 17]; // default
   })();
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: theme.background }}>
+    <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
 
       {lowstcks.length > 0 && (
         <PageHeader
@@ -104,8 +104,8 @@ const Dashboard = () => {
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={{ flexDirection: "row", gap: 12, marginBottom: 6 }}>
                 {lowstcks.map((item, i) => (
-                  <View style={{ backgroundColor: Theme.danger }} className="px-3 py-1 rounded-sm" key={i}>
-                    <Text style={{ color: theme.text }}>{item.product_name}</Text>
+                  <View style={{ backgroundColor: colors.danger }} className="px-3 py-1 rounded-sm" key={i}>
+                    <Text style={{ color: colors.text }}>{item.product_name}</Text>
                   </View>
                 ))}
               </View>
@@ -121,10 +121,10 @@ const Dashboard = () => {
           { icon: "thumbs-o-up", title: "Best Perfoming", value: `${TopProducts[0]?.value}` },
           { icon: "thumbs-o-down", title: "Worst Perfoming", value: "" }
           ].map((stat) => (
-            <View style={{ backgroundColor: theme.card, borderColor: theme.border }} key={stat.title} className="flex  px-10 max-w-[175px] h-32 bg-white rounded items-center justify-center">
-              <Icon name={stat.icon} style={{ color: theme.subText }} size={30} className="size-10 text-center" />
-              <Text style={{ fontWeight: "bold", color: theme.text }} className="text-xl text-center">{stat.title}</Text>
-              <Text style={{ color: theme.subText }}>{stat.value}</Text>
+            <View style={{ backgroundColor: colors.card, borderColor: colors.border }} key={stat.title} className="flex  px-10 max-w-[175px] h-32 bg-white rounded items-center justify-center">
+              <Icon name={stat.icon} style={{ color: colors.subText }} size={30} className="size-10 text-center" />
+              <Text style={{ fontWeight: "bold", color: colors.text }} className="text-xl text-center">{stat.title}</Text>
+              <Text style={{ color: colors.subText }}>{stat.value}</Text>
             </View>
           ))}
         </View>

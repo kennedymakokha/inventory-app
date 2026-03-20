@@ -5,6 +5,7 @@ import { useSettings } from "../../context/SettingsContext";
 import { Theme } from "../../utils/theme";
 import { useSelector } from "react-redux";
 import { getThemeAwareColor } from "./lineGraph";
+import { useTheme } from "../../context/themeContext";
 
 interface PieData {
     key: string;
@@ -28,23 +29,22 @@ const getRandomColor = () => {
 };
 
 const PieChart: React.FC<PieChartProps> = ({ data = [], title }) => {
-    const { isDarkMode } = useSettings();
-    const theme = isDarkMode ? Theme.dark : Theme.light;
+    const { colors, isDarkMode } = useTheme();
     const { user: { role } } = useSelector((state: any) => state.auth);
 
     // --- Empty state ---
     if (!data || data.length === 0) {
         return (
             <View style={{
-                borderColor: theme.border,
+                borderColor: colors.border,
                 padding: 16,
                 alignItems: "center",
-                backgroundColor: theme.background
+                backgroundColor: colors.background
             }}>
-                <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 16, color: theme.text }}>
+                <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 16, color: colors.text }}>
                     {title}
                 </Text>
-                <Text style={{ color: theme.text, fontSize: 16 }}>
+                <Text style={{ color: colors.text, fontSize: 16 }}>
                     No data available
                 </Text>
             </View>
@@ -72,8 +72,8 @@ const PieChart: React.FC<PieChartProps> = ({ data = [], title }) => {
     };
 
     return (
-        <View style={{ borderColor: theme.border, padding: 16, alignItems: "center", backgroundColor: theme.background }}>
-            <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 16, color: theme.text }}>
+        <View style={{ borderColor: colors.border, padding: 16, alignItems: "center", backgroundColor: colors.background }}>
+            <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 16, color: colors.text }}>
                 {title}
             </Text>
 
@@ -104,7 +104,7 @@ const PieChart: React.FC<PieChartProps> = ({ data = [], title }) => {
                                         borderRadius: 3,
                                     }}
                                 />
-                                <Text style={{ fontSize: 12, color: theme.text }}>
+                                <Text style={{ fontSize: 12, color: colors.text }}>
                                     {item.key}: {role === "admin" ? item.value : ""} ({Math.round(slicePercent)}%)
                                 </Text>
                             </View>

@@ -64,11 +64,8 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
                 offset
             );
 
-            if (append) {
-                setProducts(prev => [...prev, ...fetchedProducts]);
-            } else {
-                setProducts(fetchedProducts);
-            }
+            if (append) setProducts(prev => [...prev, ...fetchedProducts]);
+            else setProducts(fetchedProducts);
         } catch (error) {
             console.log(error);
         }
@@ -86,24 +83,21 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
         loadData(nextPage, true);
     };
 
-    /* ---------------- HANDLE ADD TO CART ---------------- */
-    const handleAddToCart = (product: ProductItem) => {
-        const qty = parseInt(quantities[product.id]) || 0;
-        const customPrice = parseFloat(sellingPrices[product.id]) || product.price;
+    /* ---------------- UNIFIED ADD TO CART ---------------- */
+    const handleIncrementAddToCart = (product: ProductItem) => {
+        const currentQty = parseInt(quantities[product.id] || '0');
+        const newQty = currentQty + 1;
 
-        if (qty <= 0) {
-            setMsg({ msg: 'Please enter a valid quantity!', state: 'error' });
-            return;
-        }
-
-        if (qty > product.quantity) {
+        if (newQty > product.quantity) {
             setMsg({ msg: 'Quantity exceeds available stock!', state: 'error' });
             return;
         }
 
-        addToCart(product, qty, customPrice); //  global cart
-        setQuantities(prev => ({ ...prev, [product.id]: '' }));
-        setSellingPrices(prev => ({ ...prev, [product.id]: '' }));
+        setQuantities(prev => ({ ...prev, [product.id]: newQty.toString() }));
+
+        const customPrice = parseFloat(sellingPrices[product.id]) || product.price;
+        addToCart(product, newQty, customPrice);
+
         setState(prev => ({ ...prev, [product.id]: true }));
     };
 
@@ -113,133 +107,132 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
         if (!code) return;
 
         const foundProduct = products.find(p => p.barcode === code);
+        if (!foundProduct) {
+            setMsg({ msg: 'Barcode not recognized', state: 'error' });
+            return;
+        }
 
-        if (foundProduct) {
-            if (isScanToCartEnabled) {
-                if (foundProduct.quantity > 0) {
-                    const customPrice = foundProduct.price;
-                    addToCart(foundProduct, 1, customPrice);
-                    setMsg({ msg: ` ${foundProduct.product_name} added to cart`, state: 'success' });
-                    setIsScannerOpen(false);
-                } else {
-                    setMsg({ msg: ' Item out of stock', state: 'error' });
-                }
-            } else {
-                setMsg({ msg: `🔍 Found: ${foundProduct.product_name}`, state: 'success' });
-                setIsScannerOpen(false);
-            }
+        if (isScanToCartEnabled) {
+            if (foundProduct.quantity > 0) {
+                addToCart(foundProduct, 1, foundProduct.price);
+                setMsg({ msg: ` ${foundProduct.product_name} added to cart`, state: 'success' });
+            } else setMsg({ msg: 'Item out of stock', state: 'error' });
+            setIsScannerOpen(false);
         } else {
-            setMsg({ msg: ' Barcode not recognized', state: 'error' });
+            setMsg({ msg: `🔍 Found: ${foundProduct.product_name}`, state: 'success' });
+            setIsScannerOpen(false);
         }
     };
 
     /* ---------------- POST SALE ---------------- */
-    const PostSale = async (
-        recieptNo: string, method: string, phone?: string, paidAmount?: string
-    ) => {
+    const PostSale = async (receiptNo: any, method: string, phone?: string, paidAmount?: string) => {
+
+        console.log("RECIT", receiptNo)
         try {
             const db = await getDBConnection();
-            await finalizeSale(db, cart, { recieptNo, method, phone, paidAmount, business_id: business._id });
-            await loadData(); // reload current category
+            await finalizeSale(db, cart, { receiptNo, method, phone, paidAmount, business_id: business._id });
+            await loadData();
             setModalVisible(false);
             setQuantities({});
             setState({});
             setSellingPrices({});
-            clearCart(); //  clear global cart after checkout
-            setMsg({ msg: ' Sale Posted Successfully!', state: 'success' });
+            clearCart();
+            setMsg({ msg: 'Sale Posted Successfully!', state: 'success' });
         } catch (error: any) {
-            setMsg({ msg: error.message || ' Sale failed.', state: 'error' });
+            setMsg({ msg: error.message || 'Sale failed.', state: 'error' });
         }
     };
 
     const total = cart.reduce((sum, item) => sum + item.quantity * item.price, 0);
 
     /* ---------------- RENDER ITEM ---------------- */
-    const renderItem = ({ item }: { item: ProductItem }) => (
-        <Pressable onPress={Keyboard.dismiss}>
-            <View style={{ backgroundColor: theme.card, borderColor: theme.border }}
-                className="mx-4 my-2 p-4 rounded-xl border"
-            >
-                <View className="flex-row justify-between items-center mb-1">
-                    <Text className="text-lg font-bold" style={{ color: theme.text }}>
-                        {item.product_name}
-                    </Text>
-                    <View style={{ backgroundColor: item.quantity > 5 ? '#064e3b' : '#7f1d1d' }}
-                        className="px-2 py-1 rounded-full">
-                        <Text style={{ color: '#fff', fontSize: 12 }}>{item.quantity} in stock</Text>
-                    </View>
-                </View>
+    const renderItem = ({ item }: { item: ProductItem }) => {
+        const currentQty = parseInt(quantities[item.id] || '0');
 
-                {item.barcode && (
-                    <Text className="text-xs mb-2 font-mono" style={{ color: theme.subText }}>
-                        {item.barcode}
-                    </Text>
-                )}
-
-                <View className="flex-row items-center justify-between mb-4 mt-2">
-                    <View style={{ backgroundColor: theme.inputBg }} className="flex-row items-center rounded-xl p-1">
-                        <TouchableOpacity
-                            onPress={() => {
-                                const current = parseInt(quantities[item.id] || '0');
-                                if (current > 0) setQuantities(prev => ({ ...prev, [item.id]: (current - 1).toString() }));
-                                setState(prev => ({ ...prev, [item.id]: false }));
-                            }}
-                            className="w-10 h-10 items-center justify-center">
-                            <Icon name="minus" size={12} color={theme.text} />
-                        </TouchableOpacity>
-
-                        <TextInput
-                            className="w-12 text-center font-bold"
-                            style={{ color: theme.text }}
-                            keyboardType="numeric"
-                            value={quantities[item.id] || '0'}
-                            onChangeText={text => {
-                                setQuantities(prev => ({ ...prev, [item.id]: text }));
-                                setState(prev => ({ ...prev, [item.id]: false }));
-                            }}
-                        />
-
-                        <TouchableOpacity
-                            onPress={() => {
-                                const current = parseInt(quantities[item.id] || '0');
-                                setQuantities(prev => ({ ...prev, [item.id]: (current + 1).toString() }));
-                                setState(prev => ({ ...prev, [item.id]: false }));
-                            }}
-                            className="w-10 h-10 items-center justify-center">
-                            <Icon name="plus" size={12} color={theme.text} />
-                        </TouchableOpacity>
-                    </View>
-
-                    <View style={{ backgroundColor: theme.inputBg }} className="flex-row items-center rounded-xl px-3 h-12">
-                        <Text style={{ color: theme.subText }}>Ksh </Text>
-                        <TextInput
-                            className="w-20 font-bold"
-                            style={{ color: theme.text }}
-                            keyboardType="numeric"
-                            value={sellingPrices[item.id] ?? item.price.toString()}
-                            onChangeText={text => setSellingPrices(prev => ({ ...prev, [item.id]: text }))}
-                        />
-                    </View>
-                </View>
-
-                <View className="flex-row justify-between items-center">
-                    <Text className="font-bold" style={{ color: '#16a34a' }}>Base: {item.price?.toFixed(2)}</Text>
-                    {state[item.id] ? (
-                        <View className="bg-green-100 p-2 rounded-full">
-                            <Icon name="check-circle" color="#16a34a" size={24} />
+        return (
+            <Pressable onPress={Keyboard.dismiss}>
+                <View style={{ backgroundColor: theme.card, borderColor: theme.border }}
+                    className="mx-4 my-2 p-4 rounded-xl border"
+                >
+                    <View className="flex-row justify-between items-center mb-1">
+                        <Text className="text-lg font-bold" style={{ color: theme.text }}>
+                            {item.product_name}
+                        </Text>
+                        <View style={{ backgroundColor: item.quantity > 5 ? '#064e3b' : '#7f1d1d' }}
+                            className="px-2 py-1 rounded-full">
+                            <Text style={{ color: '#fff', fontSize: 12 }}>{item.quantity} in stock</Text>
                         </View>
-                    ) : (
-                        <TouchableOpacity
-                            onPress={() => handleAddToCart(item)}
-                            className="bg-blue-600 px-6 py-3 rounded-sm"
-                        >
-                            <Text className="text-white font-bold">Add to Cart</Text>
-                        </TouchableOpacity>
+                    </View>
+
+                    {item.barcode && (
+                        <Text className="text-xs mb-2 font-mono" style={{ color: theme.subText }}>
+                            {item.barcode}
+                        </Text>
                     )}
+
+                    <View className="flex-row items-center justify-between mb-4 mt-2">
+                        {/* Quantity Input */}
+                        <View style={{ backgroundColor: theme.inputBg }} className="flex-row items-center rounded-xl p-1">
+                            <TouchableOpacity
+                                onPress={() => {
+                                    if (currentQty > 0) {
+                                        const newQty = currentQty - 1;
+                                        setQuantities(prev => ({ ...prev, [item.id]: newQty.toString() }));
+                                        addToCart(item, newQty, parseFloat(sellingPrices[item.id]) || item.price);
+                                        setState(prev => ({ ...prev, [item.id]: false }));
+                                    }
+                                }}
+                                className="w-10 h-10 items-center justify-center">
+                                <Icon name="minus" size={12} color={theme.text} />
+                            </TouchableOpacity>
+
+                            <TextInput
+                                className="w-12 text-center font-bold"
+                                style={{ color: theme.text }}
+                                keyboardType="numeric"
+                                value={quantities[item.id] || '0'}
+                                onChangeText={text => {
+                                    const val = Math.max(0, parseInt(text) || 0);
+                                    setQuantities(prev => ({ ...prev, [item.id]: val.toString() }));
+                                    addToCart(item, val, parseFloat(sellingPrices[item.id]) || item.price);
+                                    setState(prev => ({ ...prev, [item.id]: false }));
+                                }}
+                            />
+                        </View>
+
+                        {/* Selling Price */}
+                        <View style={{ backgroundColor: theme.inputBg }} className="flex-row items-center rounded-xl px-3 h-12">
+                            <Text style={{ color: theme.subText }}>Ksh </Text>
+                            <TextInput
+                                className="w-20 font-bold"
+                                style={{ color: theme.text }}
+                                keyboardType="numeric"
+                                value={sellingPrices[item.id] ?? item.price.toString()}
+                                onChangeText={text => setSellingPrices(prev => ({ ...prev, [item.id]: text }))}
+                            />
+                        </View>
+                    </View>
+
+                    <View className="flex-row justify-between items-center">
+                        <Text className="font-bold" style={{ color: '#16a34a' }}>Base: {item.price?.toFixed(2)}</Text>
+
+                        {/* Unified Add to Cart */}
+                        <TouchableOpacity
+                            onPress={() => handleIncrementAddToCart(item)}
+                            className="bg-blue-600 px-6 py-3 rounded-sm flex-row items-center"
+                        >
+                            <Text className="text-white font-bold mr-2">Add to Cart</Text>
+                            {currentQty > 0 && (
+                                <View className="bg-white px-2 py-0.5 rounded-full">
+                                    <Text className="text-blue-600 font-bold text-xs">{currentQty}</Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                    </View>
                 </View>
-            </View>
-        </Pressable>
-    );
+            </Pressable>
+        );
+    };
 
     const filtered = products.filter(item =>
         item.product_name?.toLowerCase().includes(query?.toLowerCase()) ||
@@ -251,7 +244,6 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
             style={{ flex: 1, backgroundColor: theme.background, paddingTop: 16 }}
             behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-
             <Modal visible={isScannerOpen} animationType="slide">
                 <View className="flex-1">
                     <Camera

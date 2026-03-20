@@ -122,7 +122,7 @@ export const finalizeSale = async (
   db: SQLiteDatabase,
   cartItems: CartItem[],
   data: {
-    recieptNo: string;
+    receiptNo: any;
     method: string;
     phone?: string;
     paidAmount?: string;
@@ -130,8 +130,8 @@ export const finalizeSale = async (
   }
 ): Promise<void> => {
 
-  console.log("🛒 finalizeSale called");
-
+  console.log("🛒 finalizeSale called", data.receiptNo);
+  console.log("RECIT", data.receiptNo)
   if (!cartItems || cartItems.length === 0) {
     console.log(" Cart is empty");
     return;
@@ -163,7 +163,7 @@ export const finalizeSale = async (
             saleId,
             total,
             createdBy,
-            data.recieptNo,
+            data.receiptNo,
             data.method,
             data.phone ?? null,
             0,
@@ -287,7 +287,7 @@ export const finalizeSale = async (
             paymentId,
             saleId,
             data.method,
-            total,
+            data.paidAmount ?? total,
             0,
             now,
             now,

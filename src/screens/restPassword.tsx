@@ -149,13 +149,13 @@ const styles = StyleSheet.create({
     input: {
         borderWidth: 1,
         padding: 14,
-        borderRadius: 12,
+        borderRadius: 5,
         marginBottom: 15,
         fontSize: 16
     },
     button: {
         padding: 16,
-        borderRadius: 12,
+        borderRadius: 5,
         alignItems: "center"
     },
     buttonText: {

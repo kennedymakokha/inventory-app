@@ -50,8 +50,8 @@ const styles = StyleSheet.create({
     overlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.6)' },
     box: { width: '80%', padding: 20, borderRadius: 20, backgroundColor: '#1e293b' },
     input: { padding: 10, borderRadius: 10, marginBottom: 12, backgroundColor: '#0f172a', color: '#fff' },
-    saveBtn: { backgroundColor: '#22c55e', padding: 12, borderRadius: 12, alignItems: 'center', marginBottom: 8 },
-    cancelBtn: { padding: 12, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#ef4444' }
+    saveBtn: { backgroundColor: '#22c55e', padding: 12, borderRadius: 5, alignItems: 'center', marginBottom: 8 },
+    cancelBtn: { padding: 12, borderRadius: 5, alignItems: 'center', borderWidth: 1, borderColor: '#ef4444' }
 });
 
 export default EntityModal;

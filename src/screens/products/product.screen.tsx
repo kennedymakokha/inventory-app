@@ -33,22 +33,22 @@ import Icon from 'react-native-vector-icons/Feather';
 import { useSearch } from '../../context/searchContext';
 import RadialFab from '../../components/multiFab';
 import { getCategories } from '../../services/category.service';
-import { Theme } from '../../utils/theme';
-import { useSettings } from '../../context/SettingsContext';
+
 import { validateItem } from '../validations/product.validation';
 import { useSelector } from 'react-redux';
 import Toast from '../../components/Toast';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from "uuid";
 import SwipeableCard from '../../components/SwipeableCard';
+import { motobikeParts } from '../../../data';
+import { useTheme } from '../../context/themeContext';
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
 
 
 
 const ProductScreen = () => {
-    const { isDarkMode } = useSettings();
-    const theme = isDarkMode ? Theme.dark : Theme.light;
+
     const { query } = useSearch();
     const { user } = useSelector((state: any) => state.auth);
     const { business } = user;
@@ -83,6 +83,7 @@ const ProductScreen = () => {
     const [saving, setSaving] = useState(false);
     const PAGE_SIZE = 20;
     const currentlyOpenSwipe = useRef<any>(null);
+    const { colors, isDarkMode } = useTheme();
     const loadProducts = async () => {
         if (loading || !hasMore) return;
 
@@ -134,12 +135,13 @@ const ProductScreen = () => {
             setSaving(true);
 
             if (item.product_id) {
-                
+
                 item.business_id = business._id
                 await updateProduct(item);
                 swipeRefs.current[item.product_id]?.close();
                 setMsg({ msg: "Product updated!", state: "success" });
             } else {
+
                 await createProduct(item);
                 setMsg({ msg: "Product added!", state: "success" });
             }
@@ -257,8 +259,8 @@ const ProductScreen = () => {
                     style={[
                         styles.card,
                         {
-                            backgroundColor: theme.card,
-                            borderColor: theme.border,
+                            backgroundColor: colors.card,
+                            borderColor: colors.border,
                             shadowColor: lowStock ? '#ef4444' : '#000',
                             shadowOpacity: lowStock ? 0.8 : 0.2,
                         }
@@ -266,18 +268,18 @@ const ProductScreen = () => {
                 >
                     {/* TOP ROW */}
                     <View style={styles.rowBetween}>
-                        <Text style={[styles.productName, { color: theme.text }]}>
+                        <Text style={[styles.productName, { color: colors.text }]}>
                             {item.product_name}
                         </Text>
 
-                        <Text style={[styles.priceText, { color: theme.text }]}>
+                        <Text style={[styles.priceText, { color: colors.text }]}>
                             Ksh {item.price}
                         </Text>
                     </View>
 
                     {/* MIDDLE ROW */}
                     <View style={styles.rowBetween}>
-                        <Text style={{ color: theme.subText, fontSize: 12 }}>
+                        <Text style={{ color: colors.subText, fontSize: 12 }}>
                             {categories.find(c => c.category_id === item.category_id)?.category_name || ''}
                         </Text>
 
@@ -290,7 +292,7 @@ const ProductScreen = () => {
 
                     {/* BOTTOM ROW */}
                     <View style={styles.rowBetween}>
-                        <Text style={{ color: theme.subText, fontSize: 12 }}>
+                        <Text style={{ color: colors.subText, fontSize: 12 }}>
                             {item.expiryDate ? `Exp: ${new Date(item.expiryDate).toLocaleDateString("en-US", {
                                 year: "numeric",
                                 month: "2-digit",
@@ -301,7 +303,7 @@ const ProductScreen = () => {
                         <View
                             style={[
                                 styles.stockBadge,
-                                { backgroundColor: lowStock ? '#7f1d1d' : '#064e3b' }
+                                { backgroundColor: lowStock ? colors.danger : colors.success }
                             ]}
                         >
                             <Text style={styles.stockText}>
@@ -315,7 +317,7 @@ const ProductScreen = () => {
     };
 
     return (
-        <View style={{ flex: 1, backgroundColor: theme.background, paddingTop: 16 }}>
+        <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: 16 }}>
             <PageHeader
                 component={() => (
                     <ScrollView
@@ -331,13 +333,13 @@ const ProductScreen = () => {
                                 {
                                     backgroundColor:
                                         selectedCategoryId === null
-                                            ? Theme.primary
-                                            : theme.chipInactive
+                                            ? colors.primary
+                                            : colors.chipInactive
                                 }
                             ]}
                         >
                             <Text style={{
-                                color: selectedCategoryId === null ? '#fff' : theme.chipTextInactive
+                                color: selectedCategoryId === null ? '#fff' : colors.chipTextInactive
                             }}>
                                 All
                             </Text>
@@ -352,15 +354,15 @@ const ProductScreen = () => {
                                     {
                                         backgroundColor:
                                             selectedCategoryId === cat.category_id
-                                                ? Theme.primary
-                                                : theme.chipInactive
+                                                ? colors.primary
+                                                : colors.chipInactive
                                     }
                                 ]}
                             >
                                 <Text style={{
                                     color: selectedCategoryId === cat.category_id
                                         ? '#fff'
-                                        : theme.chipTextInactive
+                                        : colors.chipTextInactive
                                 }}>
                                     {cat.category_name}
                                 </Text>
@@ -382,25 +384,25 @@ const ProductScreen = () => {
                 onEndReached={loadProducts}
                 onEndReachedThreshold={0.5}
                 ListFooterComponent={
-                    loading ? <ActivityIndicator color={Theme.primary} /> : null
+                    loading ? <ActivityIndicator color={colors.primary} /> : null
                 }
             />
             {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
             {/* RESTOCK MODAL */}
             <Modal visible={restockModalVisible} transparent animationType="fade">
                 <View style={styles.modalOverlay}>
-                    <View style={[styles.modalBox, { backgroundColor: theme.card }]}>
-                        <Text style={{ color: theme.text, fontWeight: '700', marginBottom: 10 }}>
+                    <View style={[styles.modalBox, { backgroundColor: colors.card }]}>
+                        <Text style={{ color: colors.text, fontWeight: '700', marginBottom: 10 }}>
                             Restock {selectedProduct?.product_name}
                         </Text>
 
                         <TextInput
                             placeholder="Enter quantity"
-                            placeholderTextColor={theme.subText}
+                            placeholderTextColor={colors.subText}
                             keyboardType="numeric"
                             value={restockQty}
                             onChangeText={setRestockQty}
-                            style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text }]}
+                            style={[styles.input, { backgroundColor: colors.inputBg, color: colors.text }]}
                         />
 
                         <TouchableOpacity
@@ -441,7 +443,7 @@ const ProductScreen = () => {
                 setModalVisible={setUploadModalVisible}
             />
             <RadialFab
-                mainColor={Theme.primary}
+                mainColor={colors.primary}
                 mainIcon="menu"
                 radius={120}
                 angle={90}

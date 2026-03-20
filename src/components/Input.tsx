@@ -1,128 +1,132 @@
-import { View, Text, TextInput } from 'react-native'
-import React from 'react'
-import Icon from 'react-native-vector-icons/Entypo'
-
-import { useColorScheme } from 'react-native';
+// components/Input.tsx
+import React from 'react';
+import { View, Text, TextInput, TextInputProps } from 'react-native';
+import Icon from 'react-native-vector-icons/Entypo';
+import { useTheme } from '../context/themeContext';
 import { InputProps } from '../../models';
-import { Theme } from '../utils/theme';
+
 
 
 
 export const Input: React.FC<InputProps> = ({
     value,
-    keyboardType,
-    latlng,
     onChangeText,
     editable = true,
-    multiline = false,
     placeholder,
-    label, hide, setHide
+    label,
+    hide,
+    setHide,
+    latlng,
+    keyboardType,
+    multiline = false,
 }) => {
-    const theme = useColorScheme(); // 'dark' or 'light'
-    const isDark = theme === 'dark';
+    const { colors } = useTheme();
 
+    // Dynamic background
     const containerBg = latlng === 'yes' && !editable
-        ? 'bg-slate-300 dark:bg-slate-700'
-        : isDark
-            ? 'bg-gray-800'
-            : 'bg-primary-50';
+        ? colors.border
+        : colors.inputBg;
 
     return (
-        <View className="flex w-full  h-20  mb-4 rounded-xl bg-primary-100 justify-center">
-            {label && <Text className='px-2  tracking-widest pt-2 uppercase text-gold-500 font-bold'>{label}</Text>}
-            <View className="flex flex-row  items-center justify-between px-4">
+        <View style={{ width: '100%', marginBottom: 16, borderRadius: 5, backgroundColor: containerBg, paddingVertical: 4 }}>
+            {label && <Text style={{ marginLeft: 8, marginBottom: 4, fontWeight: 'bold', color: colors.primary }}>{label}</Text>}
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12 }}>
                 <TextInput
-                    className=" rounded-xl text-secodary-500"
+                    style={{ flex: 1, color: colors.text, fontSize: 16, paddingVertical: 8 }}
                     placeholder={placeholder}
-                    placeholderTextColor="#999"
-                    secureTextEntry={hide}
-                    value={value}
+                    placeholderTextColor={colors.placeholder}
+                    value={value?.toString()}
                     onChangeText={onChangeText}
+                    secureTextEntry={hide}
                     keyboardType={keyboardType}
-                    autoCapitalize="none"
+                    multiline={multiline}
+                    editable={editable}
+                    cursorColor={colors.primary}
                 />
-                {hide !== undefined && <Icon onPress={setHide} name={hide ? "eye" : "eye-with-line"} size={30} color="#333333" />}
+                {hide !== undefined && setHide && (
+                    <Icon
+                        name={hide ? 'eye' : 'eye-with-line'}
+                        size={24}
+                        color={colors.subText}
+                        onPress={setHide}
+                    />
+                )}
             </View>
-
         </View>
-
     );
 };
 
-
-
-
-export const InputContainer: React.FC<any> = ({
+export const InputContainer: React.FC<InputProps & { isDarkMode?: boolean }> = ({
     value,
-    keyboardType,
-    latlng,
     onChangeText,
-    disabled,
-    editable,
-    multiline = false,
-    isDarkMode, // Prop from parent
+    editable = true,
     placeholder,
     hide,
+    setHide,
+    multiline = false,
 }) => {
-    // 1. Priority: Use isDarkMode prop if provided, otherwise fallback to system theme
-    const systemTheme = useColorScheme() === 'dark';
-    const isDark = isDarkMode !== undefined ? isDarkMode : systemTheme;
-
-    // 2. Dynamic Background Logic
-    const containerBg = latlng === 'yes' && !editable
-        ? (isDark ? 'bg-slate-700' : 'bg-slate-300')
-        : (isDark ? 'bg-slate-800' : 'bg-slate-100');
-
-    // 3. Dynamic Text Logic
-    const textColor = isDark ? 'text-white' : 'text-slate-900';
-    const placeholderColor = isDark ? '#94a3b8' : '#64748b';
+    const { colors } = useTheme();
 
     return (
-        <View
-            className={`flex w-full h-14 mb-4 rounded-lg justify-center border ${isDark ? 'border-slate-700' : 'border-slate-200'
-                } ${containerBg}`}
-        >
-            <View>
-                <TextInput
-                    className={`px-4 py-1 text-lg font-semibold ${textColor}`}
-                    placeholder={placeholder}
-                    placeholderTextColor={placeholderColor}
-                    value={value?.toString()} // Ensure value is a string
-                    onChangeText={onChangeText}
-                    secureTextEntry={hide}
-                    textContentType="none"  // avoid autofill issue
-                    editable={disabled ? false : editable}
-                    // keyboardType={keyboardType}
-                    multiline={multiline}
-                    textAlignVertical="center"
-                    // On some versions of RN, cursor color needs manual setting for dark mode
-                    cursorColor={isDark ? '#3b82f6' : '#1e293b'}
-                />
-            </View>
+        <View style={{
+            width: '100%',
+            height: 56,
+            marginBottom: 16,
+            borderRadius: 5,
+            backgroundColor: colors.inputBg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            justifyContent: 'center',
+            paddingHorizontal: 12,
+        }}>
+            <TextInput
+                style={{ color: colors.text, fontSize: 16, fontWeight: '500' }}
+                placeholder={placeholder}
+                placeholderTextColor={colors.placeholder}
+                value={value?.toString()}
+                onChangeText={onChangeText}
+                secureTextEntry={hide}
+                editable={editable}
+                multiline={multiline}
+                textAlignVertical="center"
+                cursorColor={colors.primary}
+            />
         </View>
     );
 };
 
-export const TextArea = ({ value, isDarkMode, theme, onChangeText, placeholder }: { theme: any, isDarkMode: boolean, placeholder?: string, value: string | any, onChangeText: any, }) => {
-
+export const TextArea: React.FC<{
+    value: string;
+    onChangeText: (text: string) => void;
+    placeholder?: string;
+}> = ({ value, onChangeText, placeholder }) => {
+    const { colors } = useTheme();
 
     return (
-
         <TextInput
-            className={`min-h-[100px] border font-semibold text-lg mt-2 mb-5 rounded-xl p-4 ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-100 border-slate-200 text-slate-900'}`}
+            style={{
+                minHeight: 100,
+                borderRadius: 5,
+                borderWidth: 1,
+                borderColor: colors.border,
+                backgroundColor: colors.inputBg,
+                color: colors.text,
+                fontSize: 16,
+                fontWeight: '500',
+                padding: 12,
+                marginVertical: 8,
+                textAlignVertical: 'top',
+            }}
             placeholder={placeholder}
-            placeholderTextColor={theme.placeholder}
+            placeholderTextColor={colors.placeholder}
             multiline
             numberOfLines={4}
-            textAlignVertical="top"
             value={value?.toString()}
             onChangeText={onChangeText}
-            // Sync cursor color with primary brand or text
-            cursorColor={isDarkMode ? '#3b82f6' : '#1e293b'}
+            cursorColor={colors.primary}
         />
+    );
+};
 
-    )
-}
-
-
-export default Input
+export default Input;

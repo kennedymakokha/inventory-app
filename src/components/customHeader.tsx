@@ -8,12 +8,14 @@ import { useEffect, useState } from "react";
 import { Initials } from "../../utils/getsalesdata";
 import { useSelector } from "react-redux";
 import NetInfo from "@react-native-community/netinfo";
+import { useTheme } from "../context/themeContext";
 
 function CustomHeader({ title, add }: { title: string; add?: boolean }) {
   const navigation = useNavigation<NavigationProp<authStackParamList>>();
   const { isDarkMode } = useSettings();
   const { user: { business } } = useSelector((state: any) => state.auth);
   const [dateTime, setDateTime] = useState("");
+  const { colors } = useTheme();
   const [online, setOnline] = useState(true);
   const bgColor = isDarkMode ? "#1e293b" : "#f8fafc";
   const primaryColor = isDarkMode ? "#d4af37" : "#0f172a";
@@ -35,7 +37,7 @@ function CustomHeader({ title, add }: { title: string; add?: boolean }) {
   }, []);
   return (
     <View
-      style={{ backgroundColor: bgColor }}
+      style={{ backgroundColor: colors.primary }}
       className="flex-row items-center justify-between p-4 shadow-md"
     >
       <View className="flex-row items-center">
@@ -47,7 +49,7 @@ function CustomHeader({ title, add }: { title: string; add?: boolean }) {
         </TouchableOpacity>
         <View className="flex-row items-center justify-between">
           <Text
-            style={{ color: textColor }}
+            style={{ color: colors.secondary }}
             className="text-lg uppercase font-semibold tracking-widest"
           >
             {title}
@@ -107,7 +109,7 @@ export function CustomHeaderWithSearch({
       className="flex-row justify-between items-center gap-x-2 p-4 w-full shadow-2xl"
     >
       <View className="flex-row items-center ">
-        <TouchableOpacity  onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back-sharp" size={24} color={primaryColor} />
         </TouchableOpacity>
         <View className="flex-row items-center justify-between">

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { TextInput, View } from 'react-native';
 import { useSearch } from '../context/searchContext';
+import { useTheme } from '../context/themeContext';
 
 type Props = {
     placeholder?: string;
@@ -11,7 +12,7 @@ type Props = {
 const SearchBar: React.FC<Props> = ({ placeholder = 'Search...', loading, white }) => {
     const { query, setQuery } = useSearch();
     const inputRef = useRef<TextInput>(null);
-
+    const { colors, isDarkMode } = useTheme();
     useEffect(() => {
         // Blurs the input shortly after mount
         const timeout = setTimeout(() => {

@@ -3,12 +3,12 @@ import React, { useEffect, useRef } from "react";
 import { useSettings } from "../../context/SettingsContext";
 import { Theme } from "../../utils/theme";
 import { getThemeAwareColor } from "./lineGraph";
+import { useTheme } from "../../context/themeContext";
 
 const DataGraph = ({ data = [], title }: any) => {
-  const { isDarkMode } = useSettings();
-  const theme = isDarkMode ? Theme.dark : Theme.light;
-  const chartHeight = 220;
 
+  const chartHeight = 220;
+  const { colors, isDarkMode } = useTheme();
   // Keep Animated.Values in a ref
   const animatedValuesRef = useRef<Animated.Value[]>([]);
 
@@ -36,11 +36,11 @@ const DataGraph = ({ data = [], title }: any) => {
   const maxValue = Math.max(...data.map((item: any) => item?.value || 0), 1);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
 
       {(!data || data.length === 0) ? (
-        <Text style={{ color: theme.text, textAlign: "center", marginTop: 40 }}>
+        <Text style={{ color: colors.text, textAlign: "center", marginTop: 40 }}>
           No data available
         </Text>
       ) : (
@@ -48,7 +48,7 @@ const DataGraph = ({ data = [], title }: any) => {
           {/* Y Axis */}
           <View style={styles.yAxis}>
             {[1, 0.75, 0.5, 0.25, 0].map((v, i) => (
-              <Text key={i} style={[styles.yAxisText, { color: theme.text }]}>
+              <Text key={i} style={[styles.yAxisText, { color: colors.text }]}>
                 {Math.round(maxValue * v)}
               </Text>
             ))}
@@ -63,14 +63,14 @@ const DataGraph = ({ data = [], title }: any) => {
                     key={i}
                     style={[
                       styles.gridLine,
-                      { top: chartHeight * (1 - g), borderColor: theme.border },
+                      { top: chartHeight * (1 - g), borderColor: colors.border },
                     ]}
                   />
                 ))}
               </View>
 
               {/* Bars */}
-              <View style={[styles.chartContainer, { borderColor: theme.border, height: chartHeight }]}>
+              <View style={[styles.chartContainer, { borderColor: colors.border, height: chartHeight }]}>
                 {data.map((item: any, index: number) => {
                   const barHeight = animatedValuesRef.current[index].interpolate({
                     inputRange: [0, maxValue],
@@ -79,7 +79,7 @@ const DataGraph = ({ data = [], title }: any) => {
 
                   return (
                     <View key={index} style={styles.barWrapper}>
-                      <Text style={[styles.valueText, { color: theme.text }]}>{item.value}</Text>
+                      <Text style={[styles.valueText, { color: colors.text }]}>{item.value}</Text>
                       <Animated.View
                         style={[
                           styles.bar,
@@ -92,12 +92,12 @@ const DataGraph = ({ data = [], title }: any) => {
               </View>
 
               {/* X Axis */}
-              <View style={[styles.xAxis, { backgroundColor: theme.border }]} />
+              <View style={[styles.xAxis, { backgroundColor: colors.border }]} />
 
               {/* Labels */}
               <View style={styles.labelRow}>
                 {data.map((item: any, index: number) => (
-                  <Text key={index} style={[styles.label, { color: theme.text }]}>
+                  <Text key={index} style={[styles.label, { color: colors.text }]}>
                     {item.key}
                   </Text>
                 ))}

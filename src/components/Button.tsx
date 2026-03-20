@@ -1,30 +1,105 @@
-import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native'
-import React from 'react'
-import Icon from 'react-native-vector-icons/Entypo'
-const Button = ({ handleclick, disabled,outline, title, loading }: {disabled?: boolean, outline?: boolean, handleclick: any, title: any, loading: boolean }) => {
-    return (
-        <TouchableOpacity activeOpacity={1}
-            className={`${outline ? " border border-green-500 text-green-600" : "bg-green-500"} py-3 px-2 w-full rounded-xl ${disabled ? "opacity-50" : ""}`}
-            onPress={loading || disabled ? console.log("") : handleclick}
-        >
-            {loading ? <ActivityIndicator color="white" size={20} /> : <Text className={`text-center tracking-widest uppercase font-bold ${outline ? "text-green-500" : "text-green-800"} font-semibold text-lg`}>
-                {title}
-            </Text>}
-        </TouchableOpacity>
-    )
+// components/Button.tsx
+import React from 'react';
+import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import Icon from 'react-native-vector-icons/Entypo';
+import { useTheme } from '../context/themeContext';
+
+
+interface ButtonProps {
+  handleclick: () => void;
+  title: string;
+  disabled?: boolean;
+  outline?: boolean;
+  loading?: boolean;
 }
 
-export const Fab = ({ handleclick, outline, icon, title, loading }: { outline?: boolean, handleclick: any, title: any, loading: boolean, icon: string }) => {
-    return (
-        <TouchableOpacity activeOpacity={0.8}
-            className={`${outline ? " border border-green-700 text-secondary-600" : "bg-green-700"} py-3 px-2 size-20 items-center justify-center rounded-full`}
-            onPress={loading ? console.log("") : handleclick}
-        >
-            {loading ? <ActivityIndicator color="white" size={20} /> :
-                <Icon name={icon} color={!outline ? "#fff" : "#d4af37"} size={30} />}
-
-        </TouchableOpacity>
-    )
+interface FabProps {
+  handleclick: () => void;
+  icon: string;
+  title?: string;
+  outline?: boolean;
+  loading?: boolean;
 }
 
-export default Button
+const Button: React.FC<ButtonProps> = ({ handleclick, disabled, outline, title, loading }) => {
+  const { colors } = useTheme();
+
+  const backgroundColor = outline ? 'transparent' : colors.primary;
+  const borderColor = outline ? colors.primaryLight : 'transparent';
+  const textColor = outline ? colors.primary : colors.primaryLight;
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.8}
+      onPress={loading || disabled ? () => {} : handleclick}
+      style={[
+        styles.button,
+        { backgroundColor, borderColor },
+        outline && { borderWidth: 1 },
+        disabled && { opacity: 0.5 }
+      ]}
+    >
+      {loading ? (
+        <ActivityIndicator color={textColor} size="small" />
+      ) : (
+        <Text style={[styles.buttonText, { color: textColor }]}>{title}</Text>
+      )}
+    </TouchableOpacity>
+  );
+};
+
+export const Fab: React.FC<FabProps> = ({ handleclick, outline, icon, loading }) => {
+  const { colors } = useTheme();
+
+  const backgroundColor = outline ? 'transparent' : colors.primary;
+  const borderColor = outline ? colors.primaryLight : 'transparent';
+  const iconColor = outline ? colors.primaryLight : colors.primaryLight;
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.8}
+      onPress={loading ? () => {} : handleclick}
+      style={[
+        styles.fab,
+        { backgroundColor, borderColor },
+        outline && { borderWidth: 1 },
+      ]}
+    >
+      {loading ? (
+        <ActivityIndicator color={iconColor} size="small" />
+      ) : (
+        <Icon name={icon} size={28} color={iconColor} />
+      )}
+    </TouchableOpacity>
+  );
+};
+
+const styles = StyleSheet.create({
+  button: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  fab: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
+});
+
+export default Button;

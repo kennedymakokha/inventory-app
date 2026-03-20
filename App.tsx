@@ -44,6 +44,7 @@ import { UserProvider } from './src/context/UserContext';
 import { SocketProvider } from './src/context/socketContext';
 import { registerBusinessGeofence, initGeofence, listenForGeofence, startGeofenceMonitoring } from './src/services/geofenceService';
 import handleLogout from './src/navigations/custormDrawer';
+import { ThemeProvider, useTheme } from './src/context/themeContext';
 
 /* -------------------------------- */
 /* Global Guards */
@@ -118,7 +119,7 @@ const AppWithAuth = () => {
 
       interval = setInterval(() => {
         safeSync();
-      }, 3600000);
+      }, 6000);
     };
 
     startSync();
@@ -193,6 +194,7 @@ const AppWithProviders = () => {
   if (!dbReady) {
     return (
       <View style={styles.center}>
+
         <ActivityIndicator size="large" color="#ffffff" />
         <Text style={styles.loadingText}>Initializing Database...</Text>
       </View>
@@ -210,8 +212,13 @@ const AppWithProviders = () => {
       </View>
     );
   }
-
-  return <AppWithAuth />;
+  const { colors } = useTheme();
+  return (
+    <View style={{ flex: 1 }}>
+      <StatusBar animated backgroundColor={colors.primaryLight} />
+      <AppWithAuth />
+    </View>
+  );
 };
 
 
@@ -221,30 +228,34 @@ const AppWithProviders = () => {
 function App(): React.JSX.Element {
   return (
     <View style={styles.container}>
-      <StatusBar animated backgroundColor="#000000" />
+
       <SafeAreaProvider>
         <CartProvider>
-          <Provider store={store}>
-            <BusinessProvider>
-              <SocketProvider>
-                <UserProvider>
-                  <SettingsProvider>
-                    <PersistGate
-                      persistor={persistor}
-                      loading={
-                        <View style={styles.center}>
-                          <ActivityIndicator size="large" color="#ffffff" />
-                          <Text style={styles.loadingText}>Loading app...</Text>
-                        </View>
-                      }
-                    >
-                      <AppWithProviders />
-                    </PersistGate>
-                  </SettingsProvider>
-                </UserProvider>
-              </SocketProvider>
-            </BusinessProvider>
-          </Provider>
+          <ThemeProvider>
+
+            <Provider store={store}>
+              <BusinessProvider>
+                <SocketProvider>
+                  <UserProvider>
+                    <SettingsProvider>
+                      <PersistGate
+                        persistor={persistor}
+                        loading={
+                          <View style={styles.center}>
+                            <ActivityIndicator size="large" color="#ffffff" />
+                            <Text style={styles.loadingText}>Loading app...</Text>
+                          </View>
+                        }
+                      >
+                        <AppWithProviders />
+                      </PersistGate>
+                    </SettingsProvider>
+                  </UserProvider>
+                </SocketProvider>
+              </BusinessProvider>
+
+            </Provider>
+          </ThemeProvider>
         </CartProvider>
       </SafeAreaProvider>
     </View>

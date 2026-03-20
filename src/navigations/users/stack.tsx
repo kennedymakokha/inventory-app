@@ -4,6 +4,7 @@ import { defaultHeaderOptions } from "../navigationOptions";
 
 import UsersScreen from "../../screens/users/users.screen";
 import { UsersStackParamList } from "../../../models/navigationTypes";
+import UserScreen from "../../screens/users/user.screen";
 
 export function UsersStack() {
   const { isDarkMode } = useSettings();
@@ -13,6 +14,11 @@ const UsersStackNav = createNativeStackNavigator<UsersStackParamList>();
       <UsersStackNav.Screen
         name="Users_Dashboard"
         component={UsersScreen}
+        options={{headerShown: false}}
+      />
+      <UsersStackNav.Screen
+        name="User_Dashboard"
+        component={UserScreen}
         options={{headerShown: false}}
       />
     </UsersStackNav.Navigator>

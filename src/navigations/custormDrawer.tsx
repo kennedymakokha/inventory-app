@@ -11,11 +11,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSelector } from "react-redux";
 import { useAuthContext } from "../context/authContext";
 import { useSettings } from "../context/SettingsContext";
-import { Theme } from "../utils/theme";
 import { calculateExpectedCash, closeRegister } from "../services/closeOpen.service";
 import { formatNumber } from "../../utils/formatNumbers";
 import { useNavigation } from "@react-navigation/native";
 import { closeAndDeleteDatabase } from "../services/db-service";
+import { useTheme } from "../context/themeContext";
 
 const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
   navigation,
@@ -30,11 +30,7 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
     await AsyncStorage.clear();
     await closeAndDeleteDatabase()
   };
-
-
-  const { isDarkMode } = useSettings();
-  const theme = isDarkMode ? Theme.dark : Theme.light;
-
+  const { colors } = useTheme();
   const [expected, setExpected] = useState<any>("0");
   const [message, setMessage] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
@@ -52,9 +48,9 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
           className="flex-row items-center my-4"
           onPress={() => navigation.navigate("Home", { screen })}
         >
-          <Icon name={icon} size={20} color={theme.text} />
+          <Icon name={icon} size={20} color={colors.text} />
           <Text
-            style={{ color: theme.text }}
+            style={{ color: colors.text }}
             className="tracking-widest uppercase text-base ml-3"
           >
             {label}
@@ -78,16 +74,16 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
   const showText = currentHour >= 18;
   return (
     <View
-      style={{ backgroundColor: theme.background }}
+      style={{ backgroundColor: colors.primary }}
       className="flex-1 pt-16 px-5"
     >
       {/* Header */}
-      <View className="relative items-center mb-10 border-b" style={{ borderBottomColor: theme.border }}>
+      <View className="relative items-center mb-10 border-b" style={{ borderBottomColor: colors.border }}>
 
         {/* Background number */}
         {!showText && <Text
-          className="absolute text-[880px] font-bold opacity-20"
-          style={{ color: "#38bdf8", bottom: 30, fontSize: 100 }}
+          className="absolute  font-bold  border p-2  rounded-md opacity-20"
+          style={{ color: colors.text, top: 0, fontSize: 20, right: 0, borderColor: colors.subText }}
         >
           {formatNumber(expected)}
         </Text>
@@ -103,7 +99,7 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
         >
           {expected}
         </Text>
-        <Text style={{ color: theme.text }} className="text-lg">
+        <Text style={{ color: colors.text }} className="text-lg">
           Welcome! {user?.name}
         </Text>
 
@@ -111,7 +107,7 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
 
       {!!message && (
         <Text
-          style={{ color: theme.text }}
+          style={{ color: colors.text }}
           className="text-center mt-2"
         >
           {message}
@@ -133,12 +129,12 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({
 
       {/* Footer */}
       <View
-        style={{ borderTopColor: theme.border }}
+        style={{ borderTopColor: colors.border }}
         className="mt-auto mb-20 border-t pt-5"
       >
         <TouchableOpacity onPress={handleLogout}>
           <Text
-            style={{ color: theme.text }}
+            style={{ color: colors.text }}
             className="text-center text-2xl font-bold"
           >
             Logout

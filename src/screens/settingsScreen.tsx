@@ -1,60 +1,87 @@
 import React from 'react';
-import { View, Text, Switch, ScrollView, TouchableOpacity } from 'react-native';
-;
+import { View, Text, Switch, ScrollView, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome5';
-import { useSettings } from '../context/SettingsContext';
 import PageHeader from '../components/pageHeader';
-import { Theme } from '../utils/theme';
+import { useSettings } from '../context/SettingsContext';
+import { useTheme } from '../context/themeContext';
+
 
 const SettingsScreen = () => {
-    const { isScanToCartEnabled, setScanToCart, isDarkMode, setDarkMode } = useSettings();
+    const { isScanToCartEnabled, setScanToCart } = useSettings();
 
-  const theme = isDarkMode?Theme.dark:Theme.light
-
+    // const colors = theme[isDarkMode ? 'dark' : 'light'];// <-- get dynamic colors from context
+    const { colors, isDarkMode, setDarkMode } = useTheme();
     return (
-        <View className={`flex-1 ${theme.background}`}>
-            <PageHeader component={() => <Text className="text-white font-bold text-xl uppercase tracking-widest">System Settings</Text>} />
-            
-            <ScrollView className="p-4">
-                <Text className={`mb-4 font-bold uppercase ${theme.subText}`}>Inventory & Sales</Text>
-                
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
+            <PageHeader
+                component={() => (
+                    <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 20, textTransform: 'uppercase', letterSpacing: 1.5 }}>
+                        System Settings
+                    </Text>
+                )}
+            />
+
+            <ScrollView style={{ padding: 16 }}>
+                <Text style={{ marginBottom: 16, fontWeight: 'bold', textTransform: 'uppercase', color: colors.subText }}>
+                    Inventory & Sales
+                </Text>
+
                 {/* Scan to Cart Toggle */}
-                <View className={`${theme.card} p-5 rounded-sm flex-row justify-between items-center mb-4 shadow-sm`}>
-                    <View className="flex-1 pr-4">
-                        <View className="flex-row items-center mb-1">
-                            <Icon name="barcode" size={18} color="#22c55e" className="mr-2" />
-                            <Text className={`text-lg font-bold ${theme.text}`}> Scan to Cart</Text>
+                <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    <View style={{ flex: 1, paddingRight: 16 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                            <Icon name="barcode" size={18} color={colors.success} style={{ marginRight: 8 }} />
+                            <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.text }}>Scan to Cart</Text>
                         </View>
-                        <Text className={theme.subText}>If enabled, scanning a barcode adds the item directly to the cart with quantity 1.</Text>
+                        <Text style={{ color: colors.subText }}>
+                            If enabled, scanning a barcode adds the item directly to the cart with quantity 1.
+                        </Text>
                     </View>
-                    <Switch 
-                        value={isScanToCartEnabled} 
+                    <Switch
+                        value={isScanToCartEnabled}
                         onValueChange={setScanToCart}
-                        trackColor={{ false: '#767577', true: '#22c55e' }}
-                        thumbColor={isScanToCartEnabled ? '#f4f3f4' : '#f4f3f4'}
+                        trackColor={{ false: '#767577', true: colors.success }}
+                        thumbColor="#f4f3f4"
                     />
                 </View>
 
-                <Text className={`mb-4 mt-4 font-bold uppercase ${theme.subText}`}>Appearance</Text>
+                <Text style={{ marginTop: 24, marginBottom: 16, fontWeight: 'bold', textTransform: 'uppercase', color: colors.subText }}>
+                    Appearance
+                </Text>
 
                 {/* Dark Mode Toggle */}
-                <View className={`${theme.card} p-5 rounded-sm flex-row justify-between items-center mb-4 shadow-sm`}>
-                    <View className="flex-1 pr-4">
-                        <View className="flex-row items-center mb-1">
-                            <Icon name="moon" size={18} color="#3b82f6" className="mr-2" />
-                            <Text className={`text-lg font-bold ${theme.text}`}> Dark Mode</Text>
+                <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    <View style={{ flex: 1, paddingRight: 16 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                            <Icon name="moon" size={18} color={colors.primary} style={{ marginRight: 8 }} />
+                            <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.text }}>Dark Mode</Text>
                         </View>
-                        <Text className={theme.subText}>Adjust the interface for low-light environments.</Text>
+                        <Text style={{ color: colors.subText }}>
+                            Adjust the interface for low-light environments.
+                        </Text>
                     </View>
-                    <Switch 
-                        value={isDarkMode} 
-                        onValueChange={setDarkMode}
-                        trackColor={{ false: '#767577', true: '#3b82f6' }}
+                    <Switch
+                        value={isDarkMode}
+                        onValueChange={(value) => setDarkMode(value)}
+                        trackColor={{ false: '#767577', true: colors.primary }}
+                        thumbColor="#f4f3f4"
                     />
                 </View>
             </ScrollView>
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    card: {
+        padding: 20,
+        borderRadius: 8,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+        borderWidth: 1,
+    },
+});
 
 export default SettingsScreen;

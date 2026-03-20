@@ -18,12 +18,15 @@ const LoginScreen = ({ navigation }: any) => {
     const [msg, setMsg] = useState({ msg: "", state: "" });
     const [loading, setLoading] = useState(false)
     const [progress, setprogress] = useState("")
-    const [item, setItem] = useState({ phone_number: "0727270677", password: '+254727270677' });
+    const [item, setItem] = useState({ phone_number: "0722870545", password: '+254727270677' });
     const [loginUser, { error }] = useLoginMutation();
     const dispatch = useDispatch()
     const { login } = useAuthContext();
     const { setUser } = useUser();
     const { business, updateBusiness, isLoading } = useBusiness();
+    const { setColors } = useTheme();
+
+
     const handleChange = (key: keyof User, value: string) => {
         setMsg({ msg: "", state: "" });
 
@@ -49,19 +52,19 @@ const LoginScreen = ({ navigation }: any) => {
             const data = await loginUser(item).unwrap();
 
             if (data.ok) {
-                setprogress("Data truei");
-
                 // Update Redux / AsyncStorage if needed
                 dispatch(setCredentials({ ...data }));
                 await AsyncStorage.setItem("accessToken", data.token);
                 await AsyncStorage.setItem("userId", data.user._id);
 
                 //  Update context with logged-in user
-                await setUser(data.user);
-                 updateBusiness(data.user.business);
+
                 if (data.exp) {
                     await AsyncStorage.setItem("tokenExpiry", data.exp.toString());
                     await login(data.token);
+                    setColors(data.user.business.primaryColor ?? "#22c55e", data.user.business.primaryColor ?? "#000000");
+                     setUser(data.user);
+                    updateBusiness(data.user.business);
                 }
 
                 setLoading(false);
@@ -72,6 +75,7 @@ const LoginScreen = ({ navigation }: any) => {
             }
         } catch (error: any) {
             console.error(error);
+            setLoading(false)
             setMsg({
                 msg: error.message || error.data || "Error occurred, try again 😧",
                 state: "error",
@@ -89,7 +93,7 @@ const LoginScreen = ({ navigation }: any) => {
                         resizeMode="cover" // or 'contain', 'stretch'
                     />
                 </View>
-                
+
                 <Input
                     label="Phone Number"
                     placeholder="Phone nunber"

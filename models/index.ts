@@ -92,6 +92,7 @@ export type InputProps = {
     editable?: boolean;
     multiline?: boolean;
     isDarkMode?: boolean;
+    disabled?:boolean
     value: string | any;
     onChangeText: (text: string) => void;
     placeholder: string;

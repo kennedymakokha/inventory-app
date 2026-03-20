@@ -71,8 +71,8 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
 const styles = StyleSheet.create({
     container: { flex: 1, justifyContent: "center", padding: 20 },
     title: { fontSize: 28, fontWeight: "bold", marginBottom: 24, textAlign: "center" },
-    input: { padding: 14, borderRadius: 12, borderWidth: 1, marginBottom: 16 },
-    button: { padding: 16, borderRadius: 12, alignItems: "center" },
+    input: { padding: 14, borderRadius: 5, borderWidth: 1, marginBottom: 16 },
+    button: { padding: 16, borderRadius: 5, alignItems: "center" },
     buttonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
     message: { textAlign: "center", marginBottom: 12, fontWeight: "bold" },
 });

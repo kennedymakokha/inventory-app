@@ -121,7 +121,7 @@ const OTPActivationScreen: React.FC<Props> = ({ navigation, route }) => {
                     color: theme.text,
                     borderWidth: 1,
                     borderColor: theme.border,
-                    borderRadius: 12,
+                    borderRadius: 5,
                     padding: 14,
                     fontSize: 22,
                     textAlign: "center",
@@ -153,7 +153,7 @@ const OTPActivationScreen: React.FC<Props> = ({ navigation, route }) => {
                 style={{
                     backgroundColor: Theme.primary,
                     padding: 16,
-                    borderRadius: 12,
+                    borderRadius: 5,
                     alignItems: "center"
                 }}
                 onPress={handleVerify}

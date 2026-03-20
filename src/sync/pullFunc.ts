@@ -19,7 +19,7 @@ export const pullUpdates = async (
   const data = rawData[config.payloadKey] || [];
 
   if (!Array.isArray(data) || data.length === 0) {
-    console.log(`No updates for ${config.tableName}`);
+    // console.log(`No updates for ${config.tableName}`);
     return;
   }
 
@@ -67,5 +67,5 @@ export const pullUpdates = async (
     new Date().toISOString()
   );
 
-  console.log(`⬇️ Pulled updates for ${config.tableName}`);
+  // console.log(`⬇️ Pulled updates for ${config.tableName}`);
 };

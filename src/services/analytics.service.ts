@@ -28,7 +28,81 @@ export const getTodaySales = async (userRole: string, userId?: string) => {
   return Number(result.rows.item(0)?.total ?? 0);
 };
 
+type SalesFilter =
+  | "today"
+  | "week"
+  | "month"
+  | "year"
+  | "custom"
+  | "range";
 
+export const getSales = async (
+  
+  userId?: string,
+  filter: SalesFilter = "today",
+  customDate?: string,
+  startDate?: string,
+  endDate?: string
+) => {
+  const db = await getDBConnection();
+
+
+  let dateCondition = "";
+
+
+  // Role-based filter
+  let condition = "";
+  const params: any[] = [];
+
+  // Apply filter ONLY if userId is provided
+  if (userId) {
+    condition = "AND createdBy = ?";
+    params.push(userId);
+  }
+
+
+  // Date filter
+  switch (filter) {
+    case "today":
+      dateCondition = `date(created_at,'localtime') = date('now','localtime')`;
+      break;
+
+    case "week":
+      dateCondition = `strftime('%Y-%W', created_at) = strftime('%Y-%W', 'now')`;
+      break;
+
+    case "month":
+      dateCondition = `strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')`;
+      break;
+
+    case "year":
+      dateCondition = `strftime('%Y', created_at) = strftime('%Y', 'now')`;
+      break;
+
+    case "custom":
+      dateCondition = `date(created_at) = date(?)`;
+      params.push(customDate);
+      break;
+
+    case "range":
+      dateCondition = `date(created_at) BETWEEN date(?) AND date(?)`;
+      params.push(startDate, endDate);
+      break;
+
+    default:
+      dateCondition = `date(created_at,'localtime') = date('now','localtime')`;
+  }
+
+  const [result] = await db.executeSql(
+    `SELECT SUM(total) as total
+     FROM Sale
+     WHERE ${dateCondition}
+     ${condition}`,
+    params
+  );
+
+  return Number(result.rows.item(0)?.total ?? 0);
+};
 
 /**
  * Today's transactions count

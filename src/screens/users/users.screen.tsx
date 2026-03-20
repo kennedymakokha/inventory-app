@@ -15,6 +15,9 @@ import { Theme } from '../../utils/theme';
 import { getUsers, saveUserItems, updateUser } from '../../services/users.service';
 import EntityModal from '../../components/EntityModal';
 import { LayoutAnimation } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { UsersStackParamList } from '../../../models/navigationTypes';
 
 const UsersScreen = () => {
     const { isDarkMode } = useSettings();
@@ -32,7 +35,14 @@ const UsersScreen = () => {
         role: "",
         business_id: business._id || ""
     };
+   
 
+    type NavigationProp = NativeStackNavigationProp<
+        UsersStackParamList,
+        "Users_Dashboard"
+    >;
+
+    const navigation = useNavigation<NavigationProp>();
     const [users, setUsers] = useState<UserItem[]>([]);
     const [refreshing, setRefreshing] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
@@ -95,9 +105,10 @@ const UsersScreen = () => {
             currentlyOpenSwipe={currentlyOpenSwipe}
             onEdit={() => { setItem({ ...item }); setModalVisible(true); }}
             onDelete={() => handleDelete(item)}
+            onPress={() => navigation.navigate("User_Dashboard", { user: item })}
         >
             <View style={{
-                backgroundColor: '#1e293b', padding: 16, borderRadius: 12, marginBottom: 12,
+                backgroundColor: '#1e293b', padding: 16, borderRadius: 5, marginBottom: 12,
                 shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 5
             }}>
                 <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{item.name}</Text>

@@ -15,8 +15,9 @@ import Toast from '../../../components/Toast';
 import Button from '../../../components/Button';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Theme } from '../../../utils/theme';
+
 import { Animated } from 'react-native';
+import { useTheme } from '../../../context/themeContext';
 
 const AddProductModal = ({
     modalVisible,
@@ -33,7 +34,7 @@ const AddProductModal = ({
 
     const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
-    const theme = isDarkMode ? Theme.dark : Theme.light;
+    const { colors } = useTheme();
     const [item, setData] = useState(initialData);
     const buying = parseFloat(item.Bprice) || 0;
     const selling = parseFloat(item.price) || 0;
@@ -78,7 +79,7 @@ const AddProductModal = ({
             visible={modalVisible}
             onRequestClose={() => setModalVisible(false)}
         >
-            <View style={[styles.container, { backgroundColor: theme.background }]}>
+            <View style={[styles.container, { backgroundColor: colors.background }]}>
 
                 {/* ================= SCANNER MODAL ================= */}
                 <Modal
@@ -120,7 +121,7 @@ const AddProductModal = ({
                     <Animated.Text
                         style={[
                             styles.header,
-                            { color: theme.text, opacity: fadeAnim }
+                            { color: colors.primaryLight, textTransform: 'uppercase', opacity: fadeAnim }
                         ]}
                     >
                         {item.product_id ? "Update Product" : "Add New Product"}
@@ -142,7 +143,8 @@ const AddProductModal = ({
                             label="Barcode"
                             placeholder="Scan barcode"
                             value={item.barcode}
-                            disabled
+                            onChangeText={() => console.log("first")}
+                            disabled={false}
                             isDarkMode={isDarkMode}
                         />
 
@@ -160,33 +162,33 @@ const AddProductModal = ({
 
                     {/* CATEGORY */}
                     <View style={styles.sectionSpacing}>
-                        <Text style={[styles.label, { color: theme.text }]}>
+                        <Text style={[styles.label, { color: colors.text }]}>
                             Category
                         </Text>
 
                         <View style={[
                             styles.pickerContainer,
-                            { backgroundColor: theme.inputBg, borderColor: theme.border }
+                            { backgroundColor: colors.primaryLight, borderColor: colors.border }
                         ]}>
                             <Picker
                                 selectedValue={item.category_id}
                                 onValueChange={(val) =>
                                     handleChange("category_id", val)
                                 }
-                                dropdownIconColor={theme.text}
-                                style={{ color: theme.text }}
+                                dropdownIconColor={colors.text}
+                                style={{ color: colors.text }}
                             >
                                 <Picker.Item
                                     label="Select Category"
                                     value=""
-                                    color={theme.placeholder}
+                                    color={colors.placeholder}
                                 />
                                 {categories?.map((cat: any) => (
                                     <Picker.Item
                                         key={cat.id}
                                         label={cat.category_name}
                                         value={cat.category_id}
-                                        color={theme.text}
+                                        color={colors.text}
                                     />
                                 ))}
                             </Picker>
@@ -236,7 +238,7 @@ const AddProductModal = ({
                                 onChangeText={(text: string) =>
                                     handleChange("price", text)
                                 }
-                                 keyboardType="phone-pad"
+                                keyboardType="phone-pad"
                                 isDarkMode={isDarkMode}
                             />
                         </View>
@@ -250,13 +252,13 @@ const AddProductModal = ({
                         onChangeText={(text: string) =>
                             handleChange("initial_stock", text)
                         }
-                         keyboardType="phone-pad"
+                        keyboardType="phone-pad"
                         isDarkMode={isDarkMode}
                     />
 
                     {/* EXPIRY DATE */}
                     <View style={styles.sectionSpacing}>
-                        <Text style={[styles.label, { color: theme.text }]}>
+                        <Text style={[styles.label, { color: colors.text }]}>
                             Expiry Date (Optional)
                         </Text>
 
@@ -264,14 +266,14 @@ const AddProductModal = ({
                             onPress={() => setShowDatePicker(true)}
                             style={[
                                 styles.dateBtn,
-                                { backgroundColor: theme.inputBg, borderColor: theme.border }
+                                { backgroundColor: colors.inputBg, borderColor: colors.border }
                             ]}
                         >
                             <Text
                                 style={{
                                     color: item.expiryDate
-                                        ? theme.text
-                                        : theme.placeholder
+                                        ? colors.text
+                                        : colors.placeholder
                                 }}
                             >
                                 {item.expiryDate
@@ -279,7 +281,7 @@ const AddProductModal = ({
                                     : "Set Expiry Date"}
                             </Text>
 
-                            <Icon name="calendar" size={20} color={theme.placeholder} />
+                            <Icon name="calendar" size={20} color={colors.placeholder} />
                         </TouchableOpacity>
                     </View>
 
@@ -298,13 +300,12 @@ const AddProductModal = ({
 
                     {/* DESCRIPTION */}
                     <TextArea
-                        theme={theme}
                         placeholder="Additional notes..."
                         value={item.description}
                         onChangeText={(text: string) =>
                             handleChange("description", text)
                         }
-                        isDarkMode={isDarkMode}
+
                     />
 
                     {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
@@ -379,8 +380,9 @@ const styles = StyleSheet.create({
 
     pickerContainer: {
         borderWidth: 1,
-        borderRadius: 12,
+        borderRadius: 5,
         overflow: 'hidden',
+        marginBottom: 10
     },
 
     priceRow: {
@@ -391,7 +393,7 @@ const styles = StyleSheet.create({
     dateBtn: {
         borderWidth: 1,
         height: 55,
-        borderRadius: 12,
+        borderRadius: 5,
         paddingHorizontal: 15,
         flexDirection: 'row',
         alignItems: 'center',
@@ -401,7 +403,7 @@ const styles = StyleSheet.create({
     footerBtns: {
         flexDirection: 'row',
         gap: 12,
-        marginTop: 30,
+        marginTop: 60,
     },
 
     scannerContainer: {
