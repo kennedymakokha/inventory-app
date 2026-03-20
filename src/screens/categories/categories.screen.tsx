@@ -25,10 +25,10 @@ import Toast from '../../components/Toast';
 import SwipeableCard from '../../components/SwipeableCard';
 import { validateItem } from '../validations/category.validation';
 import { Theme } from '../../utils/theme';
+import { useTheme } from '../../context/themeContext';
 
 const CategoryScreen = () => {
-    const { isDarkMode } = useSettings();
-    const theme = isDarkMode ? Theme.dark : Theme.light;
+
     const { query } = useSearch();
     const { user } = useSelector((state: any) => state.auth);
     const { business } = user;
@@ -42,7 +42,7 @@ const CategoryScreen = () => {
 
     const swipeRefs = useRef<any>({});
     const currentlyOpenSwipe = useRef<any>(null);
-
+    const { colors, isDarkMode } = useTheme();
     const [categories, setCategories] = useState<CategoryItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
@@ -121,31 +121,18 @@ const CategoryScreen = () => {
         >
             <TouchableOpacity
                 activeOpacity={0.9}
-                style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}
+                style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
             >
-                <Text style={[styles.nameText, { color: theme.text }]}>{item?.category_name}</Text>
-                <Text style={{ color: theme.subText, fontSize: 12, marginTop: 4 }}>
+                <Text style={[styles.nameText, { color: colors.text }]}>{item?.category_name}</Text>
+                <Text style={{ color: colors.subText, fontSize: 12, marginTop: 4 }}>
                     {item?.description || ""}
                 </Text>
             </TouchableOpacity>
         </SwipeableCard>
     );
-    console.log("New Cat", item)
     return (
-        <View style={{ flex: 1, backgroundColor: theme.background, paddingTop: 16 }}>
-            <PageHeader
-                component={() => (
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.filterContainer}
-                        style={{ flexGrow: 0 }}
-                    >
-                        {/* Add any category filters here if needed */}
-                    </ScrollView>
-                )}
-            />
-
+        <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: 16 }}>
+            <PageHeader />
             <FlatList
                 data={filteredCategories}
                 keyExtractor={(item) => item.category_id}
@@ -166,6 +153,7 @@ const CategoryScreen = () => {
                 PostLocally={handleAddCategory}
                 modalVisible={modalVisible}
                 setItem={setItem}
+                onClose={() => { setModalVisible(false); setItem(initialState) }}
                 fetchCategories={onRefresh}
                 initialData={item}
                 setModalVisible={setModalVisible}
@@ -184,7 +172,7 @@ const CategoryScreen = () => {
             />
 
             <RadialFab
-                mainColor={Theme.primary}
+                mainColor={colors.primary}
                 mainIcon="menu"
                 radius={120}
                 angle={90}

@@ -4,43 +4,69 @@ import { useSearch } from '../context/searchContext';
 import { useTheme } from '../context/themeContext';
 
 type Props = {
-    placeholder?: string;
-    loading?: boolean
-    white?: boolean
+  placeholder?: string;
+  loading?: boolean;
+  white?: boolean;
 };
 
 const SearchBar: React.FC<Props> = ({ placeholder = 'Search...', loading, white }) => {
-    const { query, setQuery } = useSearch();
-    const inputRef = useRef<TextInput>(null);
-    const { colors, isDarkMode } = useTheme();
-    useEffect(() => {
-        // Blurs the input shortly after mount
-        const timeout = setTimeout(() => {
-            inputRef.current?.blur();
-        }, 100);
-        return () => clearTimeout(timeout);
-    }, []);
+  const { query, setQuery } = useSearch();
+  const inputRef = useRef<TextInput>(null);
+  const { colors, isDarkMode } = useTheme();
 
-    return (
+  useEffect(() => {
+    // Blur input shortly after mount to avoid auto-focus issues
+    const timeout = setTimeout(() => {
+      inputRef.current?.blur();
+    }, 100);
+    return () => clearTimeout(timeout);
+  }, []);
 
-        <>
-            {loading ? <View className="bg-secondary-700   p-2 h-10 rounded-md animate-pulse " /> :
+  // Determine background, text, and placeholder colors
+  const backgroundColor = white
+    ? colors.card
+    : isDarkMode
+    ? colors.card
+    : colors.card;
 
-                <View className={`w-full ${white ? "bg-slate-50 rounded-md" : "border border-green-400"} rounded-md px-2`}>
-                    <TextInput
-                        ref={inputRef}
-                        value={query}
-                        onChangeText={setQuery}
-                        autoFocus={false}
-                        placeholder={placeholder}
-                        className={`w-full px-3 py-2 h-10 text-end ${white ? "text-green-400" : "text-primary-900 "}rounded-md   `}
-                        placeholderTextColor={white ? "black" : "#ffceff"}
-                    />
-                </View>
-            }
-        </>
+  const textColor = white ? colors.primary : isDarkMode ? colors.text : colors.primaryDark;
+  const placeholderColor = white ? colors.subText : isDarkMode ? colors.subText : colors.primaryLight;
 
-    );
+  return (
+    <>
+      {loading ? (
+        <View
+          style={{ backgroundColor: colors.secondary, height: 40, borderRadius: 8 }}
+          className="animate-pulse"
+        />
+      ) : (
+        <View
+          style={{
+            backgroundColor,
+            borderColor: white ? 'transparent' : colors.primary,
+            borderWidth: white ? 0 : 1,
+            borderRadius: 8,
+            paddingHorizontal: 8,
+          }}
+        >
+          <TextInput
+            ref={inputRef}
+            value={query}
+            onChangeText={setQuery}
+            autoFocus={false}
+            placeholder={placeholder}
+            placeholderTextColor={placeholderColor}
+            style={{
+              color: textColor,
+              height: 40,
+              textAlign: 'left',
+              fontSize: 16,
+            }}
+          />
+        </View>
+      )}
+    </>
+  );
 };
 
 export default SearchBar;

@@ -26,7 +26,7 @@ const Button: React.FC<ButtonProps> = ({ handleclick, disabled, outline, title, 
 
   const backgroundColor = outline ? 'transparent' : colors.primary;
   const borderColor = outline ? colors.primaryLight : 'transparent';
-  const textColor = outline ? colors.primary : colors.primaryLight;
+  const textColor = outline ? colors.primary : colors.secondary;
 
   return (
     <TouchableOpacity

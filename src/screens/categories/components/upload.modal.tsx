@@ -3,27 +3,21 @@ import { View, Text, Modal, TouchableOpacity, StyleSheet, ActivityIndicator } fr
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Toast from '../../../components/Toast';
 import Button from '../../../components/Button';
+import { useTheme } from '../../../context/themeContext';
 
 const CSVUploadModal = ({
     modalVisible,
     setModalVisible,
     onUpload, // Function to handle the actual file processing
-    isDarkMode,
+
     msg,
     setMsg
 }: any) => {
+
+    
     const [isSelecting, setIsSelecting] = useState(false);
     const [selectedFile, setSelectedFile] = useState<{ name: string; size?: number } | null>(null);
-
-    const theme = {
-        bg: isDarkMode ? '#0f172a' : '#f8fafc',
-        card: isDarkMode ? '#1e293b' : '#ffffff',
-        text: isDarkMode ? '#f8fafc' : '#1e293b',
-        subtext: isDarkMode ? '#94a3b8' : '#64748b',
-        border: isDarkMode ? '#334155' : '#e2e8f0',
-        dropzone: isDarkMode ? '#1e293b' : '#f1f5f9',
-    };
-
+    const { colors, isDarkMode } = useTheme();
     const handleFilePick = async () => {
         setIsSelecting(true);
         // Logic for DocumentPicker would go here
@@ -48,22 +42,22 @@ const CSVUploadModal = ({
             onRequestClose={resetAndClose}
         >
             <View style={styles.overlay}>
-                <View style={[styles.modalContainer, { backgroundColor: theme.bg, borderColor: theme.border }]}>
-                    
-                    <Text style={[styles.title, { color: theme.text }]}>Import Products</Text>
-                    
-                    <Text style={[styles.description, { color: theme.subtext }]}>
+                <View style={[styles.modalContainer, { backgroundColor: colors.background, borderColor: colors.border }]}>
+
+                    <Text style={[styles.title, { color: colors.text }]}>Import Products</Text>
+
+                    <Text style={[styles.description, { color: colors.subText }]}>
                         Upload a CSV file to add multiple products at once. Ensure your headers match the template.
                     </Text>
 
                     {/* Upload Dropzone / Trigger */}
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         onPress={handleFilePick}
                         style={[
-                            styles.dropzone, 
-                            { 
-                                backgroundColor: theme.dropzone, 
-                                borderColor: selectedFile ? '#22c55e' : theme.border,
+                            styles.dropzone,
+                            {
+                                backgroundColor: colors.dropzone,
+                                borderColor: selectedFile ? '#22c55e' : colors.border,
                                 borderStyle: selectedFile ? 'solid' : 'dashed'
                             }
                         ]}
@@ -73,16 +67,16 @@ const CSVUploadModal = ({
                         ) : selectedFile ? (
                             <View style={styles.fileInfo}>
                                 <Icon name="file-check" size={40} color="#22c55e" />
-                                <Text style={[styles.fileName, { color: theme.text }]}>{selectedFile.name}</Text>
+                                <Text style={[styles.fileName, { color: colors.text }]}>{selectedFile.name}</Text>
                                 <TouchableOpacity onPress={() => setSelectedFile(null)}>
                                     <Text style={{ color: '#ef4444', marginTop: 4, fontWeight: '600' }}>Remove</Text>
                                 </TouchableOpacity>
                             </View>
                         ) : (
                             <View style={styles.fileInfo}>
-                                <Icon name="cloud-upload-outline" size={40} color={theme.subtext} />
-                                <Text style={[styles.uploadText, { color: theme.text }]}>Tap to select CSV</Text>
-                                <Text style={{ color: theme.subtext, fontSize: 12 }}>Max size: 5MB</Text>
+                                <Icon name="cloud-upload-outline" size={40} color={colors.subText} />
+                                <Text style={[styles.uploadText, { color: colors.text }]}>Tap to select CSV</Text>
+                                <Text style={{ color: colors.subText, fontSize: 12 }}>Max size: 5MB</Text>
                             </View>
                         )}
                     </TouchableOpacity>
@@ -95,19 +89,19 @@ const CSVUploadModal = ({
 
                     <View style={styles.buttonRow}>
                         <View style={{ flex: 1 }}>
-                            <Button 
-                                handleclick={resetAndClose} 
+                            <Button
+                                handleclick={resetAndClose}
                                 loading={false}
-                                outline 
-                                title="Cancel" 
+                                outline
+                                title="Cancel"
                             />
                         </View>
                         <View style={{ flex: 1 }}>
-                            <Button 
-                                handleclick={() => onUpload(selectedFile)} 
+                            <Button
+                                handleclick={() => onUpload(selectedFile)}
                                 disabled={!selectedFile}
-                                loading={false} 
-                                title="Upload" 
+                                loading={false}
+                                title="Upload"
                             />
                         </View>
                     </View>

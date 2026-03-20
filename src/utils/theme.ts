@@ -57,6 +57,7 @@ import { lighten, darken, withOpacity } from "./colors";
 export const createTheme = (primary: string, secondary: string) => {
     return {
         light: {
+            dropzone: '#f1f5f9',
             background: lighten(secondary, 0.95),
 
             card: "#ffffff",
@@ -75,8 +76,8 @@ export const createTheme = (primary: string, secondary: string) => {
         },
 
         dark: {
+            dropzone: '#1e293b',
             background: darken(secondary, 0.4),
-
             card: darken(secondary, 0.2),
             elevated: darken(primary, 0.7),
 
