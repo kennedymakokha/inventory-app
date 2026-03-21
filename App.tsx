@@ -201,7 +201,7 @@ const AppWithProviders = () => {
     );
   }
 
-  // 🚨 Disabled screen when outside working hours
+  //Disabled screen when outside working hours
   if (!isWithinHours && user.role === "sales") {
     return (
       <View style={styles.center}>

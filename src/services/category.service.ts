@@ -305,6 +305,17 @@ export const saveCategoryItems = async (
 /* -------------------------- */
 
 
+export const softDeleteCategory = async (
+  id: any
+) => {
+  const db = await getDBConnection();
+  await db.executeSql(
+    `UPDATE Category 
+     SET deleted_at = datetime('now'),  synced = 0, updatedAt = datetime('now') 
+     WHERE category_id = ?`,
+    [id]
+  );
+};
 
 /* -------------------------- */
 /* MARK SYNCED */

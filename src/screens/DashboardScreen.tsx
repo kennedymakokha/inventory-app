@@ -109,11 +109,11 @@ const Dashboard = () => {
     // Fetch Transaction Count (Quantity of sales)
     const totalTransactions = await getDetailedUserStats(
       id,
-      "today",
+      `${user.role === "admin" ? "month" : "today"}`,
 
     );
     setStats(totalTransactions);
-    const productsByCategoryResult: any = await getSalesByCategory(id);
+    const productsByCategoryResult: any = await getSalesByCategory(id, `${user.role === "admin" ? "month" : "today"}`);
     setTopCategoryProducts(productsByCategoryResult);
   };
   return (

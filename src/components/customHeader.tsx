@@ -49,7 +49,7 @@ function CustomHeader({ title, add }: { title: string; add?: boolean }) {
         </TouchableOpacity>
         <View className="flex-row items-center justify-between">
           <Text
-            style={{ color: colors.secondary }}
+            style={{ color: "#ffffff" }}
             className="text-lg uppercase font-semibold tracking-widest"
           >
             {title}

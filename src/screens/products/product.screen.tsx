@@ -127,9 +127,8 @@ const ProductScreen = () => {
 
         setRefreshing(false);
     };
-
     const handleAddProduct = async () => {
-        if (saving) return;   // 🚨 prevents duplicate calls
+        if (saving) return;   //prevents duplicate calls
         if (!validateItem(item, setMsg)) return;
 
         try {
@@ -233,8 +232,10 @@ const ProductScreen = () => {
     };
 
     useEffect(() => {
+
         loadProducts();
     }, []);
+
 
 
     const renderProductCard = ({ item }: { item: ProductItem }) => {

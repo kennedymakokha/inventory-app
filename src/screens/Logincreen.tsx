@@ -20,11 +20,12 @@ const LoginScreen = ({ navigation }: any) => {
     const [msg, setMsg] = useState({ msg: "", state: "" });
     const [loading, setLoading] = useState(false)
     const [progress, setprogress] = useState("")
-    const [item, setItem] = useState({ phone_number: "0722870545", password: '+254727270677' });
+    const [item, setItem] = useState({ phone_number: "0725215439", password: '+254725215439' });
     const [loginUser, { error }] = useLoginMutation();
     const dispatch = useDispatch()
     const { login } = useAuthContext();
     const { setUser } = useUser();
+    const { refreshTheme } = useTheme();
     const { business, updateBusiness, isLoading } = useBusiness();
 
 
@@ -64,16 +65,26 @@ const LoginScreen = ({ navigation }: any) => {
                 if (data.exp) {
                     await AsyncStorage.setItem("tokenExpiry", data.exp.toString());
                     await login(data.token);
-                    createTheme(data.user.business.primaryColor ?? "#22c55e", data.user.business.primaryColor ?? "#000000");
                     setUser(data.user);
                     updateBusiness(data.user.business);
+                    if (data.user.business) {
+                        const { primary_color, secondary_color } = data.user.business;
+
+                        // 1. Save the "Seeds"
+                        await AsyncStorage.setItem("primary_color", primary_color ?? "#3c58a8");
+                        await AsyncStorage.setItem("secondary_color", secondary_color ?? "#fff");
+
+                        // 2. Refresh the context
+                        // The Provider will now call createTheme(p, s) and update the whole UI
+                        await refreshTheme();
+                    }
                 }
 
                 setLoading(false);
                 setMsg({ msg: "Login successful! Redirecting...", state: "success" });
             } else {
                 setLoading(false);
-                setprogress("Data false");
+                 setMsg({ msg: "Login successful! Redirecting...", state: "error" });
             }
         } catch (error: any) {
             console.error(error);

@@ -20,21 +20,22 @@ import { CartItem, DataSales, ProductItem } from '../../../models';
 import CheckoutModal from './components/checkout';
 import Toast from '../../components/Toast';
 import { useSearch } from '../../context/searchContext';
-import { useSettings } from '../../context/SettingsContext';
+
 import PageHeader from '../../components/pageHeader';
 import SearchBar from '../../components/searchBar';
-import { Theme } from '../../utils/theme';
+
 import { useCart } from '../../context/CartContext';
 import { finalizeSale } from '../../services/sales.service';
 import { useSelector } from 'react-redux';
 import { useTheme } from '../../context/themeContext';
+import { useSettings } from '../../context/SettingsContext';
 
 const LIMIT = 30;
 
 const SalesScreen: React.FC = ({ route, navigation }: any) => {
     const { category } = route.params;
     const { user } = useSelector((state: any) => state.auth);
-    console.log(user)
+
     const { business } = user;
     const { isScanToCartEnabled } = useSettings();
     const { query } = useSearch();
@@ -314,6 +315,7 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
                 setMsg={setMsg}
                 msg={msg}
                 cartItems={cart}
+                clearCart={clearCart}
                 PostLocally={PostSale}
                 modalVisible={modalVisible}
                 setModalVisible={setModalVisible}

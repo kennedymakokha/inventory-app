@@ -6,12 +6,12 @@ import { validateItem } from '../validations/user.validation';
 import PageHeader from '../../components/pageHeader';
 import { useSearch } from '../../context/searchContext';
 import RadialFab from '../../components/multiFab';
-import { useSettings } from '../../context/SettingsContext';
+
 import { useSelector } from 'react-redux';
 import SwipeableCard from '../../components/SwipeableCard';
 import AddUserModal from './components/addModal';
 import CSVUploadModal from './components/upload.modal';
-import { Theme } from '../../utils/theme';
+
 import { getUsers, saveUserItems, updateUser } from '../../services/users.service';
 import EntityModal from '../../components/EntityModal';
 import { LayoutAnimation } from 'react-native';

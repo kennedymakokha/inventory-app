@@ -12,7 +12,7 @@ import {
 
 } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useSelector } from 'react-redux';
+
 import { CartItem } from '../../../../models';
 import { printToPrinter as printToPrinter } from '../../../services/printerService';
 import { getNextReceiptNumber } from '../../../utils/recieptNo';
@@ -20,8 +20,6 @@ import Icon from 'react-native-vector-icons/FontAwesome5';
 import Ionicons from 'react-native-vector-icons/Ionicons'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PrinterSelectionModal } from '../../printerSelection';
-import { useSettings } from '../../../context/SettingsContext';
-import { Theme } from '../../../utils/theme';
 import { Animated } from 'react-native';
 import { useBusiness } from '../../../context/BusinessContext';
 import { useUser } from '../../../context/UserContext';
@@ -29,9 +27,11 @@ import { ScrollView } from 'react-native';
 import { FineDate, FormatDate } from '../../../../utils/formatDate';
 import Keypad from './keypad';
 import { useTheme } from '../../../context/themeContext';
+import { useSelector } from 'react-redux';
 
 interface CheckoutModalProps {
   modalVisible: boolean;
+  clearCart: () => void;
   isDarkMode?: any
   setMsg?: any
   msg?: any;
@@ -48,10 +48,12 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   msg,
   PostLocally,
   setMsg,
+  clearCart,
   setModalVisible,
 }) => {
-  const { user } = useUser();
-  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'MPESA'>('CASH');
+  const { user } = useSelector((state: any) => state.auth);
+  const { business } = useBusiness();
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'MPESA'>(business?.strictMpesa ? 'MPESA' : 'CASH');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [amountGiven, setAmountGiven] = useState(''); // Cash input
   const [processing, setProcessing] = useState(false);
@@ -60,7 +62,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [printCount, setPrintCount] = useState(0);
   const [adjustedCart, setAdjustedCart] = useState<CartItem[]>([...cartItems]);
   const { colors, isDarkMode } = useTheme();
-  const { business } = useBusiness();
+
   const [mpesa, setMpesa] = useState({
     checkoutRequestId: "",
     merchantRequestId: "",
@@ -70,7 +72,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [retrying, setRetrying] = useState(false);
 
   const autoRetryPendingReceipts = async () => {
-    if (retrying) return; // جلوگیری duplicate runs
+    if (retrying) return;
 
     try {
       setRetrying(true);
@@ -118,7 +120,12 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
     };
     loadPrinter();
   }, []);
-
+  useEffect(() => {
+    if (adjustedCart.length === 0 && modalVisible) {
+      setModalVisible(false);
+      clearCart()
+    }
+  }, [adjustedCart]);
   // Update adjustedCart if cartItems change
   useEffect(() => {
     setAdjustedCart([...cartItems]);
@@ -152,7 +159,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
       // 1️⃣ Initiate STK push
       const response = await fetch(
-        "https://a8d3-41-209-9-121.ngrok-free.app/v1/payments/stk",
+        "https://5fd3-41-209-9-121.ngrok-free.app/v1/payments/stk",
         {
           method: "POST",
           headers: {
@@ -184,7 +191,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
         attempts++;
 
         const statusRes = await fetch(
-          `https://a8d3-41-209-9-121.ngrok-free.app/callbacks/stk/status/${receiptNo}`,
+          `https://5fd3-41-209-9-121.ngrok-free.app/callbacks/stk/status/${receiptNo}`,
           {
             headers: {
               "x-api-key": "1234567ss8bcer6",
@@ -505,21 +512,42 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item, index }: any) => (
                   <View className="flex-row justify-between mb-2 px-4 items-center">
-                    <Text className="text-slate-400 font-medium">
-                      {item.product_name} <Text className="text-slate-600">x{item.quantity}</Text>
-                    </Text>
+
+                    {/* TAP TO DECREMENT */}
+                    <TouchableOpacity
+                      onPress={() => {
+                        const updated = [...adjustedCart];
+
+                        if (updated[index].quantity > 1) {
+                          updated[index].quantity -= 1;
+                        } else {
+                          updated.splice(index, 1);
+                        }
+
+                        setAdjustedCart(updated);
+                      }}
+                    >
+                      <Text className="text-slate-400 font-medium">
+                        {item.product_name}{" "}
+                        <Text className="text-slate-600">x{item.quantity}</Text>
+                      </Text>
+                    </TouchableOpacity>
+
+                    {/* PRICE EDIT */}
                     <TextInput
                       value={item.price.toString()}
                       keyboardType="numeric"
                       onChangeText={(val) => {
                         const newVal = parseFloat(val) || 0;
+
                         if (newVal < item.cost_price) {
                           Alert.alert(
-                            'Invalid Price',
+                            "Invalid Price",
                             `Price cannot be lower than the cost price (${item.cost_price})`
                           );
                           return;
                         }
+
                         const updated = [...adjustedCart];
                         updated[index].price = newVal;
                         setAdjustedCart(updated);
@@ -532,27 +560,30 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
             </View>
 
             {/* PAYMENT SELECTOR */}
-            <Text className="text-slate-500 font-black mb-4 uppercase text-[10px] tracking-[2px]">
-              Choose Method
-            </Text>
-            <View className="flex-row w-full items-center justify-center gap-x-3 space-x-3 mb-8">
-              <TouchableOpacity
-                onPress={() => setPaymentMethod("CASH")}
-                className={`w-[48%] py-4 rounded items-center ${paymentMethod === "CASH" ? "bg-green-600" : "bg-slate-800"
-                  }`}
-              >
-                <Text className="text-white font-bold">CASH</Text>
-              </TouchableOpacity>
+            {business?.api_key && !business?.strictMpesa && <>
+              <Text className="text-slate-500 font-black mb-4 uppercase text-[10px] tracking-[2px]">
+                Choose Method {business?.strictMpesa ? "mpesa" : "no Mpesa"}
+              </Text>
+              <View className="flex-row w-full items-center justify-center gap-x-3 space-x-3 mb-8">
+                <TouchableOpacity
+                  onPress={() => setPaymentMethod("CASH")}
+                  className={`w-[48%] py-4 rounded items-center ${paymentMethod === "CASH" ? "bg-green-600" : "bg-slate-800"
+                    }`}
+                >
+                  <Text className="text-white font-bold">CASH</Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={() => setPaymentMethod("MPESA")}
-                className={`w-[48%] py-4 rounded items-center ${paymentMethod === "MPESA" ? "bg-green-600" : "bg-slate-800"
-                  }`}
-              >
-                <Text className="text-white font-bold">MPESA</Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setPaymentMethod("MPESA")}
+                  className={`w-[48%] py-4 rounded items-center ${paymentMethod === "MPESA" ? "bg-green-600" : "bg-slate-800"
+                    }`}
+                >
+                  <Text className="text-white font-bold">MPESA</Text>
+                </TouchableOpacity>
 
-            </View>
+              </View>
+            </>}
+
 
             {/* DYNAMIC INPUT AREA */}
             <View className="flex-1">
@@ -687,7 +718,13 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
         </TouchableOpacity>
         <View style={{ backgroundColor: colors.danger }} className="flex justify-center items-center h-full w-[20%] ">
           <TouchableOpacity
-            onPress={() => setModalVisible(false)}
+            onPress={() => {
+              setAdjustedCart([]);   // clear cart
+              setPhoneNumber("");
+              setAmountGiven("");
+              clearCart();
+              setModalVisible(false);
+            }}
             disabled={processing}
             className="flex items-center w-full h-full justify-center"
           >

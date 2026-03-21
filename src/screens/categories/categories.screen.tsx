@@ -12,19 +12,19 @@ import {
 
 import { getDBConnection } from '../../services/db-service';
 import { CategoryItem } from '../../../models';
-import { getCategories, saveCategoryItems, updateCategory, softDeleteCategory } from '../../services/category.service';
+import { getCategories, saveCategoryItems, softDeleteCategory, updateCategory } from '../../services/category.service';
 
 import AddCategoryModal from './components/addCategoryModal';
 import UploadProductsModal from './components/upload.modal';
 import PageHeader from '../../components/pageHeader';
 import RadialFab from '../../components/multiFab';
 import { useSearch } from '../../context/searchContext';
-import { useSettings } from '../../context/SettingsContext';
+
 import { useSelector } from 'react-redux';
 import Toast from '../../components/Toast';
 import SwipeableCard from '../../components/SwipeableCard';
 import { validateItem } from '../validations/category.validation';
-import { Theme } from '../../utils/theme';
+
 import { useTheme } from '../../context/themeContext';
 
 const CategoryScreen = () => {
@@ -73,6 +73,9 @@ const CategoryScreen = () => {
         await loadCategories();
         setRefreshing(false);
     };
+
+    const arr: any = []
+    
 
     const handleAddCategory = async () => {
         if (!validateItem(item, setMsg)) return;
