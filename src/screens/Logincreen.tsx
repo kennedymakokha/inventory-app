@@ -14,13 +14,14 @@ import { useLoginMutation } from '../services/authApi';
 import { useUser } from '../context/UserContext';
 import { useBusiness } from '../context/BusinessContext';
 import { useTheme } from '../context/themeContext';
-import { createTheme } from '../utils/theme';
+import Toast from '../components/Toast';
+
 
 const LoginScreen = ({ navigation }: any) => {
     const [msg, setMsg] = useState({ msg: "", state: "" });
     const [loading, setLoading] = useState(false)
-    const [progress, setprogress] = useState("")
-    const [item, setItem] = useState({ phone_number: "0725215439", password: '+254725215439' });
+
+    const [item, setItem] = useState({ phone_number: "", password: '' });
     const [loginUser, { error }] = useLoginMutation();
     const dispatch = useDispatch()
     const { login } = useAuthContext();
@@ -42,7 +43,7 @@ const LoginScreen = ({ navigation }: any) => {
 
     const handleLogin = async (e?: any) => {
         try {
-            setprogress("starting");
+
             setMsg({ msg: "", state: "" });
 
             if (!item.phone_number || !item.password) {
@@ -84,13 +85,13 @@ const LoginScreen = ({ navigation }: any) => {
                 setMsg({ msg: "Login successful! Redirecting...", state: "success" });
             } else {
                 setLoading(false);
-                 setMsg({ msg: "Login successful! Redirecting...", state: "error" });
+                setMsg({ msg: "Login successful! Redirecting...", state: "error" });
             }
         } catch (error: any) {
             console.error(error);
             setLoading(false)
             setMsg({
-                msg: error.message || error.data || "Error occurred, try again 😧",
+                msg: error.message || error.data || "Error occurred, try again ",
                 state: "error",
             });
         }
@@ -125,7 +126,9 @@ const LoginScreen = ({ navigation }: any) => {
                 <TouchableOpacity onPress={() => navigation.navigate('forgetPass')} >
                     <Text className="text-center text-secondary-100">Forgot Password?</Text>
                 </TouchableOpacity>
+                {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
             </View>
+
         </View>
     );
 };

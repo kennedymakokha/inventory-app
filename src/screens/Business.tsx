@@ -8,36 +8,23 @@ import {
     ScrollView,
     ActivityIndicator,
     KeyboardAvoidingView,
-    Platform,
-    Switch
+    Platform
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useBusiness, Business } from "../context/BusinessContext";
 import { useUpdatebusinessMutation } from "../services/businessApi";
 import Geolocation from "react-native-geolocation-service";
 import { PermissionsAndroid } from "react-native";
-import { Picker } from "@react-native-picker/picker";
 import { useTheme } from "../context/themeContext";
 
-const fields = [
-    { label: "Business Name", key: "business_name", icon: "business-outline" },
-    { label: "Postal Address", key: "postal_address", icon: "location-outline" },
-    { label: "Phone Number", key: "phone_number", icon: "call-outline" },
-    { label: "Contact Number", key: "contact_number", icon: "person-outline" },
-    { label: "KRA PIN", key: "kra_pin", icon: "document-text-outline" },
-    { label: "Latitude", key: "latitude", icon: "navigate-outline" },
-    { label: "Longitude", key: "longitude", icon: "compass-outline" },
-    { label: "API Key", key: "api_key", icon: "key-outline", secure: true, locked: true },
-];
-
 const BusinessProfileScreen = () => {
-    const { colors, isDarkMode } = useTheme();
+    const { colors } = useTheme();
     const { business, updateBusiness, isLoading } = useBusiness();
     const [updateBusinessRemotely, { isLoading: isUpdating }] = useUpdatebusinessMutation();
 
     const [isEditing, setIsEditing] = useState(false);
     const [showKey, setShowKey] = useState(false);
-    const [printQr, setPrintQr] = useState(false); //  toggle state
+
     const [data, setData] = useState<Business>({
         _id: "",
         business_name: "",
@@ -45,13 +32,17 @@ const BusinessProfileScreen = () => {
         phone_number: "",
         contact_number: "",
         kra_pin: "",
-        printQr: true,
-        working_hrs: "",
+        printQr: false,
+        working_hrs: "8-17",
         api_key: "",
         latitude: 0,
-        longitude: 0
+        longitude: 0,
+        primary_color: "",
+        secondary_color: "",
+        logo: "",
+        state: "inactive",
+        strictMpesa: false,
     });
-    const [locationEnabled, setLocationEnabled] = useState(true);
 
     const requestLocationPermission = async () => {
         if (Platform.OS === "ios") return true;
@@ -67,236 +58,270 @@ const BusinessProfileScreen = () => {
 
     const getCurrentLocation = async () => {
         const hasPermission = await requestLocationPermission();
-        if (!hasPermission) {
-            setLocationEnabled(false);
-            return;
-        }
-        setLocationEnabled(true);
+        if (!hasPermission) return;
+
         Geolocation.getCurrentPosition(
             (position) => {
                 const { latitude, longitude } = position.coords;
                 setData(prev => ({ ...prev, latitude, longitude }));
             },
             () => { },
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+            { enableHighAccuracy: true }
         );
     };
 
     useEffect(() => {
-        if (business && !isEditing && JSON.stringify(data) !== JSON.stringify(business)) {
-            setData(business);
+        if (business && !isEditing) {
+            setData({
+                ...business,
+                printQr: business.printQr ?? false,
+                strictMpesa: business.strictMpesa ?? false,
+            });
         }
     }, [business]);
 
-    const handleChange = (key: keyof Business, value: string) => {
+    const handleChange = (key: keyof Business, value: any) => {
         setData(prev => ({
             ...prev,
             [key]: key === "latitude" || key === "longitude" ? Number(value) : value
         }));
     };
 
-    const startEditing = () => {
-        if (business) setData(business);
-        setIsEditing(true);
-    };
-
     const handleSave = async () => {
         try {
-            const updatedBusiness = await updateBusinessRemotely({
-                ...data,
-                headers: { "x-source": "socket" }
-            }).unwrap();
-            updateBusiness(updatedBusiness);
+            const updated = await updateBusinessRemotely(data).unwrap();
+            updateBusiness(updated);
             setIsEditing(false);
         } catch (err) {
-            console.error("Failed to update business:", err);
+            console.error(err);
         }
     };
 
-    const renderField = (label: string, key: keyof Business, icon: string, secure?: boolean, locked?: boolean) => (
-        <View key={key} style={[styles.fieldCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
-            <View style={styles.fieldHeader}>
-                <Ionicons name={icon} size={18} color={colors.primary} />
-                <Text style={[styles.label, { color: colors.primary }]}>{label}</Text>
-            </View>
-            {isEditing && !locked ? (
-                <TextInput
-                    style={[styles.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
-                    value={String(data[key])}
-                    onChangeText={text => handleChange(key, text)}
-                    secureTextEntry={secure && !showKey}
-                />
-            ) : (
-                <View style={styles.valueRow}>
-                    <Text style={[styles.value, { color: colors.text }]}>
-                        {secure && !showKey ? "••••••••••••••" : data[key]}
-                    </Text>
-                    {secure && (
-                        <TouchableOpacity onPress={() => setShowKey(!showKey)}>
-                            <Ionicons name={showKey ? "eye-off-outline" : "eye-outline"} size={18} color={colors.primary} />
-                        </TouchableOpacity>
-                    )}
+    const renderRow = (fields: any[]) => (
+        <View style={{ flexDirection: "row", gap: 10, marginBottom: 12 }}>
+            {fields.map(field => (
+                <View key={field.key} style={{ flex: 1 }}>
+                    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                        <View style={styles.header}>
+                            <Ionicons name={field.icon} size={16} color={colors.primary} />
+                            <Text style={[styles.label, { color: colors.primary }]}>{field.label}</Text>
+                        </View>
+
+                        {isEditing ? (
+                            <TextInput
+                                style={[styles.input, { color: colors.text }]}
+                                value={String(data[field.key])}
+                                onChangeText={(t) => handleChange(field.key, t)}
+                                secureTextEntry={field.secure && !showKey}
+                            />
+                        ) : (
+                            <Text style={{ color: colors.text }}>
+                                {field.secure && !showKey ? "••••••••" : data[field.key]}
+                            </Text>
+                        )}
+                    </View>
                 </View>
-            )}
+            ))}
         </View>
     );
 
-    if (isLoading) {
-        return (
-            <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-                <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={{ marginTop: 10, color: colors.text }}>Loading Business Profile...</Text>
+    const renderRadio = (label: string, key: keyof Business) => (
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, marginBottom: 16 }]}>
+            <Text style={[styles.label, { color: colors.primary }]}>{label}</Text>
+            <View style={styles.radioRow}>
+                {["Yes", "No"].map(val => {
+                    const boolVal = val === "Yes";
+                    return (
+                        <TouchableOpacity
+                            key={val}
+                            style={styles.radioItem}
+                            onPress={() => setData(prev => ({ ...prev, [key]: boolVal }))}
+                        >
+                            <View style={[styles.radioOuter, data[key] === boolVal && styles.radioActive]}>
+                                {data[key] === boolVal && <View style={styles.radioInner} />}
+                            </View>
+                            <Text style={{ color: colors.text }}>{val}</Text>
+                        </TouchableOpacity>
+                    );
+                })}
             </View>
-        );
-    }
+        </View>
+    );
+
+    if (isLoading) return <ActivityIndicator style={{ flex: 1 }} />;
 
     return (
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
-            <ScrollView contentContainerStyle={{ paddingBottom: 100 }} style={[styles.container, { backgroundColor: colors.background }]}>
-                {fields.map(field =>
-                    renderField(field.label, field.key as keyof Business, field.icon, field.secure, field.locked)
-                )}
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === "ios" ? "padding" : undefined}
+                keyboardVerticalOffset={80}
+            >  <ScrollView
+                style={{ flex: 1 }}
+                contentContainerStyle={{ padding: 16, paddingBottom: 200, flexGrow: 1 }}
+                showsVerticalScrollIndicator={false}
+            >
 
-                {/*  Working Hours Picker */}
-                <View style={[styles.fieldCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
-                    <View style={styles.fieldHeader}>
-                        <Ionicons name="time-outline" size={18} color={colors.primary} />
-                        {data.working_hrs === "8-17"
-                            ? "8 AM - 5 PM"
-                            : data.working_hrs === "9-18"
-                                ? "9 AM - 6 PM"
-                                : data.working_hrs === "00-24"
-                                    ? "24 Hours"
-                                    : "Not set"}
-                    </View>
-                    {isEditing ? (
-                        <Picker
-                            selectedValue={data.working_hrs}
-                            onValueChange={(value) => handleChange("working_hrs", value)}
-                            style={{ color: colors.text }}
-                        >
-                            <Picker.Item label="8 AM - 5 PM" value="8-17" />
-                            <Picker.Item label="9 AM - 6 PM" value="9-18" />
-                            <Picker.Item label="24 Hours" value="00-24" />
-                        </Picker>
-                    ) : (
-                        <Text style={[styles.value, { color: colors.text }]}>{data.working_hrs || "Not set"}</Text>
+                    {renderRow([{ label: "Business Name", key: "business_name", icon: "business-outline" }])}
+
+                    {renderRow([
+                        { label: "Phone", key: "phone_number", icon: "call-outline" },
+                        { label: "Contact", key: "contact_number", icon: "person-outline" }
+                    ])}
+
+                    {renderRow([
+                        { label: "Latitude", key: "latitude", icon: "navigate-outline" },
+                        { label: "Longitude", key: "longitude", icon: "compass-outline" }
+                    ])}
+
+                    {renderRow([
+                        { label: "KRA PIN", key: "kra_pin", icon: "document-text-outline" },
+                        { label: "Postal", key: "postal_address", icon: "location-outline" }
+                    ])}
+
+                    {renderRow([
+                        { label: "API Key", key: "api_key", icon: "key-outline", secure: true },
+                        { label: "State", key: "state", icon: "toggle-outline" }
+                    ])}
+
+                    {renderRow([
+                        { label: "Primary Color", key: "primary_color", icon: "color-palette-outline" },
+                        { label: "Secondary Color", key: "secondary_color", icon: "color-fill-outline" }
+                    ])}
+
+                    {renderRow([
+                        { label: "Logo URL", key: "logo", icon: "image-outline" }
+                    ])}
+
+                    {renderRadio("Print QR", "printQr")}
+
+                    {data.api_key && data.api_key.trim() !== "" && (
+                        <View style={{ marginBottom: 16 }}>
+                            {renderRadio("Strict Mpesa", "strictMpesa")}
+                        </View>
                     )}
-                </View>
-
-                {/*  Toggle for Print QR Code */}
-                <View style={[styles.fieldCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
-                    <View style={styles.fieldHeader}>
-                        <Ionicons name="qr-code-outline" size={18} color={colors.primary} />
-                        <Text style={[styles.label, { color: colors.primary }]}>Print QR Code</Text>
+                    {/* Working Hours Radio Group */}
+                    {/* Working Hours */}
+                    <View style={{ marginBottom: 16 }}>
+                        <Text style={[styles.label, { color: colors.primary }]}>Working Hours</Text>
+                        <View style={{ flexDirection: "row", gap: 16, marginTop: 8, flexWrap: "wrap" }}>
+                            {[
+                                { label: "8 AM - 5 PM", value: "8-17" },
+                                { label: "9 AM - 6 PM", value: "9-18" },
+                                { label: "24 Hours", value: "00-24" },
+                            ].map(opt => (
+                                <TouchableOpacity
+                                className="gap-x-3"
+                                    key={opt.value}
+                                    style={styles.radioItem}
+                                    onPress={() => isEditing && handleChange("working_hrs", opt.value)} // only change in edit mode
+                                >
+                                    <View
+                                        style={[
+                                            styles.radioOuter,
+                                            data.working_hrs === opt.value && styles.radioActive,
+                                        ]}
+                                    >
+                                        {data.working_hrs === opt.value && <View style={styles.radioInner} />}
+                                    </View>
+                                    <Text style={{ color: colors.text }}>{opt.label}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
                     </View>
-                    <Switch value={data.printQr} onValueChange={(value) =>
-                        setData(prev => ({ ...prev, printQr: value }))
-                    } />
-                </View>
+                    <View style={styles.bottomBar}>
+                        <TouchableOpacity style={styles.btn} onPress={getCurrentLocation}>
+                            <Text style={styles.btnText}>Use Location</Text>
+                        </TouchableOpacity>
 
-                {isEditing && (
-                    <TouchableOpacity
-                        style={[styles.button, { backgroundColor: locationEnabled ? "#4CAF50" : "#888" }]}
-                        disabled={!locationEnabled}
-                        onPress={getCurrentLocation}
-                    >
-                        <Ionicons name="locate-outline" size={18} color="#fff" />
-                        <Text style={styles.buttonText}>Use Current Location</Text>
-                    </TouchableOpacity>
-                )}
-
-                {isUpdating && (
-                    <View style={styles.overlay}>
-                        <ActivityIndicator size="large" color="#fff" />
-                        <Text style={styles.overlayText}>Saving changes...</Text>
+                        <TouchableOpacity
+                            style={[styles.btn, { backgroundColor: colors.primary }]}
+                            onPress={isEditing ? handleSave : () => setIsEditing(true)}
+                        >
+                            <Text style={styles.btnText}>
+                                {isEditing ? "Save" : "Edit"}
+                            </Text>
+                        </TouchableOpacity>
                     </View>
-                )}
 
-                <TouchableOpacity
-                    disabled={isUpdating}
-                    style={[styles.button, { backgroundColor: colors.primary, opacity: isUpdating ? 0.7 : 1 }]}
-                    onPress={isEditing ? handleSave : startEditing}
-                >
-                    <Ionicons name={isEditing ? "save-outline" : "create-outline"} size={18} color="#fff" />
-                    <Text style={styles.buttonText}>{isEditing ? "Save Changes" : "Edit Profile"}</Text>
-                </TouchableOpacity>
-            </ScrollView>
-        </KeyboardAvoidingView>
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </View>
     );
 };
 
 export default BusinessProfileScreen;
+
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        padding: 20,
-    },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    fieldCard: {
+    card: {
+        padding: 12,
+        borderRadius: 8,
         borderWidth: 1,
-        borderRadius: 5,
-        padding: 14,
-        marginBottom: 16,
     },
-    fieldHeader: {
+    bottomBar: {
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        padding: 16,
+        backgroundColor: "#111", // or colors.card
+        borderTopWidth: 1,
+        borderColor: "#333",
+    },
+    header: {
         flexDirection: "row",
         alignItems: "center",
-        marginBottom: 6,
-        gap: 6,
+        gap: 5,
+        marginBottom: 5,
     },
     label: {
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: "600",
-    },
-    valueRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-    },
-    value: {
-        fontSize: 16,
-        fontWeight: "500",
     },
     input: {
         borderWidth: 1,
-        borderRadius: 10,
-        padding: 10,
-        fontSize: 15,
+        borderRadius: 6,
+        padding: 8,
     },
-    button: {
-        flexDirection: "row",
-        justifyContent: "center",
-        alignItems: "center",
-        marginTop: 20,
+    btn: {
+        marginTop: 15,
         padding: 14,
-        borderRadius: 5,
-        gap: 8,
+        backgroundColor: "#4CAF50",
+        borderRadius: 8,
+        alignItems: "center",
     },
-    buttonText: {
+    btnText: {
         color: "#fff",
-        fontWeight: "600",
-        fontSize: 16,
+        fontWeight: "bold",
     },
-    overlay: {
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: "rgba(0,0,0,0.5)",
+    radioRow: {
+        flexDirection: "row",
+        justifyContent: "flex-start", // or "space-between" if you want them spread
+        marginTop: 10,
+    },
+
+    radioItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginRight: 20, // <-- Add spacing between each radio button
+    },
+
+    radioOuter: {
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        borderWidth: 2,
+        borderColor: "#999",
         justifyContent: "center",
         alignItems: "center",
-        zIndex: 1000,
     },
-    overlayText: {
-        color: "#fff",
-        marginTop: 10,
-        fontSize: 16,
-        fontWeight: "500",
+    radioInner: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: "#4CAF50",
+    },
+    radioActive: {
+        borderColor: "#4CAF50",
     },
 });

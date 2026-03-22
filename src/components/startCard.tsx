@@ -3,7 +3,7 @@ import React from 'react';
 import { formatNumber } from '../../utils/formatNumbers';
 import { useTheme } from '../context/themeContext';
 import Icon from 'react-native-vector-icons/FontAwesome';
-
+import Ionicons from 'react-native-vector-icons/Ionicons';
 interface StatCardProps {
   totalTransactions: number;
   totalSales: number;
@@ -20,7 +20,7 @@ const StartCard = (data: StatCardProps) => {
     <View style={styles.container}>
       {/* SALES CARD */}
       <View style={[styles.card, { backgroundColor: colors.card }]}>
-        <Icon name="dollar" size={24} color={colors.primary} />
+        <Ionicons name="stats-chart-outline" size={24} color={colors.primary} />
         <Text style={[styles.title, { color: colors.text }]}>Total Sales</Text>
         <Text style={[styles.mainValue, { color: colors.text }]}>
           {formatNumber(data.totalSales)}

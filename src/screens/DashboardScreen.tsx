@@ -13,6 +13,7 @@ import {
   getTodaySales,
   getTodayTransactions,
   getTopProducts,
+  SalesFilter,
 } from "../services/analytics.service";
 
 import DataGraph from "./dashbordItems/DataGraph";
@@ -24,7 +25,10 @@ import { useSocket } from "../context/socketContext";
 import { Business, useBusiness } from "../context/BusinessContext";
 import { useTheme } from "../context/themeContext";
 import StartCard from "../components/startCard";
+import RadialFab from "../components/multiFab";
 
+import DateTimePicker from '@react-native-community/datetimepicker';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 const Dashboard = () => {
   const { user } = useSelector((state: any) => state.auth);
   const { colors, isDarkMode } = useTheme();
@@ -32,14 +36,13 @@ const Dashboard = () => {
   const [showbyCategory, setShowbyCategory] = useState(false);
   const { socket } = useSocket();
   const { business, updateBusiness, isLoading } = useBusiness();
-  const [topCategoryProducts, setTopCategoryProducts] = useState([]);
-  const [sales, setSales] = useState<any[]>([]);
+  const [topCategoryProducts, setTopCategoryProducts] = useState([])
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [lowstcks, setlowstcks] = useState<any[]>([]);
   const [monthlySales, setMonthlySales] = useState<any[]>([]);
   const [TopProducts, setTopProducts] = useState([]);
-  const [transactions, setTransactions] = useState(0);
   const [datasets, setDatasets] = useState<any[]>([]);
-
+ const { refreshTheme } = useTheme();
   const fetchHourlySales = async () => {
     try {
       const productDatasets = await getHourlySalesByProduct(
@@ -53,32 +56,34 @@ const Dashboard = () => {
   };
 
   const loadDashboard = useCallback(async () => {
-    const totalToday: any = await getTodaySales(user.role, user._id);
 
-    const topProducts: any = await getTopProducts(user.user_id, `${user.role === "admin" ? "month" : "today"}`);
-    setTopProducts(topProducts);
+
     const mS = await getMonthlySales(user.role, user._id);
-    const todayTx = await getTodayTransactions(user.role, user._id);
+
     const stcks = await getLowStockProducts();
 
     setMonthlySales(mS);
 
     setlowstcks(stcks);
-    setSales(totalToday);
-    setTransactions(todayTx);
+
+
   }, [user]);
 
   useEffect(() => {
+    const filter = user.role === "admin" ? "month" : "today"
     fetchHourlySales();
     loadDashboard();
-    fetchAnalytics()
+    fetchAnalytics(filter)
   }, []);
 
   useEffect(() => {
     if (!socket) return;
 
-    const handleNotification = (data: Business) => {
-      updateBusiness(data);
+    const handleNotification = async (data: Business) => {
+      await updateBusiness(data);
+      await AsyncStorage.setItem("primary_color", data.primary_color ?? "#3c58a8");
+      await AsyncStorage.setItem("secondary_color", data.secondary_color ?? "#fff");
+      await refreshTheme();
     };
 
     socket.on("notification", handleNotification);
@@ -102,52 +107,95 @@ const Dashboard = () => {
     }
     return [8, 17]; // default
   })();
-  const fetchAnalytics = async () => {
+
+
+  const fetchAnalytics = async (filter: SalesFilter, customDate?: string) => {
     // Ensure you use the correct ID property from your user object
-    const id = user.user_id || user._id;
+    const id = user.role !== "admin" ? user.user_id || user._id : "";
 
     // Fetch Transaction Count (Quantity of sales)
     const totalTransactions = await getDetailedUserStats(
       id,
-      `${user.role === "admin" ? "month" : "today"}`,
+      filter,
+      customDate,
 
     );
+    const topProducts: any = await getTopProducts(id, filter, customDate,);
+    setTopProducts(topProducts);
     setStats(totalTransactions);
-    const productsByCategoryResult: any = await getSalesByCategory(id, `${user.role === "admin" ? "month" : "today"}`);
+    const productsByCategoryResult: any = await getSalesByCategory(id, filter, customDate,);
     setTopCategoryProducts(productsByCategoryResult);
   };
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1 }}>
+      <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
 
-      {lowstcks.length > 0 && (
-        <PageHeader
-          component={() => (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={{ flexDirection: "row", gap: 12, marginBottom: 6 }}>
-                {lowstcks.map((item, i) => (
-                  <View style={{ backgroundColor: colors.danger }} className="px-3 py-1 rounded-sm" key={i}>
-                    <Text style={{ color: colors.text }}>{item.product_name}</Text>
-                  </View>
-                ))}
-              </View>
-            </ScrollView>
-          )}
-        />
-      )}
+        {lowstcks.length > 0 && (
+          <PageHeader
+            component={() => (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View style={{ flexDirection: "row", gap: 12, marginBottom: 6 }}>
+                  {lowstcks.map((item, i) => (
+                    <View style={{ backgroundColor: colors.danger }} className="px-3 py-1 rounded-sm" key={i}>
+                      <Text style={{ color: colors.text }}>{item.product_name}</Text>
+                    </View>
+                  ))}
+                </View>
+              </ScrollView>
+            )}
+          />
+        )}
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <StartCard {...stats} />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <StartCard {...stats} />
+        </ScrollView>
+
+        <DataGraph pressed={() => setShowbyCategory(!showbyCategory)} title={`Top Performing ${showbyCategory ? "Categories" : "Products"}`} data={showbyCategory ? topCategoryProducts ?? topCategoryProducts : TopProducts ?? TopProducts} />
+
+
+        <MultiLineChart startHour={startHour} // optional business start hour
+          endHour={endHour} title="Hourly Sales" datasets={datasets || []} />
+
+        <PieChart title="Monthly sales" data={monthlySales} />
+
       </ScrollView>
 
-      <DataGraph pressed={() => setShowbyCategory(!showbyCategory)} title={`Top Performing ${showbyCategory ? "Categories" : "Products"}`} data={showbyCategory ? topCategoryProducts ?? topCategoryProducts : TopProducts ?? TopProducts} />
+      <RadialFab
+        mainColor={colors.primary}
+        mainIcon="menu"
+        radius={120}
+        angle={90}
+        actions={[
+          { icon: 'today-outline', label: 'T', onPress: () => fetchAnalytics('today') },
+          { icon: 'calendar-outline', label: 'W', onPress: () => fetchAnalytics('week') },
+          { icon: 'stats-chart-outline', label: 'M', onPress: () => fetchAnalytics('month') },
+          { icon: 'bar-chart-outline', label: 'Y', onPress: () => fetchAnalytics('year') },
+          { icon: 'person-outline', label: 'C', onPress: () => setShowDatePicker(true) },
+        ]}
+      />
+      {showDatePicker && (
+        <DateTimePicker
+          value={new Date()}
+          mode="date"
+          display="default"
+          themeVariant={isDarkMode ? "dark" : "light"}
+          onChange={async (event, date) => {
+            if (event.type === 'dismissed') {
+              setShowDatePicker(false);
+              return;
+            }
 
+            if (date) {
+              const formattedDate = date.toISOString().split('T')[0];
 
-      <MultiLineChart startHour={startHour} // optional business start hour
-        endHour={endHour} title="Hourly Sales" datasets={datasets || []} />
+              await fetchAnalytics('custom', formattedDate);
+              setShowDatePicker(false);
+            }
+          }}
+        />
+      )}
+    </View>
 
-      <PieChart title="Monthly sales" data={monthlySales} />
-
-    </ScrollView>
   );
 };
 

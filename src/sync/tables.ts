@@ -80,4 +80,5 @@ export const syncTables = [
         lastSyncKey: "auth_last_sync",
         payloadKey: "users",
     },
+    
 ];

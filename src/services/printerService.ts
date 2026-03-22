@@ -8,7 +8,7 @@ export const printToPrinter = async (
   macAddress: string,
   text: string,
   qrData: string,
-  printQr: boolean,
+  printQr?: boolean,
   logoBase64?: string
 ) => {
   if (!macAddress) throw new Error("No printer selected");

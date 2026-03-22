@@ -1,753 +1,642 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import {
   View,
   Text,
   Modal,
   FlatList,
-  Alert,
   TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-
+  ScrollView,
+  Animated,
+  ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
-
-import { CartItem } from '../../../../models';
-import { printToPrinter as printToPrinter } from '../../../services/printerService';
-import { getNextReceiptNumber } from '../../../utils/recieptNo';
-import Icon from 'react-native-vector-icons/FontAwesome5';
-import Ionicons from 'react-native-vector-icons/Ionicons'
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { PrinterSelectionModal } from '../../printerSelection';
-import { Animated } from 'react-native';
-import { useBusiness } from '../../../context/BusinessContext';
-import { useUser } from '../../../context/UserContext';
-import { ScrollView } from 'react-native';
-import { FineDate, FormatDate } from '../../../../utils/formatDate';
-import Keypad from './keypad';
-import { useTheme } from '../../../context/themeContext';
+import Icon from 'react-native-vector-icons/FontAwesome5';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useSelector } from 'react-redux';
 
+// Internal/Service Imports
+import { CartItem } from '../../../../models';
+import { printToPrinter } from '../../../services/printerService';
+import { getNextReceiptNumber } from '../../../utils/recieptNo';
+import { PrinterSelectionModal } from '../../printerSelection';
+import { useBusiness } from '../../../context/BusinessContext';
+import { useUser } from '../../../context/UserContext';
+import { FineDate } from '../../../../utils/formatDate';
+import Keypad from './keypad';
+import { useTheme } from '../../../context/themeContext';
+import Toast from '../../../components/Toast';
+
+/**
+ * PROPS INTERFACE
+ */
 interface CheckoutModalProps {
   modalVisible: boolean;
   clearCart: () => void;
-  isDarkMode?: any
-  setMsg?: any
+  isDarkMode?: any;
+  setMsg?: any;
   msg?: any;
   cartItems: CartItem[];
-  PostLocally: any;
+  PostLocally: (receiptNo: string, method: string, phone: string, amount: number, mpesaData?: any, displayNo?: any) => Promise<void>;
   setModalVisible: (v: boolean) => void;
 }
 
-
+/**
+ * REUSABLE STYLED COMPONENTS
+ */
+const Divider = ({ color }: { color: string }) => (
+  <View style={{ height: 1, backgroundColor: color, marginVertical: 12, opacity: 0.3 }} />
+);
 
 const CheckoutModal: React.FC<CheckoutModalProps> = ({
   modalVisible,
   cartItems,
-  msg,
   PostLocally,
-  setMsg,
   clearCart,
   setModalVisible,
 }) => {
+  // --- CONTEXT & HOOKS ---
   const { user } = useSelector((state: any) => state.auth);
   const { business } = useBusiness();
-  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'MPESA'>(business?.strictMpesa ? 'MPESA' : 'CASH');
+  const { colors } = useTheme();
+
+  // --- STATE MANAGEMENT ---
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'MPESA'>('CASH');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [amountGiven, setAmountGiven] = useState(''); // Cash input
+  const [amountGiven, setAmountGiven] = useState('');
   const [processing, setProcessing] = useState(false);
   const [selectedPrinterMac, setSelectedPrinterMac] = useState<string | null>(null);
   const [showPrinterModal, setShowPrinterModal] = useState(false);
   const [printCount, setPrintCount] = useState(0);
-  const [adjustedCart, setAdjustedCart] = useState<CartItem[]>([...cartItems]);
-  const { colors, isDarkMode } = useTheme();
-
-  const [mpesa, setMpesa] = useState({
-    checkoutRequestId: "",
-    merchantRequestId: "",
-    receiptNumber: "",
-    transactionDate: "",
-  })
+  const [adjustedCart, setAdjustedCart] = useState<CartItem[]>([]);
+  const [discount, setDiscount] = useState(0);
   const [retrying, setRetrying] = useState(false);
+  const [msg, setMsg] = useState({ msg: "", state: "" });
+  // --- ANIMATIONS ---
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new Animated.Value(300)).current;
+
+  // --- INITIALIZATION ---
+  useEffect(() => {
+    if (modalVisible) {
+      setAdjustedCart([...cartItems]);
+      if (business?.strictMpesa) setPaymentMethod('MPESA');
+
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 50,
+      }).start();
+    }
+  }, [modalVisible, cartItems]);
+
+  useEffect(() => {
+    const loadPrinter = async () => {
+      const saved = await AsyncStorage.getItem('SELECTED_PRINTER_MAC');
+      if (saved) setSelectedPrinterMac(saved);
+      checkPendingReceipts();
+    };
+    loadPrinter();
+  }, []);
+
+  // --- CALCULATIONS ---
+  const totals = useMemo(() => {
+    const subtotal = adjustedCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const tax = subtotal * (16 / 116); // Assuming 16% VAT Inclusive
+    const finalTotal = subtotal - discount;
+    return { subtotal, tax, finalTotal };
+  }, [adjustedCart, discount]);
+
+  const changeDue = useMemo(() => {
+    const cash = parseFloat(amountGiven) || 0;
+    return cash > totals.finalTotal ? cash - totals.finalTotal : 0;
+  }, [amountGiven, totals.finalTotal]);
+
+  // --- PENDING RECEIPTS LOGIC ---
+  const checkPendingReceipts = async () => {
+    const data = await AsyncStorage.getItem("PENDING_RECEIPTS");
+    const receipts = data ? JSON.parse(data) : [];
+    setPrintCount(receipts.length);
+    if (selectedPrinterMac && receipts.length > 0) autoRetryPendingReceipts();
+  };
+
+  const savePendingReceipt = async (receipt: any) => {
+    const existing = await AsyncStorage.getItem("PENDING_RECEIPTS");
+    const receipts = existing ? JSON.parse(existing) : [];
+    const updated = [...receipts, receipt];
+    await AsyncStorage.setItem("PENDING_RECEIPTS", JSON.stringify(updated));
+    setPrintCount(updated.length);
+  };
 
   const autoRetryPendingReceipts = async () => {
-    if (retrying) return;
-
+    if (retrying || !selectedPrinterMac) return;
+    setRetrying(true);
     try {
-      setRetrying(true);
-
       const data = await AsyncStorage.getItem("PENDING_RECEIPTS");
       const receipts = data ? JSON.parse(data) : [];
+      if (!receipts.length) return;
 
-      if (!receipts.length || !selectedPrinterMac) return;
-
-      const remaining: any[] = [];
-
+      const remaining = [];
       for (const r of receipts) {
         try {
-          await printToPrinter(
-            selectedPrinterMac,
-            r.receiptText,
-            `https://mtandao.app`,
-            business?.printQr ?? false
-          );
-
-          //  Post after successful print
-          PostLocally(r.receiptNo, r.method, r.phone, r.amount);
-
-        } catch (err) {
+          await printToPrinter(selectedPrinterMac, r.receiptText, "https://mtandao.app", business?.printQr);
+          await PostLocally(r.receiptNo, r.method, r.phone, r.amount);
+        } catch {
           remaining.push(r);
         }
       }
-
       await AsyncStorage.setItem("PENDING_RECEIPTS", JSON.stringify(remaining));
-
-      //  Update UI
       setPrintCount(remaining.length);
-
-    } catch (e) {
-      console.error("Auto retry error:", e);
     } finally {
       setRetrying(false);
     }
   };
-  useEffect(() => {
-    // Load saved printer
-    const loadPrinter = async () => {
-      const saved = await AsyncStorage.getItem('SELECTED_PRINTER_MAC');
-      if (saved) setSelectedPrinterMac(saved);
-    };
-    loadPrinter();
-  }, []);
-  useEffect(() => {
-    if (adjustedCart.length === 0 && modalVisible) {
-      setModalVisible(false);
-      clearCart()
-    }
-  }, [adjustedCart]);
-  // Update adjustedCart if cartItems change
-  useEffect(() => {
-    setAdjustedCart([...cartItems]);
-  }, [cartItems]);
-  useEffect(() => {
-    const init = async () => {
-      const data: any = await AsyncStorage.getItem("PENDING_RECEIPTS");
-      const receipts = data ? JSON.parse(data) : [];
 
-      setPrintCount(receipts.length);
-
-      //  AUTO RETRY when printer is available
-      if (selectedPrinterMac && receipts.length > 0) {
-        autoRetryPendingReceipts();
-      }
-    };
-
-    init();
-  }, [selectedPrinterMac]);
-  // Grand total based on adjusted prices
-  const grandTotal = adjustedCart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
-  // Change calculation
-  const changeDue =
-    paymentMethod === 'CASH' && parseFloat(amountGiven) > grandTotal
-      ? parseFloat(amountGiven) - grandTotal
-      : 0;
-
-  const handleSTK = async (receiptNo: string, phoneNumber: string) => {
+  // --- MPESA STK PUSH LOGIC ---
+  const handleSTK = async (phone: string) => {
+    const requestId = `STK-${Date.now()}`;
     try {
-
-      // 1️⃣ Initiate STK push
-      const response = await fetch(
-        "https://5fd3-41-209-9-121.ngrok-free.app/v1/payments/stk",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": "1234567ss8bcer6",
-            "Idempotency-Key": receiptNo,
-            "X-Master-Key": "k3f9Jq8sT1vQmZ0uLx7Y2pV+5A1bF4Hq0r9N2wT+6GQ="
-          },
-          body: JSON.stringify({
-            amount: 1, // replace with actual amount if needed
-            phone: `254${phoneNumber}`,
-            accountReference: business?.business_name,
-            description: "Payment"
-          })
-        }
-      );
+      const response = await fetch(`https://5fd3-41-209-9-121.ngrok-free.app/v1/payments/stk`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": `${business?.api_key}`,
+          "Idempotency-Key": requestId,
+        },
+        body: JSON.stringify({
+          amount: 1,
+          phone: `254${phone}`,
+          accountReference: business?.business_name?.substring(0, 12),
+          description: "Retail Goods"
+        })
+      });
 
       const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "STK Initiation Failed");
 
-
-      // 2️⃣ Poll transaction status
+      // Polling Logic
       let status = "pending";
-      let attempts = 0;
-      const maxAttempts = 12; // 12 × 5s = 1 minute
-
-      while (status === "pending" && attempts < maxAttempts) {
-        // wait 5 seconds
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        attempts++;
-
-        const statusRes = await fetch(
-          `https://5fd3-41-209-9-121.ngrok-free.app/callbacks/stk/status/${receiptNo}`,
-          {
-            headers: {
-              "x-api-key": "1234567ss8bcer6",
-              "X-Master-Key": "k3f9Jq8sT1vQmZ0uLx7Y2pV+5A1bF4Hq0r9N2wT+6GQ="
-            }
-          }
-        );
-
-        const statusData = await statusRes.json();
-        status = statusData.status;
-        if (status === "success") {
-          setMpesa(statusData.mpesa);
-          return "success";
-        }
-
-        if (status === "failed") {
-          setMsg({ msg: "Transaction did not complete", state: "error" });
-          return "failed";
-        }
-
-        // If still pending → continue polling
+      for (let i = 0; i < 15; i++) {
+        await new Promise(res => setTimeout(res, 5000));
+        const statusCheck = await fetch(`https://5fd3-41-209-9-121.ngrok-free.app/callbacks/stk/status/${requestId}`, {
+          headers: { "x-api-key": `${business?.api_key}` }
+        });
+        const statusData = await statusCheck.json();
+        if (statusData.status === "success") return { success: true, mpesa: statusData.mpesa };
+        if (statusData.status === "failed") return { success: false, error: "Payment declined" };
       }
-
-      // ⏱️ Timeout if still pending after max attempts
-      if (status === "pending") {
-        setMsg({ msg: "Transaction timed out", state: "error" });
-        return "timeout";
-      }
-
-    } catch (error) {
-      console.error("handleSTK error:", error);
-      setMsg({ msg: "STK Push failed", state: "error" });
-      return "failed";
-    }
-  };
-  const savePendingReceipt = async (receipt: any) => {
-    try {
-      const existing = await AsyncStorage.getItem("PENDING_RECEIPTS");
-      const receipts = existing ? JSON.parse(existing) : [];
-
-      const updatedReceipts = [...receipts, receipt];
-
-      await AsyncStorage.setItem(
-        "PENDING_RECEIPTS",
-        JSON.stringify(updatedReceipts)
-      );
-
-      //  UPDATE UI IMMEDIATELY
-      setPrintCount(updatedReceipts.length);
-
-    } catch (e) {
-      console.error("Error saving pending receipt", e);
+      return { success: false, error: "Payment timeout" };
+    } catch (error: any) {
+      return { success: false, error: error.message || "Network Error" };
     }
   };
 
-  const retryPendingReceipts = async () => {
-    try {
-      const data = await AsyncStorage.getItem("PENDING_RECEIPTS");
-      const receipts = data ? JSON.parse(data) : [];
 
-      if (!receipts.length) {
-        Alert.alert("Info", "No pending receipts.");
-        return;
-      }
+  const buildReceiptText = ({
+    receiptNo,
+    paid,
+    invoiceId,
+    cartItems,
+    user,
+    method,
+    amountPaid,
+    mpesaData,
+  }: any) => {
+    const width = 32;
+    const line = '-'.repeat(width) + '\n';
+    const center = (str: string) => {
+      const space = Math.max(0, Math.floor((width - str.length) / 2));
+      return ' '.repeat(space) + str + '\n';
+    };
 
-      const remaining: any[] = [];
-
-      for (const r of receipts) {
-        try {
-          await printToPrinter(
-            selectedPrinterMac!,
-            r.receiptText,
-            `https://mtandao.app`,
-            business?.printQr ?? false
-          );
-
-          //  Post ONLY after successful print
-          PostLocally(r.receiptNo, r.method, r.phone, r.amount);
-
-        } catch (err) {
-          remaining.push(r); // still failed
-        }
-      }
-
-      await AsyncStorage.setItem("PENDING_RECEIPTS", JSON.stringify(remaining));
-
-      Alert.alert(
-        "Done",
-        remaining.length
-          ? "Some receipts still failed to print."
-          : "All pending receipts printed successfully."
-      );
-    } catch (e) {
-      console.error(e);
+    let text = '';
+    if (business) {
+      text += center(business.business_name.toUpperCase());
+      text += center(business.postal_address);
+      text += center(`Tel: ${business.phone_number}`);
     }
+    text += line;
+
+    text += `Receipt No: ${receiptNo}\nInvoice ID: ${invoiceId}\nPayment: ${method}\n`;
+
+    // USE THE PASSED DATA INSTEAD OF STATE
+    if (mpesaData?.receiptNumber) {
+      text += `Trans ID: ${mpesaData.receiptNumber}\n`;
+      text += `Paid via: ${phoneNumber}\n`;
+    }
+    const displayDate = mpesaData?.transactionDate
+      ? FineDate(`${mpesaData.transactionDate}`)
+      : new Date().toLocaleString();
+
+    text += `Date: ${displayDate}\n${line}ITEMS\n`;
+
+    let totalInclusive = 0;
+    cartItems.forEach((item: any) => {
+      const itemTotal = item.price * item.quantity;
+      totalInclusive += itemTotal;
+      const name = item.product_name.length > width ? item.product_name.substring(0, width) : item.product_name;
+      text += `${name}\n`;
+      const left = `${item.quantity} x ${item.price.toFixed(2)}`;
+      const right = itemTotal.toFixed(2);
+      text += left.padEnd(width - right.length) + right + '\n';
+    });
+
+    text += line;
+    const vat = totalInclusive * (16 / 116);
+    const net = totalInclusive - vat;
+
+    text += `Net (Ex VAT)`.padEnd(width - net.toFixed(2).length) + net.toFixed(2) + '\n';
+    text += `VAT (16%)`.padEnd(width - vat.toFixed(2).length) + vat.toFixed(2) + '\n';
+    text += line;
+    text += `TOTAL`.padEnd(width - totals.finalTotal.toFixed(2).length) + totals.finalTotal.toFixed(2) + '\n';
+    text += line;
+
+    text += `Amount Paid`.padEnd(width - paid.toFixed(2).length) + paid.toFixed(2) + '\n';
+    text += `Change`.padEnd(width - (changeDue).toFixed(2).length) + (changeDue).toFixed(2) + '\n';
+    text += line;
+
+    text += center(`MPESA TILL: 123456`);
+    text += center('Prices VAT Inclusive');
+    text += center('Thank You!');
+    if (user?.name) text += `Served by: ${user.name}\n`;
+
+    return text;
   };
-  // Finalize checkout
-  const finalizeCheckout = async (
-    method: "CASH" | "MPESA",
-    paidAmount: number
-  ) => {
-    if (method === "CASH" && paidAmount < grandTotal) {
-      Alert.alert("Insufficient Cash", "Amount given is less than total.");
+
+  // --- FINAL CHECKOUT ---
+  const finalizeCheckout = async () => {
+    if (paymentMethod === 'CASH' && (parseFloat(amountGiven) || 0) < totals.finalTotal) {
+      setMsg({ msg: `Cash amount is less than total`, state: "error" });
+      return;
+    }
+    if (paymentMethod === 'MPESA' && phoneNumber.length < 9) {
+      setMsg({ msg: `Valid Mpesa phone required`, state: "error" });
       return;
     }
 
-    const receiptNo = await getNextReceiptNumber();
-    const invoiceId = `INV${Date.now().toString().slice(-6)}`;
-    const displayReceiptNo = `RCPT${receiptNo}`;
-
+    setProcessing(true);
     try {
-      setProcessing(true);
+      let mpesaData = null;
+      if (paymentMethod === 'MPESA') {
+        const result = await handleSTK(phoneNumber);
+        if (!result.success) {
+          setMsg({ msg: `Payment Failed\n${result.error}`, state: "error" });
 
-      //  STEP 1: MPESA must succeed FIRST
-      if (method === "MPESA") {
-        const status = await handleSTK(receiptNo, phoneNumber);
-
-        if (status === "timeout") {
-          Alert.alert("Timeout", "Customer did not complete payment in time.");
           return;
         }
-
-        if (status !== "success") {
-          Alert.alert("Payment Failed", "MPESA transaction failed.");
-          return;
-        }
+        mpesaData = result.mpesa;
       }
-      const buildReceiptText = ({
-        receiptNo,
-        invoiceId,
-        cartItems,
-        user,
-        paymentMethod,
-        amountPaid,
-      }: any) => {
-        const width = 32;
-        const line = '-'.repeat(width) + '\n';
-        const center = (str: string) => {
-          const space = Math.max(0, Math.floor((width - str.length) / 2));
-          return ' '.repeat(space) + str + '\n';
-        };
 
-        let text = '';
-        if (business) {
-          text += center(business.business_name.toUpperCase());
-          text += center(business.postal_address);
-          text += center(`Tel: ${business.phone_number}`);
-        }
-        text += line;
-        text += `Receipt No: ${receiptNo}\nInvoice ID: ${invoiceId}\nPayment: ${paymentMethod}\n`;
-        if (mpesa.receiptNumber) text += `Trans ID: ${mpesa.receiptNumber}\n`;
-        if (mpesa.receiptNumber) text += `Paid via: ${phoneNumber}\n`;
-        text += `Date: ${FineDate(`${mpesa.transactionDate}`)} \n${line}ITEMS\n`;
+      const receiptNo = await getNextReceiptNumber();
+      const displayNo = receiptNo;
+      const paid = paymentMethod === 'CASH' ? parseFloat(amountGiven) : totals.finalTotal;
 
-        let totalInclusive = 0;
-        cartItems.forEach((item: any) => {
-          const itemTotal = item.price * item.quantity;
-          totalInclusive += itemTotal;
-          const name = item.product_name.length > width ? item.product_name.substring(0, width) : item.product_name;
-          text += `${name}\n`;
-          const left = `${item.quantity} x ${item.price.toFixed(2)}`;
-          const right = itemTotal.toFixed(2);
-          text += left.padEnd(width - right.length) + right + '\n';
-        });
-
-        text += line;
-        const vat = totalInclusive * (16 / 116);
-        const net = totalInclusive - vat;
-
-        text += `Net (Ex VAT)`.padEnd(width - net.toFixed(2).length) + net.toFixed(2) + '\n';
-        text += `VAT (16%)`.padEnd(width - vat.toFixed(2).length) + vat.toFixed(2) + '\n';
-        text += line;
-        text += `TOTAL`.padEnd(width - grandTotal.toFixed(2).length) + grandTotal.toFixed(2) + '\n';
-        text += line;
-        text += `Amount Paid`.padEnd(width - amountPaid.toFixed(2).length) + amountPaid.toFixed(2) + '\n';
-        text += `Change`.padEnd(width - (amountPaid - grandTotal).toFixed(2).length) + (amountPaid - grandTotal).toFixed(2) + '\n';
-        text += line;
-
-        text += center(`MPESA TILL: 123456`);
-        text += center('Prices VAT Inclusive');
-        text += center('Thank You!');
-        if (user?.name) text += `Served by: ${user.name}\n`;
-
-        return text;
-      };
-      //  STEP 2: Build receipt
       const receiptText = buildReceiptText({
-        receiptNo: displayReceiptNo,
-        invoiceId,
-        cartItems: adjustedCart,
+        invoiceId: `INV${Date.now().toString().slice(-6)}`,
+        receiptNo: displayNo,
         user,
-        paymentMethod: method,
-        amountPaid: paidAmount,
+        cartItems: adjustedCart,
+        method: paymentMethod,
+        paid: paid,
+        mpesaData: mpesaData
       });
 
-      const receiptPayload = {
-        receiptNo,
-        method,
-        phone: phoneNumber,
-        amount: paidAmount,
-        receiptText,
-      };
+      // Post locally
+      await PostLocally(displayNo, paymentMethod, phoneNumber, paid, mpesaData, receiptNo);
 
-      // ❗ Ensure printer exists
-      if (!selectedPrinterMac) {
-        Alert.alert("Printer Error", "No printer selected.");
-        return;
+      // Print Logic
+      if (selectedPrinterMac) {
+        try {
+          await printToPrinter(selectedPrinterMac, receiptText, "https://mtandao.app", business?.printQr);
+        } catch {
+          await savePendingReceipt({ receiptNo: displayNo, method: paymentMethod, phone: phoneNumber, amount: paid, receiptText });
+        }
       }
 
-      //  STEP 3: PRINT FIRST
-      try {
-        await printToPrinter(
-          selectedPrinterMac,
-          receiptText,
-          `https://mtandao.app`,
-          business?.printQr ?? false
-        );
-
-        //  ONLY AFTER PRINT SUCCESS → POST
-        PostLocally(receiptNo, method, phoneNumber, paidAmount);
-
-      } catch (printErr) {
-        console.error(printErr);
-
-        //  Save for retry
-        await savePendingReceipt(receiptPayload);
-
-        Alert.alert(
-          "Printer Error",
-          "Payment successful, but printing failed.\nYou can reprint from pending receipts."
-        );
-
-        return;
-      }
-
-      //  CLEANUP
-      setPhoneNumber("");
-      setAmountGiven("");
+      clearCart();
       setModalVisible(false);
-
+      setMsg({ msg: "transaction Complete...", state: "success" });
     } catch (err) {
-      console.error("Checkout Error:", err);
-      Alert.alert("Error", "Something went wrong.");
+      console.log(err)
+      setMsg({ msg: "Failed to finalize sale", state: "error" });
     } finally {
       setProcessing(false);
     }
   };
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  // const 
-  useEffect(() => {
-    const findPending = async () => {
-      const data: any = await AsyncStorage.getItem("PENDING_RECEIPTS");
-      const receipts = data ? JSON.parse(data) : [];
-      setPrintCount(receipts?.length)
-    }
-    findPending()
-    if (!selectedPrinterMac) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.1,
-            duration: 600,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 600,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    } else {
-      pulseAnim.setValue(1);
-    }
-  }, [selectedPrinterMac]);
 
-  return (
-    <Modal animationType="fade" transparent={false} visible={modalVisible}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, paddingTop: 20 }}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          className="flex-1"
-        >
-          <ScrollView
-            className="flex-1 px-6"
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 120 }}
-          >
-            {/* SUMMARY CARD */}
-            <View
-              style={{
-                backgroundColor: colors.card,
-                borderColor: colors.border,
-                borderWidth: 1,
-                borderRadius: 12,
-                padding: 20,
-                marginBottom: 20,
-              }}
-            >
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginVertical: 16 }}>
-                <View>
-                  <Text style={{ color: colors.subText, fontWeight: 'bold', fontSize: 10 }}>
-                    TOTAL PAYABLE
-                  </Text>
-                  <Text style={{ color: colors.success, fontSize: 32, fontWeight: '900' }}>
-                    Ksh {grandTotal.toLocaleString()}
-                  </Text>
-                </View>
-                <Icon name="file-invoice-dollar" size={28} color={colors.subText} />
-              </View>
-
-              <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 10 }} />
-
-              <FlatList
-                data={adjustedCart}
-                scrollEnabled={true}
-                nestedScrollEnabled
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item, index }: any) => (
-                  <View className="flex-row justify-between mb-2 px-4 items-center">
-
-                    {/* TAP TO DECREMENT */}
-                    <TouchableOpacity
-                      onPress={() => {
-                        const updated = [...adjustedCart];
-
-                        if (updated[index].quantity > 1) {
-                          updated[index].quantity -= 1;
-                        } else {
-                          updated.splice(index, 1);
-                        }
-
-                        setAdjustedCart(updated);
-                      }}
-                    >
-                      <Text className="text-slate-400 font-medium">
-                        {item.product_name}{" "}
-                        <Text className="text-slate-600">x{item.quantity}</Text>
-                      </Text>
-                    </TouchableOpacity>
-
-                    {/* PRICE EDIT */}
-                    <TextInput
-                      value={item.price.toString()}
-                      keyboardType="numeric"
-                      onChangeText={(val) => {
-                        const newVal = parseFloat(val) || 0;
-
-                        if (newVal < item.cost_price) {
-                          Alert.alert(
-                            "Invalid Price",
-                            `Price cannot be lower than the cost price (${item.cost_price})`
-                          );
-                          return;
-                        }
-
-                        const updated = [...adjustedCart];
-                        updated[index].price = newVal;
-                        setAdjustedCart(updated);
-                      }}
-                      className="text-slate-300 font-bold w-16 text-right"
-                    />
-                  </View>
-                )}
-              />
-            </View>
-
-            {/* PAYMENT SELECTOR */}
-            {business?.api_key && !business?.strictMpesa && <>
-              <Text className="text-slate-500 font-black mb-4 uppercase text-[10px] tracking-[2px]">
-                Choose Method {business?.strictMpesa ? "mpesa" : "no Mpesa"}
-              </Text>
-              <View className="flex-row w-full items-center justify-center gap-x-3 space-x-3 mb-8">
-                <TouchableOpacity
-                  onPress={() => setPaymentMethod("CASH")}
-                  className={`w-[48%] py-4 rounded items-center ${paymentMethod === "CASH" ? "bg-green-600" : "bg-slate-800"
-                    }`}
-                >
-                  <Text className="text-white font-bold">CASH</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => setPaymentMethod("MPESA")}
-                  className={`w-[48%] py-4 rounded items-center ${paymentMethod === "MPESA" ? "bg-green-600" : "bg-slate-800"
-                    }`}
-                >
-                  <Text className="text-white font-bold">MPESA</Text>
-                </TouchableOpacity>
-
-              </View>
-            </>}
-
-
-            {/* DYNAMIC INPUT AREA */}
-            <View className="flex-1">
-              {paymentMethod === 'MPESA' ? (
-                <View className="animate-in slide-in-from-bottom">
-                  <Text className="text-slate-400 font-bold mb-2 ml-1">Customer Phone Number</Text>
-                  <View
-                    style={{
-                      backgroundColor: colors.inputBg,
-                      borderColor: colors.border,
-                      borderWidth: 1,
-                      borderRadius: 8,
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      paddingHorizontal: 12,
-                    }}
-                  >
-                    <Text style={{ color: colors.subText, fontWeight: 'bold', marginRight: 6 }}>
-                      +254
-                    </Text>
-
-                    <TextInput
-                      style={{ flex: 1, color: colors.text, fontSize: 18 }}
-                      placeholder="712345678"
-                      placeholderTextColor={colors.placeholder}
-                      keyboardType="phone-pad"
-                      value={phoneNumber}
-                      onChangeText={(text) => setPhoneNumber(text.replace(/[^0-9]/g, ""))}
-                    />
-                  </View>
-                </View>
-              ) : (
-                <View className="animate-in slide-in-from-bottom">
-                  <Text className="text-slate-400 font-bold mb-2 ml-1">Amount Given (Ksh)</Text>
-                  <View className="bg-slate-900 border border-slate-700 rounded-sm flex-col items-center py-4 px-4">
-                    <View className="bg-slate-900 border border-slate-700 rounded-lg py-3 px-4" >
-                      <Text className="text-white text-4xl font-black text-center">
-                        Ksh {amountGiven || "0"}
-                      </Text>
-                    </View>
-
-                    <Keypad
-                      value={amountGiven}
-                      onChange={setAmountGiven}
-                    />
-                  </View>
-                  {parseFloat(amountGiven) > 0 && (
-                    <View className="mt-4 flex-row justify-between px-2">
-                      <Text className="text-slate-500 font-bold">CHANGE DUE:</Text>
-                      <Text style={{ color: colors.success, fontWeight: 'bold', fontSize: 18 }}>
-                        Ksh {changeDue.toLocaleString()}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              )}
-            </View>
-            {printCount > 0 && <TouchableOpacity
-              onPress={retryPendingReceipts}
-              style={{
-                backgroundColor: '#f59e0b', // keep warning color
-                padding: 12,
-                borderRadius: 8,
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                marginTop: 10,
-              }}
-            >
-              <Text style={{ color: '#fff', fontWeight: 'bold' }}>
-                Retry Pending Receipts
-              </Text>
-
-              <View style={{
-                borderColor: colors.border,
-                borderWidth: 1,
-                paddingHorizontal: 6,
-                borderRadius: 6
-              }}>
-                <Text style={{ color: colors.text }}>{printCount}</Text>
-              </View>
-            </TouchableOpacity>}
-            {/* ACTION BUTTONS */}
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-
-      {/* PRINTER LINK */}
-
-
-
-      <View className="flex flex-row w-full h-20 gap-x-1" style={{ backgroundColor: colors.background }}>
-
-        <Animated.View
-          style={{
-            transform: [{ scale: pulseAnim }],
-            width: selectedPrinterMac ? '0%' : '20%',
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: selectedPrinterMac ? 'transparent' : colors.danger,
-          }}
-        > <TouchableOpacity onPress={() => setShowPrinterModal(true)}>
-            <Text className="text-white text-center">
-              {selectedPrinterMac ? <Icon name="print" size={30} color="#1e293b" /> : "No Printer Linked"}
-            </Text>
-          </TouchableOpacity>
-        </Animated.View>
-
-        <TouchableOpacity
-          onPress={() =>
-            paymentMethod === 'MPESA'
-              ? finalizeCheckout('MPESA', grandTotal)
-              : finalizeCheckout('CASH', parseFloat(amountGiven))
-          }
-          disabled={processing || (paymentMethod === 'CASH' && !amountGiven)}
-          style={{
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor:
-              processing || (paymentMethod === 'CASH' && !amountGiven)
-                ? colors.border
-                : colors.success,
-          }}
-        >
-          <Text style={{ color: '#fff', fontWeight: '900' }}>
-            {processing
-              ? 'Processing...'
-              : paymentMethod === 'MPESA'
-                ? 'Send STK & Print'
-                : 'Confirm & Print Receipt'}
-          </Text>
-        </TouchableOpacity>
-        <View style={{ backgroundColor: colors.danger }} className="flex justify-center items-center h-full w-[20%] ">
+  // --- UI COMPONENTS ---
+  const renderItem = ({ item, index }: { item: CartItem, index: number }) => (
+    <View style={[styles.itemRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: colors.text, fontWeight: '600' }}>{item.product_name}</Text>
+        <View className="flex-row items-center mt-1">
           <TouchableOpacity
             onPress={() => {
-              setAdjustedCart([]);   // clear cart
-              setPhoneNumber("");
-              setAmountGiven("");
-              clearCart();
-              setModalVisible(false);
+              const updated = [...adjustedCart];
+              if (updated[index].quantity > 1) updated[index].quantity -= 1;
+              else updated.splice(index, 1);
+              setAdjustedCart(updated);
             }}
-            disabled={processing}
-            className="flex items-center w-full h-full justify-center"
+            className="bg-red-500/20 p-1 rounded"
           >
-            <Text className="text-slate-500 text-center font-bold"><Ionicons name="close-sharp" size={30} color="#1e293b" style={{ backgroundColor: colors.danger }} /> </Text>
+            <Icon name="minus" size={10} color="#ef4444" />
+          </TouchableOpacity>
+          <Text style={{ color: colors.subText, marginHorizontal: 10 }}>Qty: {item.quantity}</Text>
+          <TouchableOpacity
+            onPress={() => {
+              const updated = [...adjustedCart];
+              updated[index].quantity += 1;
+              setAdjustedCart(updated);
+            }}
+            className="bg-green-500/20 p-1 rounded"
+          >
+            <Icon name="plus" size={10} color="#22c55e" />
           </TouchableOpacity>
         </View>
       </View>
-
-
-      <PrinterSelectionModal
-        visible={showPrinterModal}
-        onClose={() => setShowPrinterModal(false)}
-        onSelect={(mac) => {
-          setSelectedPrinterMac(mac);
-
-          //  trigger retry immediately
-          setTimeout(() => {
-            autoRetryPendingReceipts();
-          }, 500);
+      <TextInput
+        keyboardType="numeric"
+        value={item.price.toString()}
+        onChangeText={(v) => {
+          const p = parseFloat(v) || 0;
+          const updated = [...adjustedCart];
+          updated[index].price = p;
+          setAdjustedCart(updated);
         }}
+        style={[styles.priceInput, { color: colors.primaryLight, backgroundColor: colors.background }]}
       />
+    </View>
+  );
+  useEffect(() => {
+    if (!modalVisible) {
+      clearCart();
+      setAdjustedCart([]);
+      setAmountGiven('');
+      setPhoneNumber('');
+    }
+  }, [modalVisible]);
+  return (
+    <Modal animationType="slide" transparent={false} visible={modalVisible}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+
+          {/* HEADER */}
+          <View className="px-6 py-4 flex-row justify-between items-center border-b" style={{ borderColor: colors.border }}>
+            <View>
+              <Text style={{ color: colors.text, fontSize: 20, fontWeight: 'bold' }}>Checkout</Text>
+              <Text style={{ color: colors.subText, fontSize: 12 }}>{adjustedCart.length} items in bucket</Text>
+            </View>
+            <TouchableOpacity onPress={() => setModalVisible(false)} className="p-2">
+              <Ionicons name="close-circle" size={32} color={colors.danger} />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView className="flex-1 px-6 pt-4" showsVerticalScrollIndicator={false}>
+
+            {/* CART ITEMS SUMMARY */}
+            <View className="mb-6">
+              <Text className="text-[10px] tracking-widest font-bold mb-3 uppercase" style={{ color: colors.subText }}>Order Summary</Text>
+              <FlatList
+                data={adjustedCart}
+                renderItem={renderItem}
+                keyExtractor={(item, idx) => `item-${idx}`}
+                scrollEnabled={false}
+              />
+            </View>
+
+            {/* TOTALS CARD */}
+            <View style={[styles.totalsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View className="flex-row justify-between mb-2">
+                <Text style={{ color: colors.subText }}>Subtotal</Text>
+                <Text style={{ color: colors.text }}>Ksh {totals.subtotal.toFixed(2)}</Text>
+              </View>
+              <View className="flex-row justify-between mb-2">
+                <Text style={{ color: colors.subText }}>VAT (Included)</Text>
+                <Text style={{ color: colors.text }}>Ksh {totals.tax.toFixed(2)}</Text>
+              </View>
+              <Divider color={colors.border} />
+              <View className="flex-row justify-between items-center">
+                <Text style={{ color: colors.text, fontWeight: 'bold' }}>Amount Payable</Text>
+                <Text style={{ color: colors.primaryLight, fontSize: 24, fontWeight: '900' }}>
+                  Ksh {totals.finalTotal.toLocaleString()}
+                </Text>
+              </View>
+            </View>
+
+            {/* PAYMENT METHOD TOGGLE */}
+            {!business?.strictMpesa && (
+              <View className="flex-row mb-6 bg-slate-800/50 p-1 rounded-xl">
+                <TouchableOpacity
+                  onPress={() => setPaymentMethod('CASH')}
+                  className={`flex-1 py-3 rounded-lg flex-row justify-center items-center ${paymentMethod === 'CASH' ? 'bg-blue-600' : ''}`}
+                >
+                  <Icon name="money-bill-wave" size={14} color="white" />
+                  <Text className="text-white font-bold ml-2">CASH</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setPaymentMethod('MPESA')}
+                  className={`flex-1 py-3 rounded-lg flex-row justify-center items-center ${paymentMethod === 'MPESA' ? 'bg-green-600' : ''}`}
+                >
+                  <Icon name="mobile-alt" size={14} color="white" />
+                  <Text className="text-white font-bold ml-2">MPESA</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* PAYMENT INPUTS */}
+            {paymentMethod === 'MPESA' ? (
+              <Animated.View style={{ opacity: 1 }}>
+                <Text style={{ color: colors.subText, marginBottom: 8, fontWeight: '600' }}>Mpesa Phone Number</Text>
+                <View style={[styles.phoneInputContainer, { backgroundColor: colors.card, borderColor: colors.primaryLight }]}>
+                  <Text style={{ color: colors.primaryLight, fontWeight: 'bold', fontSize: 18 }}>+254 </Text>
+                  <TextInput
+                    placeholder="712345678"
+                    placeholderTextColor={colors.placeholder}
+                    keyboardType="numeric"
+                    maxLength={9}
+                    value={phoneNumber}
+                    onChangeText={setPhoneNumber}
+                    style={{ flex: 1, color: colors.text, fontSize: 18, fontWeight: 'bold' }}
+                  />
+                </View>
+                <View className="mt-4 p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+                  <Text className="text-green-500 text-xs text-center font-medium">
+                    Customer will receive a popup on their phone to enter PIN.
+                  </Text>
+                </View>
+              </Animated.View>
+            ) : (
+              <View>
+                <Text style={{ color: colors.subText, marginBottom: 8, fontWeight: '600' }}>Amount Received</Text>
+                <View className="mb-4 p-4 rounded-xl border-2 items-center" style={{ borderColor: colors.primaryLight, backgroundColor: colors.card }}>
+                  <Text style={{ color: colors.text, fontSize: 32, fontWeight: 'bold' }}>
+                    Ksh {amountGiven || "0.00"}
+                  </Text>
+                </View>
+                <Keypad value={amountGiven} onChange={setAmountGiven} />
+
+                {changeDue > 0 && (
+                  <View className="mt-4 p-4 rounded-xl bg-orange-500/10 flex-row justify-between">
+                    <Text className="text-orange-500 font-bold">CHANGE TO GIVE:</Text>
+                    <Text className="text-orange-500 font-black text-lg">Ksh {changeDue.toFixed(2)}</Text>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* PENDING RECEIPTS BUTTON */}
+            {printCount > 0 && (
+              <TouchableOpacity
+                onPress={autoRetryPendingReceipts}
+                className="mt-6 flex-row items-center justify-between p-4 rounded-xl bg-amber-500"
+              >
+                <View className="flex-row items-center">
+                  <Icon name="exclamation-triangle" color="white" size={16} />
+                  <Text className="text-white font-bold ml-2">Sync Pending Receipts</Text>
+                </View>
+                <View className="bg-white/20 px-3 py-1 rounded-full">
+                  <Text className="text-white font-black">{printCount}</Text>
+                </View>
+              </TouchableOpacity>
+            )}
+
+            <View style={{ height: 100 }} />
+          </ScrollView>
+
+          {/* BOTTOM FIXED ACTION BAR */}
+          <View style={[styles.bottomBar, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
+
+            {/* PRINTER STATUS */}
+            <TouchableOpacity
+              onPress={() => setShowPrinterModal(true)}
+              style={[styles.printerBtn, { backgroundColor: selectedPrinterMac ? colors.success + '20' : colors.danger + '20' }]}
+            >
+              <Icon
+                name="print"
+                size={20}
+                color={selectedPrinterMac ? colors.success : colors.danger}
+              />
+              {!selectedPrinterMac && <View style={styles.alertDot} />}
+            </TouchableOpacity>
+
+            {/* MAIN ACTION */}
+            <TouchableOpacity
+              onPress={finalizeCheckout}
+              disabled={processing || (paymentMethod === 'CASH' && !amountGiven)}
+              style={[
+                styles.mainActionBtn,
+                {
+                  backgroundColor: processing ? colors.primaryDark : colors.success,
+                  opacity: (paymentMethod === 'CASH' && !amountGiven) ? 0.6 : 1
+                }
+              ]}
+            >
+              {processing ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text style={styles.mainActionText}>
+                  {paymentMethod === 'MPESA' ? 'PROCESS MPESA' : 'COMPLETE SALE'}
+                </Text>
+              )}
+            </TouchableOpacity>
+
+          </View>
+        </KeyboardAvoidingView>
+
+        {/* PRINTER MODAL */}
+        <PrinterSelectionModal
+          visible={showPrinterModal}
+          onClose={() => setShowPrinterModal(false)}
+          onSelect={(mac) => {
+            setSelectedPrinterMac(mac);
+            AsyncStorage.setItem('SELECTED_PRINTER_MAC', mac);
+            setTimeout(autoRetryPendingReceipts, 500);
+          }}
+        />
+
+      </SafeAreaView>
     </Modal>
   );
 };
+
+const styles = StyleSheet.create({
+  itemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  priceInput: {
+    width: 80,
+    padding: 8,
+    borderRadius: 8,
+    textAlign: 'right',
+    fontWeight: 'bold',
+  },
+  totalsCard: {
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 20,
+  },
+  phoneInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 2,
+  },
+  bottomBar: {
+    flexDirection: 'row',
+    padding: 16,
+    borderTopWidth: 1,
+    alignItems: 'center',
+  },
+  printerBtn: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  alertDot: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#ef4444',
+    borderWidth: 2,
+    borderColor: 'white',
+  },
+  mainActionBtn: {
+    flex: 1,
+    height: 56,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 8,
+  },
+  mainActionText: {
+    color: 'white',
+    fontWeight: '900',
+    fontSize: 16,
+    letterSpacing: 1,
+  },
+});
 
 export default CheckoutModal;

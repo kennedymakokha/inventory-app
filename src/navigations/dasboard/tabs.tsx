@@ -7,14 +7,15 @@ import CustomHeader from "../../components/customHeader";
 import ProductScreen from "../../screens/products/product.screen";
 import { CategoriesStack } from "../categories/stack";
 import { UsersStack } from "../users/stack";
+import CustomersScreen from "../../screens/customers/customers.screen";
+import { useTheme } from "../../context/themeContext";
 
 const Tab = createBottomTabNavigator();
 export function DashboardTabs() {
-    const { isDarkMode } = useSettings();
-
-    const tabBackground = isDarkMode ? "#1e293b" : "#f8fafc";
-    const activeTint = isDarkMode ? "#d4af37" : "#0f172a";
-    const inactiveTint = isDarkMode ? "#cbd5e1" : "#64748b";
+    const { colors, isDarkMode } = useTheme();
+    const tabBackground = colors.background
+    const activeTint = colors.primary;
+    const inactiveTint = colors.primaryLight;
 
     return (
         <Tab.Navigator
@@ -26,7 +27,7 @@ export function DashboardTabs() {
                         categories: "list",
                         products: "pricetags",
                         users: "people",
-                        sales: "cart",
+                        Customers: "shield",
 
                     };
                     return <Ionicons name={icons[route.name]} size={size} color={color} />;
@@ -62,10 +63,10 @@ export function DashboardTabs() {
                 options={{ header: () => <CustomHeader title="Users" /> }}
             />
             <Tab.Screen
-                name="sales"
-                component={ProductScreen}
-                initialParams={{ filter: "sales" }}
-                options={{ header: () => <CustomHeader title="Sales" /> }}
+                name="Customers"
+                component={CustomersScreen}
+                initialParams={{ filter: "customers" }}
+                options={{ header: () => <CustomHeader title="Customers " /> }}
             />
         </Tab.Navigator>
     );

@@ -73,7 +73,7 @@ const PieChart: React.FC<PieChartProps> = ({ data = [], title }) => {
 
     return (
         <View style={{ borderColor: colors.border, padding: 16, alignItems: "center", backgroundColor: colors.background }}>
-            <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 16, color: colors.text }}>
+            <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 16, color: colors.primary }}>
                 {title}
             </Text>
 

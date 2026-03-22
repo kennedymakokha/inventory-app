@@ -22,6 +22,20 @@ export type ProductItem = {
     updatedAt: string
     synced: boolean
 };
+export type CustomerItem = {
+    _id?: string;
+    id?: string | any
+    customer_name: string;
+    business_id: string
+    amount: number
+    sale_id: string;
+    customer_id: string;
+    phone_number: string;
+    createdBy?: string | any,
+    transaction_id: string,
+    updatedAt?: string
+    synced?: boolean
+};
 export type CategoryItem = {
     _id?: string;
     id?: string | any
@@ -92,7 +106,7 @@ export type InputProps = {
     editable?: boolean;
     multiline?: boolean;
     isDarkMode?: boolean;
-    disabled?:boolean
+    disabled?: boolean
     value: string | any;
     onChangeText: (text: string) => void;
     placeholder: string;

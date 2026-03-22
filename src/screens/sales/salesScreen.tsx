@@ -30,6 +30,7 @@ import { useSelector } from 'react-redux';
 import { useTheme } from '../../context/themeContext';
 import { useSettings } from '../../context/SettingsContext';
 
+
 const LIMIT = 30;
 
 const SalesScreen: React.FC = ({ route, navigation }: any) => {
@@ -128,12 +129,18 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
     };
 
     /* ---------------- POST SALE ---------------- */
-    const PostSale = async (receiptNo: any, method: string, phone?: string, paidAmount?: string) => {
+    const PostSale = async (
+        receiptNo: any,
+        method: string,
+        phone?: string,
+        paidAmount?: string,
+        mpesaData?: any,
+        displayNo?: any) => {
 
-        console.log("RECIT", receiptNo)
+        console.log(receiptNo)
         try {
             const db = await getDBConnection();
-            await finalizeSale(db, cart, { receiptNo, method, phone, paidAmount, business_id: business._id, createdBy: user.user_id });
+            await finalizeSale(db, cart, { receiptNo, method, phone, paidAmount, business_id: business._id, createdBy: user.user_id, mpesaData });
             await loadData();
             setModalVisible(false);
             setQuantities({});
@@ -150,32 +157,65 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
 
     /* ---------------- RENDER ITEM ---------------- */
     const renderItem = ({ item }: { item: ProductItem }) => {
-        const currentQty = parseInt(quantities[item.id] || '0');
+        const currentQty = parseInt(quantities[item.id] || "0");
+
+        // Determine stock color based on theme
+        const stockColor = item.quantity > 5 ? colors.success : colors.danger;
 
         return (
             <Pressable onPress={Keyboard.dismiss}>
-                <View style={{ backgroundColor: colors.card, borderColor: colors.border }}
-                    className="mx-4 my-2 p-4 rounded-xl border"
+                <View
+                    style={{
+                        backgroundColor: colors.card,
+                        borderColor: colors.border,
+                        marginHorizontal: 16,
+                        marginVertical: 8,
+                        padding: 16,
+                        borderRadius: 16,
+                        borderWidth: 1,
+                    }}
                 >
-                    <View className="flex-row justify-between items-center mb-1">
-                        <Text className="text-lg font-bold" style={{ color: colors.text }}>
+                    {/* Header: Product Name + Stock */}
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                        <Text style={{ color: colors.text, fontSize: 18, fontWeight: "bold" }}>
                             {item.product_name}
                         </Text>
-                        <View style={{ backgroundColor: item.quantity > 5 ? '#064e3b' : '#7f1d1d' }}
-                            className="px-2 py-1 rounded-full">
-                            <Text style={{ color: '#fff', fontSize: 12 }}>{item.quantity} in stock</Text>
+                        <View
+                            style={{
+                                backgroundColor: stockColor,
+                                paddingHorizontal: 8,
+                                paddingVertical: 4,
+                                borderRadius: 5,
+                            }}
+                        >
+                            <Text style={{ color: colors.primaryDark, fontSize: 12 }}>
+                                {item.quantity} in stock
+                            </Text>
                         </View>
                     </View>
 
+                    {/* Barcode */}
                     {item.barcode && (
-                        <Text className="text-xs mb-2 font-mono" style={{ color: colors.subText }}>
+                        <Text style={{ color: colors.subText, fontSize: 12, marginBottom: 8, fontFamily: "monospace" }}>
                             {item.barcode}
                         </Text>
                     )}
 
-                    <View className="flex-row items-center justify-between mb-4 mt-2">
+                    {/* Quantity + Price Inputs */}
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                         {/* Quantity Input */}
-                        <View style={{ backgroundColor: colors.inputBg }} className="flex-row items-center rounded-xl p-1">
+                        <View style={{ backgroundColor: colors.inputBg, flexDirection: "row", borderRadius: 16, padding: 4, alignItems: "center" }}>
+                            <TextInput
+                                style={{ color: colors.text, textAlign: "center", fontWeight: "bold", width: 48 }}
+                                keyboardType="numeric"
+                                value={quantities[item.id] || "0"}
+                                onChangeText={text => {
+                                    const val = Math.max(0, parseInt(text) || 0);
+                                    setQuantities(prev => ({ ...prev, [item.id]: val.toString() }));
+                                    addToCart(item, val, parseFloat(sellingPrices[item.id]) || item.price);
+                                    setState(prev => ({ ...prev, [item.id]: false }));
+                                }}
+                            />
                             <TouchableOpacity
                                 onPress={() => {
                                     if (currentQty > 0) {
@@ -185,30 +225,26 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
                                         setState(prev => ({ ...prev, [item.id]: false }));
                                     }
                                 }}
-                                className="w-10 h-10 items-center justify-center">
+                                style={{ width: 40, height: 40, justifyContent: "center", alignItems: "center" }}
+                            >
                                 <Icon name="minus" size={12} color={colors.text} />
                             </TouchableOpacity>
 
-                            <TextInput
-                                className="w-12 text-center font-bold"
-                                style={{ color: colors.text }}
-                                keyboardType="numeric"
-                                value={quantities[item.id] || '0'}
-                                onChangeText={text => {
-                                    const val = Math.max(0, parseInt(text) || 0);
-                                    setQuantities(prev => ({ ...prev, [item.id]: val.toString() }));
-                                    addToCart(item, val, parseFloat(sellingPrices[item.id]) || item.price);
-                                    setState(prev => ({ ...prev, [item.id]: false }));
-                                }}
-                            />
+
+
+                            {/* <TouchableOpacity
+                                onPress={() => handleIncrementAddToCart(item)}
+                                style={{ width: 40, height: 40, justifyContent: "center", alignItems: "center" }}
+                            >
+                                <Icon name="add" size={12} color={colors.text} />
+                            </TouchableOpacity> */}
                         </View>
 
-                        {/* Selling Price */}
-                        <View style={{ backgroundColor: colors.inputBg }} className="flex-row items-center rounded-xl px-3 h-12">
+                        {/* Selling Price Input */}
+                        <View style={{ backgroundColor: colors.inputBg, flexDirection: "row", alignItems: "center", borderRadius: 16, paddingHorizontal: 12, height: 48 }}>
                             <Text style={{ color: colors.subText }}>Ksh </Text>
                             <TextInput
-                                className="w-20 font-bold"
-                                style={{ color: colors.text }}
+                                style={{ color: colors.text, fontWeight: "bold", width: 80 }}
                                 keyboardType="numeric"
                                 value={sellingPrices[item.id] ?? item.price.toString()}
                                 onChangeText={text => setSellingPrices(prev => ({ ...prev, [item.id]: text }))}
@@ -216,18 +252,31 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
                         </View>
                     </View>
 
-                    <View className="flex-row justify-between items-center">
-                        <Text className="font-bold" style={{ color: '#16a34a' }}>Base: {item.price?.toFixed(2)}</Text>
+                    {/* Footer: Base Price + Add to Cart */}
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                        <Text style={{ color: colors.success, fontWeight: "bold" }}>
+                            Base: {item.price?.toFixed(2)}
+                        </Text>
 
-                        {/* Unified Add to Cart */}
                         <TouchableOpacity
                             onPress={() => handleIncrementAddToCart(item)}
-                            className="bg-blue-600 px-6 py-3 rounded-sm flex-row items-center"
+                            style={{
+                                backgroundColor: colors.primaryDark,
+                                paddingHorizontal: 16,
+                                paddingVertical: 12,
+                                borderRadius: 8,
+                                flexDirection: "row",
+                                alignItems: "center",
+                            }}
                         >
-                            <Text className="text-white font-bold mr-2">Add to Cart</Text>
+                            <Text style={{ color: "white", fontWeight: "bold", marginRight: 8 }}>
+                                Add to Cart
+                            </Text>
                             {currentQty > 0 && (
-                                <View className="bg-white px-2 py-0.5 rounded-full">
-                                    <Text className="text-blue-600 font-bold text-xs">{currentQty}</Text>
+                                <View style={{ backgroundColor: colors.card, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 12 }}>
+                                    <Text style={{ color: colors.text, fontWeight: "bold", fontSize: 12 }}>
+                                        {currentQty}
+                                    </Text>
                                 </View>
                             )}
                         </TouchableOpacity>
@@ -241,7 +290,7 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
         item.product_name?.toLowerCase().includes(query?.toLowerCase()) ||
         (item.barcode && item.barcode.includes(query))
     );
-
+   
     return (
         <KeyboardAvoidingView
             style={{ flex: 1, backgroundColor: colors.background, paddingTop: 16 }}

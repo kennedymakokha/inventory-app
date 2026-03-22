@@ -37,7 +37,7 @@ const DataGraph = ({ data = [], title, pressed }: any) => {
 
   return (
     <TouchableOpacity activeOpacity={1} onPress={pressed} style={[styles.container, { backgroundColor: colors.background }]}>
-      <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+      <Text style={[styles.title, { color: colors.primaryLight }]}>{title}</Text>
 
       {(!data || data.length === 0) ? (
         <Text style={{ color: colors.text, textAlign: "center", marginTop: 40 }}>

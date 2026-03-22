@@ -128,11 +128,11 @@ export const finalizeSale = async (
     paidAmount?: string;
     business_id?: string,
     createdBy: string,
+    mpesaData?: any
   }
 ): Promise<void> => {
 
-  console.log("🛒 finalizeSale called", data.receiptNo);
-  console.log("RECIT", data.receiptNo)
+
   if (!cartItems || cartItems.length === 0) {
     console.log(" Cart is empty");
     return;
@@ -145,14 +145,12 @@ export const finalizeSale = async (
     0
   );
 
+
   return new Promise((resolve, reject) => {
 
     db.transaction(
 
       (tx) => {
-
-        console.log("📦 Transaction started");
-
         // INSERT SALE
         tx.executeSql(
           `INSERT INTO Sale
@@ -182,9 +180,6 @@ export const finalizeSale = async (
         );
 
         for (const item of cartItems) {
-
-          console.log("Processing item:", item);
-
           const saleItemId = uuidv4();
           const itemTotal = item.price * item.quantity;
 
@@ -266,7 +261,7 @@ export const finalizeSale = async (
               now,
               now
             ],
-            () => console.log("📒 Inventory log inserted"),
+            
             (_, error) => {
               console.log(" Inventory log error", error);
               throw error;
@@ -280,19 +275,27 @@ export const finalizeSale = async (
 
         tx.executeSql(
           `INSERT INTO Payments
-          (payment_id,sale_id,method,amount,synced,created_at,updatedAt,createdBy)
-          VALUES (?,?,?,?,?,?,?,?)`,
+          (payment_id,sale_id,method,amount,synced,created_at,updatedAt,createdBy,customer_phone,      
+              customer_name,       
+              mpesa_receipt, 
+              receipt_no)
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
           [
             paymentId,
             saleId,
             data.method,
-            data.paidAmount ?? total,
+            total,
             0,
             now,
             now,
-            data.createdBy
+            data.createdBy ?? "",
+            data?.mpesaData?.phone ?? "",
+            data?.mpesaData?.customer_name ?? "Unknown Customer",
+            data?.mpesaData?.receiptNumber ?? "",
+            data?.receiptNo ?? "",
+
           ],
-          () => console.log("💳 Payment inserted"),
+        
           (_, error) => {
             console.log(" Payment insert error", error);
             throw error;
@@ -307,7 +310,7 @@ export const finalizeSale = async (
       },
 
       () => {
-        console.log("🎉 Transaction completed");
+       
         resolve();
       }
 

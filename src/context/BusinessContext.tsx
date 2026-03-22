@@ -12,8 +12,9 @@ export type Business = {
   secondary_color: string;
   working_hrs: string;
   kra_pin: string;
-  printQr: boolean;
+  
   api_key: string;
+  printQr?:boolean
   latitude: number;
   longitude: number;
   strictMpesa:boolean;

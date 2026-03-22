@@ -1,5 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+
+const generateUniqueId = () => {
+  const timestamp = Date.now().toString(36);
+  const randomStr = Math.random().toString(36).substring(2, 5);
+  return `${timestamp}-${randomStr}`.toUpperCase();
+};
 export const getNextReceiptNumber = async () => {
   const key = 'receipt_number';
 
@@ -7,8 +13,8 @@ export const getNextReceiptNumber = async () => {
   const next = current ? parseInt(current) + 1 : 1;
 
   await AsyncStorage.setItem(key, next.toString());
-
-  return next.toString().padStart(5, '0');
+  let number = `${generateUniqueId()}-${next.toString().padStart(5, '0')}`
+  return number;
 };
 
 

@@ -30,18 +30,18 @@ export const registerBusinessGeofence = async (
 
     await BackgroundGeolocation.addGeofence({
         identifier: "business-zone",
-        radius: 200,
+        radius: 50,
         latitude: lat,
         longitude: lng,
         notifyOnExit: true,
         notifyOnEntry: false
     });
 };
-export const listenForGeofence = (onExit: () => void): void => {
+export const listenForGeofence = (onExit:  (isInside: boolean) => void): void => {
     BackgroundGeolocation.onGeofence((event: GeofenceEvent) => {
         console.log("Geofence event:", event);
         if (event.action === "EXIT") {
-            onExit();
+            onExit(false);
         }
     });
 };

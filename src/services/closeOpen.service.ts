@@ -42,6 +42,10 @@ export const createPaymentsTable = async () => {
             `CREATE TABLE IF NOT EXISTS Payments (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               payment_id TEXT UNIQUE,
+              customer_phone TEXT,      
+              customer_name TEXT,       
+              mpesa_receipt TEXT, 
+              receipt_no TEXT UNIQUE,       
               sale_id TEXT,
               method TEXT,
               amount REAL,
@@ -62,7 +66,6 @@ export const calculateExpectedCash = async (userRole: string, userId?: string) =
     const db = await getDBConnection();
     await createPaymentsTable();
 
-    // Role condition
     let roleCondition = '';
     if (userRole === 'sales' && userId) {
         roleCondition = ` AND createdBy = '${userId}'`;
@@ -71,7 +74,9 @@ export const calculateExpectedCash = async (userRole: string, userId?: string) =
     const [cashSales] = await db.executeSql(
         `SELECT SUM(amount) as total
      FROM Payments
-     WHERE method='CASH' ${roleCondition}`
+     WHERE method = 'CASH'
+     AND date(created_at,'localtime') = date('now','localtime')
+     ${roleCondition}`
     );
 
     return cashSales.rows.item(0).total || 0;
@@ -110,3 +115,4 @@ export const closeRegister = async (
         console.error("Error closing register:", err);
     }
 };
+

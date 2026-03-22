@@ -45,7 +45,7 @@ function CustomHeader({ title, add }: { title: string; add?: boolean }) {
           onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
           className="mr-4"
         >
-          <Ionicons name="menu" size={24} color={primaryColor} />
+          <Ionicons name="menu" size={24} color={colors.primaryDark} />
         </TouchableOpacity>
         <View className="flex-row items-center justify-between">
           <Text

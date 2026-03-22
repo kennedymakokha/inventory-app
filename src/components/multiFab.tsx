@@ -1,9 +1,10 @@
 import React, { useRef, useState } from 'react';
+import { Text } from 'react-native';
 import { View, TouchableOpacity, Animated, Easing, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 // Assuming you might want to pass colors in or use a default
-const DEFAULT_COLOR = '#000fff'; 
+const DEFAULT_COLOR = '#000fff';
 
 export interface ActionButton {
   icon: keyof typeof Ionicons.glyphMap;
@@ -52,12 +53,12 @@ const RadialFab = ({
 
   return (
     // Fixed: Added zIndex and ensured container doesn't block touches when closed
-    <View 
-        style={[
-            styles.container, 
-            { bottom: position.bottom, right: position.right }
-        ]}
-        pointerEvents="box-none" 
+    <View
+      style={[
+        styles.container,
+        { bottom: position.bottom, right: position.right }
+      ]}
+      pointerEvents="box-none"
     >
       {actions.map((action, index) => {
         // Calculate angle: if 3 items and 90 deg, they go 0, 45, 90
@@ -99,7 +100,7 @@ const RadialFab = ({
               }}
               style={styles.touchTarget}
             >
-              <Ionicons name={action.icon} size={20} color="#fff" />
+              {action.icon !== "" ? <Ionicons name={action.icon} size={20} color="#fff" /> : <Text>{action.label}</Text>}
             </TouchableOpacity>
           </Animated.View>
         );
@@ -112,14 +113,14 @@ const RadialFab = ({
       >
         {/* Added Rotation to the icon itself */}
         <Animated.View style={{
-            transform: [{
-                rotate: animation.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ['0deg', '90deg']
-                })
-            }]
+          transform: [{
+            rotate: animation.interpolate({
+              inputRange: [0, 1],
+              outputRange: ['0deg', '90deg']
+            })
+          }]
         }}>
-            <Ionicons name={open ? 'close' : mainIcon} size={26} color="#fff" />
+          <Ionicons name={open ? 'close' : mainIcon} size={26} color="#fff" />
         </Animated.View>
       </TouchableOpacity>
     </View>

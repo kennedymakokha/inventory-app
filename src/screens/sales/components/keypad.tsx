@@ -52,7 +52,7 @@ const Keypad = ({ value, onChange }: any) => {
                 borderRadius: 10,
                 alignItems: "center",
                 borderWidth: 1,
-                borderColor: colors.border,
+                borderColor: colors.primaryLight,
               }}
               activeOpacity={0.8}
             >
