@@ -14,14 +14,11 @@ import { Provider, useSelector } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { store, persistor } from './store';
 import Ionicons from 'react-native-vector-icons/Ionicons'
-
 import { SettingsProvider } from './src/context/SettingsContext';
 import { useAuthContext } from './src/context/authContext';
 import { useTokenExpiryWatcher } from './src/hooks/useTokenExpiryWatcher';
-
 import { RootDrawer } from './src/navigations/rootDrawer';
 import { AuthStack } from './src/navigations/auth/stack';
-
 import { globalSync } from './src/sync';
 import { syncTables } from './src/sync/tables';
 
@@ -48,19 +45,34 @@ import { BusinessProvider, useBusiness } from './src/context/BusinessContext';
 import { UserProvider } from './src/context/UserContext';
 import { SocketProvider } from './src/context/socketContext';
 
-import {
-  registerBusinessGeofence,
-  initGeofence,
-  listenForGeofence,
-  startGeofenceMonitoring
-} from './src/services/geofenceService';
-
 import { ThemeProvider, useTheme } from './src/context/themeContext';
-import { createCustomerTable } from './src/services/customer.service';
+import { NativeModules, NativeEventEmitter } from 'react-native';
 
+// "RNCustomGeolocation" matches getName() in your Java file
+const { RNCustomGeolocation } = NativeModules;
+const geoEventEmitter = new NativeEventEmitter(RNCustomGeolocation);
 /* -------------------------------- */
 /* Global Sync Guard */
 /* -------------------------------- */
+
+const getCurrentPosition = () => {
+  return RNCustomGeolocation.getCurrentPosition();
+};
+
+const watchPosition = (callback: any) => {
+  RNCustomGeolocation.startWatching();
+
+  // This listens to the "onLocationUpdate" event sent from your Java code
+  const subscription = geoEventEmitter.addListener('onLocationUpdate', (location) => {
+    callback(location);
+  });
+
+  // Return a function to stop watching (clean up)
+  return () => {
+    subscription.remove();
+    RNCustomGeolocation.stopWatching();
+  };
+};
 let syncing = false;
 
 const safeSync = async (token: any) => {
@@ -127,7 +139,35 @@ const AppWithProviders = () => {
   const [isWithinZones, setisWithinZones] = React.useState(true);
 
   const { colors } = useTheme();
+  // Get once
+  useEffect(() => {
+    let stopWatcher: () => void;
 
+    const run = async () => {
+      try {
+        console.log("Checking Location...");
+        const loc = await getCurrentPosition().catch((e: any) => {
+          console.log("Native Geo Error:", e);
+          return null;
+        });
+
+        if (loc) {
+          console.log("Initial Position:", loc);
+          stopWatcher = watchPosition((location: any) => {
+            console.log("Live Update:", location);
+          });
+        }
+      } catch (err) {
+        console.error("Non-blocking Geo error:", err);
+      }
+    };
+
+    run();
+
+    return () => {
+      if (stopWatcher) stopWatcher();
+    };
+  }, []);
   // Working hours
   const [startHour, endHour] = (() => {
     if (business?.working_hrs) {
@@ -147,26 +187,26 @@ const AppWithProviders = () => {
   const isWithinHours = currentHour >= startHour && currentHour < endHour;
 
   /* ---------- Geofence Setup ---------- */
-  useEffect(() => {
-    if (!business?.latitude || !business?.longitude) return;
+  // useEffect(() => {
+  //   if (!business?.latitude || !business?.longitude) return;
 
-    const setup = async () => {
-      await initGeofence();
+  //   const setup = async () => {
+  //     await initGeofence();
 
-      await registerBusinessGeofence(
-        Number(business.latitude),
-        Number(business.longitude)
-      );
+  //     await registerBusinessGeofence(
+  //       Number(business.latitude),
+  //       Number(business.longitude)
+  //     );
 
-      listenForGeofence((isInside) => {
-        setisWithinZones(isInside);
-      });
+  //     listenForGeofence((isInside) => {
+  //       setisWithinZones(isInside);
+  //     });
 
-      await startGeofenceMonitoring();
-    };
+  //     await startGeofenceMonitoring();
+  //   };
 
-    setup();
-  }, [business]);
+  //   setup();
+  // }, [business]);
 
   /* ---------- DB Setup ---------- */
   useEffect(() => {

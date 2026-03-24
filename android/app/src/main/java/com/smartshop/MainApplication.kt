@@ -1,5 +1,8 @@
 package com.smartshop
 
+// 1. ADD THIS IMPORT (The Package, not just the Module)
+import com.smartshop.customgeo.CustomGeoPackage 
+
 import android.app.Application
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
@@ -18,8 +21,8 @@ class MainApplication : Application(), ReactApplication {
       object : DefaultReactNativeHost(this) {
         override fun getPackages(): List<ReactPackage> =
             PackageList(this).packages.apply {
-              // Packages that cannot be autolinked yet can be added manually here, for example:
-              // add(MyReactNativePackage())
+              // 2. ADD THE PACKAGE INSTANCE HERE
+              add(CustomGeoPackage())
             }
 
         override fun getJSMainModuleName(): String = "index"
@@ -37,7 +40,6 @@ class MainApplication : Application(), ReactApplication {
     super.onCreate()
     SoLoader.init(this, OpenSourceMergedSoMapping)
     if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
-      // If you opted-in for the New Architecture, we load the native entry point for this app.
       load()
     }
   }

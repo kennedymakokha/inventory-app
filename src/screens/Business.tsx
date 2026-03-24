@@ -152,8 +152,7 @@ const BusinessProfileScreen = () => {
 
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
-            <KeyboardAvoidingView
-                style={{ flex: 1 }}
+            <KeyboardAvoidingView style={{ flex: 1 }}
                 behavior={Platform.OS === "ios" ? "padding" : undefined}
                 keyboardVerticalOffset={80}
             >  <ScrollView
