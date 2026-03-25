@@ -131,7 +131,7 @@ const MultiLineChart: React.FC<LineGraphProps> = ({
     >
       <Text
         style={{
-          color: colors.primaryDark,
+          color: colors.primary,
           fontSize: 18,
           fontWeight: "600",
           marginBottom: 10,

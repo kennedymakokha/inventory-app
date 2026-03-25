@@ -29,6 +29,7 @@ import RadialFab from "../components/multiFab";
 
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { clockIn, clockOut } from "../services/users.service";
 const Dashboard = () => {
   const { user } = useSelector((state: any) => state.auth);
   const { colors, isDarkMode } = useTheme();
@@ -42,7 +43,7 @@ const Dashboard = () => {
   const [monthlySales, setMonthlySales] = useState<any[]>([]);
   const [TopProducts, setTopProducts] = useState([]);
   const [datasets, setDatasets] = useState<any[]>([]);
- const { refreshTheme } = useTheme();
+  const { refreshTheme } = useTheme();
   const fetchHourlySales = async () => {
     try {
       const productDatasets = await getHourlySalesByProduct(
@@ -77,6 +78,7 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
+
     if (!socket) return;
 
     const handleNotification = async (data: Business) => {
@@ -92,6 +94,8 @@ const Dashboard = () => {
       socket.off("notification", handleNotification);
     };
   }, [socket]);
+
+ 
 
   const [startHour, endHour] = (() => {
     if (business?.working_hrs) {

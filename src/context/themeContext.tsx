@@ -58,17 +58,40 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   });
 
   // Function to load colors from Storage
+  // Inside ThemeProvider
+  const [tick, setTick] = useState(0); // A "force update" counter
+
   const loadThemeColors = async () => {
     try {
       const storedPrimary = await AsyncStorage.getItem("primary_color");
       const storedSecondary = await AsyncStorage.getItem("secondary_color");
 
+      // Even if the colors haven't changed, updating state 
+      // triggers the useEffect that builds the 'colors' object
       if (storedPrimary) setDynamicPrimary(storedPrimary);
       if (storedSecondary) setDynamicSecondary(storedSecondary);
+
+      setTick(t => t + 1); // Increment to force the second useEffect to run
+      console.log("Theme Refreshed to:", storedPrimary);
     } catch (e) {
       console.log("Error loading theme", e);
     }
   };
+
+  // Add 'tick' to this dependency array to be 100% sure it runs
+  useEffect(() => {
+    const base = isDarkMode ? Theme.dark : Theme.light;
+    setColors({
+      ...base,
+      primary: dynamicPrimary,
+      primaryLight: lightenColor(dynamicPrimary, 90),
+      primaryDark: darkenColor(dynamicPrimary, 50),
+      secondary: dynamicSecondary,
+      success: Theme.success,
+      danger: Theme.danger,
+      dropzone: "#f3f4f6"
+    });
+  }, [isDarkMode, dynamicPrimary, dynamicSecondary, tick]);
 
   // Initial load
   useEffect(() => {

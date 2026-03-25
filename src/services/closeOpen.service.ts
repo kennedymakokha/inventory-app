@@ -45,7 +45,7 @@ export const createPaymentsTable = async () => {
               customer_phone TEXT,      
               customer_name TEXT,       
               mpesa_receipt TEXT, 
-              receipt_no TEXT UNIQUE,       
+              receipt_no TEXT,       
               sale_id TEXT,
               method TEXT,
               amount REAL,

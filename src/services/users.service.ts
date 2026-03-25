@@ -45,6 +45,32 @@ export const createUserTable = async () => {
   }
 };
 
+export const createCLockTable = async () => {
+  try {
+    const db = await getDBConnection();
+    await createTableIfNotExists(
+      db,
+      'Clock', // Changed to plural to match your Insert
+      `CREATE TABLE Clock (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          clock_id TEXT UNIQUE,
+          user_id TEXT ,
+          check_in_time TEXT,
+          check_out_time TEXT,
+          business TEXT,
+          synced INTEGER DEFAULT 0,
+          createdAt TEXT,
+          updatedAt TEXT,
+          deleted_at TEXT
+      );` // Removed the trailing comma after deleted_at
+    );
+  } catch (err) {
+    console.error(' createClocksTable failed:', err);
+    throw err;
+  }
+};
+
+
 export const updateUser = async (
   data: UserItem
 ) => {
@@ -97,6 +123,78 @@ export const getUsers = async (
 
 
 
+export const clockIn = async (item: {
+  user_id: string;
+  business_id: string;
+}) => {
+  const db = await getDBConnection();
+
+  // 🔍 Check if there's already an open session
+  const checkQuery = `
+    SELECT * FROM Clock
+    WHERE user_id = ?
+    AND check_out_time IS NULL
+    LIMIT 1
+  `;
+
+  const existing = await db.executeSql(checkQuery, [item.user_id]);
+
+  if (existing[0].rows.length > 0) {
+    throw new Error("User already clocked in");
+  }
+
+  const now = new Date().toISOString();
+  let clockId = uuidv4()
+  const insertQuery = `
+    INSERT INTO Clock (
+      clock_id,
+      user_id,
+      business,
+      check_in_time,
+      check_out_time,
+      synced,
+      createdAt,
+      updatedAt
+    )
+    VALUES (?,?, ?, ?, NULL, ?, ?, ?)
+  `;
+
+  await db.executeSql(insertQuery, [
+    clockId,
+    item.user_id,
+    item.business_id,
+    now,
+    0,
+    now,
+    now,
+  ]);
+};
+export const clockOut = async (user_id: string) => {
+  const db = await getDBConnection();
+  const now = new Date().toISOString();
+
+  // 1. Find the latest open clock record
+  const selectQuery = `
+    SELECT id FROM Clock
+    WHERE user_id = ?
+    AND check_out_time IS NULL
+    ORDER BY createdAt DESC
+    LIMIT 1
+  `;
+  const result = await db.executeSql(selectQuery, [user_id]);
+
+  if (result[0].rows.length > 0) {
+    const clockId = result[0].rows.item(0).id;
+
+    // 2. Update that record
+    const updateQuery = `
+      UPDATE Clock
+      SET check_out_time = ?, updatedAt = ?
+      WHERE id = ?
+    `;
+    await db.executeSql(updateQuery, [now, now, clockId]);
+  }
+};
 
 
 export const saveUserItems = async (

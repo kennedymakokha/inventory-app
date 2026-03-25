@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, Image } from "react-native";
 import { DrawerContentComponentProps } from "@react-navigation/drawer";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -10,6 +10,7 @@ import { formatNumber } from "../../utils/formatNumbers";
 import { closeAndDeleteDatabase } from "../services/db-service";
 import { useTheme } from "../context/themeContext";
 import { useBusiness } from "../context/BusinessContext";
+import { useFocusEffect } from "@react-navigation/native";
 
 
 const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => {
@@ -21,7 +22,7 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => 
 
   // Component State
   const [expected, setExpected] = useState<any>("0");
-  const [message, setMessage] = useState<string>("");
+  const isInactive = colors.primary === "#868688";
 
   const handleLogout = async () => {
     try {
@@ -48,7 +49,7 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => 
     const interval = setInterval(load, 5000);
     return () => clearInterval(interval);
   }, [user]);
-
+ 
   const menuItem = (label: string, icon: string, screen: string, role?: string) => {
     if (user?.role === "admin" || user?.role === role) {
       return (
@@ -73,7 +74,12 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => 
   const showText = currentHour >= 18;
 
   return (
-    <View style={{ backgroundColor: colors.background }} className="flex-1  ">
+    <View
+      style={{
+        backgroundColor: colors.background,
+        opacity: isInactive ? 0.8 : 1 // Subtly dim the whole drawer
+      }}
+      className="flex-1  ">
       {/* Header */}
       <View style={{ marginBottom: 20 }}>
         {/* Background */}
@@ -179,18 +185,14 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => 
         </View>
       </View>
 
-      {!!message && (
-        <Text style={{ color: colors.text }} className="text-center mt-2">
-          {message}
-        </Text>
-      )}
+
       <View className="px-5">
         {/* Navigation Links */}
         {menuItem("Home", "home-outline", "dashboard", "sales")}
         {menuItem("Business", "briefcase-outline", "business", "admin")}
         {menuItem("Products", "swap-horizontal-outline", "products", "admin")}
         {menuItem("Categories", "grid-outline", "categories", "admin")}
-        {menuItem("Sales", "cart-outline", "sales", "sales")}
+        {!isInactive && menuItem("Sales", "cart-outline", "sales", "sales")}
         {menuItem("Reports", "book-outline", "salesreport", "sales")}
         {menuItem("Settings", "settings-outline", "settings", "sales")}
         {menuItem("Profile", "person-outline", "profile", "sales")}
@@ -261,7 +263,7 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => 
               marginTop: 2,
             }}
           >
-            Mtandao LTD
+            {isInactive ? "SHOP CLOSED / OUT OF ZONE" : "Mtandao LTD"}
           </Text>
         </View>
       </View>

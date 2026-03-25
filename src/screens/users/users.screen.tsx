@@ -55,7 +55,6 @@ const UsersScreen = () => {
             const db = await getDBConnection();
             const storedItems = await getUsers(db);
             setUsers(storedItems);
-            console.log(storedItems)
         } catch (err) {
             console.error(err);
         }

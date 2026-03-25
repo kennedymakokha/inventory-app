@@ -11,6 +11,8 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="18"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="18"/>
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     
     <application
       android:name=".MainApplication"
@@ -24,6 +26,12 @@
       <meta-data
     android:name="com.google.android.geo.API_KEY"
     android:value="AIzaSyAlznuU65FZX3CAnSRXG052QnR0YqPO290"/>
+    <service 
+        android:name=".customgeo.LocationService"
+        android:foregroundServiceType="location"
+        android:enabled="true"
+        android:exported="false" />
+     <receiver android:name=".customgeo.GeofenceBroadcastReceiver" android:enabled="true" android:exported="true" />   
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"

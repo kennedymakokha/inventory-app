@@ -80,5 +80,13 @@ export const syncTables = [
         lastSyncKey: "auth_last_sync",
         payloadKey: "users",
     },
+    {
+        tableName: "Clock",
+        primaryKey: "clock_id",
+        bulkEndpoint: "/api/clocks/bulk",
+        updatedSinceEndpoint: "/api/clocks/updated-since",
+        lastSyncKey: "clocks_last_sync",
+        payloadKey: "clocks",
+    },
     
 ];

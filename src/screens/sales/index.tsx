@@ -18,6 +18,9 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SalesStackParamList } from "../../../models/navigationTypes";
 import { getProductsGroupedByCategory } from "../../services/product.service";
 import { useTheme } from "../../context/themeContext";
+import { useCart } from "../../context/CartContext";
+import { useSelector } from "react-redux";
+import { RootState } from "../../../store";
 
 const LIMIT = 20;
 
@@ -29,7 +32,7 @@ export default function GroupedProductsForSale() {
 
     const navigation =
         useNavigation<NativeStackNavigationProp<SalesStackParamList>>();
-
+  const { items: cart } = useSelector((state: RootState) => state.cart);
     const { query } = useSearch();
     const { colors, isDarkMode } = useTheme();
     const [loading, setLoading] = useState(false);
@@ -191,24 +194,36 @@ export default function GroupedProductsForSale() {
                 {loading ? (
                     <SkeletonList />
                 ) : (
-                    <FlatList
-                        data={categories}
-                        keyExtractor={(item) => item}
-                        renderItem={renderCategory}
+                    <>
+                        <FlatList
+                            data={categories}
+                            keyExtractor={(item) => item}
+                            renderItem={renderCategory}
 
-                        onEndReached={loadMore}
-                        onEndReachedThreshold={0.5}
+                            onEndReached={loadMore}
+                            onEndReachedThreshold={0.5}
 
-                        refreshControl={
-                            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                        }
+                            refreshControl={
+                                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                            }
 
-                        ListEmptyComponent={() => (
-                            <View className="items-center mt-10">
-                                <Text className="text-gray-400">No products found</Text>
-                            </View>
+                            ListEmptyComponent={() => (
+                                <View className="items-center mt-10">
+                                    <Text className="text-gray-400">No products found</Text>
+                                </View>
+                            )}
+                        />
+                        {cart.length > 0 && (
+                            <TouchableOpacity
+                                onPress={() => navigation.navigate("Sales_Details", { category: expandedCategory || categories[0] })}
+                                className="absolute bottom-10 left-5 right-5 bg-green-600 p-4 rounded-2xl flex-row justify-between"
+                            >
+                                <Text className="text-white font-bold">Items in Cart: {cart.length}</Text>
+                                <Text className="text-white font-bold">View Checkout →</Text>
+                            </TouchableOpacity>
                         )}
-                    />
+                    </>
+
                 )}
 
             </View>

@@ -118,207 +118,321 @@ export const createRefundItemsTable = async () => {
 // -------------------------------
 
 
+// export const finalizeSale = async (
+//   db: SQLiteDatabase,
+//   cartItems: CartItem[],
+//   data: {
+//     receiptNo: any;
+//     method: string;
+//     phone?: string;
+//     paidAmount?: string;
+//     business_id?: string,
+//     createdBy: string,
+//     mpesaData?: any
+//   }
+// ): Promise<void> => {
+
+
+//   if (!cartItems || cartItems.length === 0) {
+//     console.log(" Cart is empty");
+//     return;
+//   }
+//   const now = new Date().toISOString();
+//   const saleId = uuidv4();
+
+//   const total = cartItems.reduce(
+//     (sum, item) => sum + item.price * item.quantity,
+//     0
+//   );
+
+
+//   return new Promise((resolve, reject) => {
+
+//     db.transaction(
+
+//       (tx) => {
+//         // INSERT SALE
+//         tx.executeSql(
+//           `INSERT INTO Sale
+//           (sale_id,total,createdBy,receipt_number,payment_method,phone,synced,created_at,updatedAt)
+//           VALUES (?,?,?,?,?,?,?,?,?)`,
+//           [
+//             saleId,
+//             total,
+//             data.createdBy,
+//             data.receiptNo,
+//             data.method,
+//             data.phone ?? null,
+//             0,
+//             now,
+//             now
+//           ],
+//           (_, result) => {
+//             if (result.rowsAffected === 0) {
+//               throw new Error("Sale insert failed");
+//             }
+//             console.log(" Sale inserted");
+//           },
+//           (_, error) => {
+//             console.log(" Sale insert error", error);
+//             throw error;
+//           }
+//         );
+
+//         for (const item of cartItems) {
+//           const saleItemId = uuidv4();
+//           const itemTotal = item.price * item.quantity;
+
+//           // INSERT SALE ITEM
+//           tx.executeSql(
+//             `INSERT INTO SaleItems
+//             (sale_item_id,sale_id,product_id,quantity,price,total,synced,created_at,updatedAt)
+//             VALUES (?,?,?,?,?,?,?,?,?)`,
+//             [
+//               saleItemId,
+//               saleId,
+//               item.product_id,
+//               item.quantity,
+//               item.price,
+//               itemTotal,
+//               0,
+//               now,
+//               now
+//             ],
+//             () => console.log(" SaleItem inserted"),
+//             (_, error) => {
+//               console.log(" SaleItem error", error);
+//               throw error;
+//             }
+//           );
+
+//           // UPDATE PRODUCT STOCK
+//           tx.executeSql(
+//             `UPDATE Product
+//              SET quantity = quantity - ?, synced = 0, updatedAt = ?
+//              WHERE product_id = ? AND quantity >= ?`,
+//             [
+//               item.quantity,
+//               now,
+//               item.product_id,
+//               item.quantity
+//             ],
+//             (_, res) => {
+
+//               if (res.rowsAffected === 0) {
+//                 console.log(" Not enough stock for", item.product_id);
+//                 throw new Error("Insufficient stock");
+//               }
+
+//               console.log("📉 Stock updated");
+
+//             },
+//             (_, error) => {
+//               console.log(" Stock update error", error);
+//               throw error;
+//             }
+//           );
+
+//           // INVENTORY LOG
+//           const inventoryId = uuidv4();
+
+//           tx.executeSql(
+//             `INSERT INTO Inventory_log
+//             (inventory_log_id,
+//             business,
+//             product_id,
+//             quantity,
+//             reference_id,
+//             reference_type,
+//             createdBy,
+//             synced,
+//             createdAt,
+//             updatedAt)
+//             VALUES (?,?,?,?,?,?,?,?,?,?)`,
+//             [
+//               inventoryId,
+//               data.business_id,
+//               item.product_id,
+//               item.quantity,
+//               saleId,
+//               "SALE",
+//               data.createdBy,
+//               0,
+//               now,
+//               now
+//             ],
+
+//             (_, error) => {
+//               console.log(" Inventory log error", error);
+//               throw error;
+//             }
+//           );
+
+//         }
+
+//         // INSERT PAYMENT
+//         const paymentId = uuidv4();
+
+//         tx.executeSql(
+//           `INSERT INTO Payments
+//           (payment_id,sale_id,method,amount,synced,created_at,updatedAt,createdBy,customer_phone,      
+//               customer_name,       
+//               mpesa_receipt, 
+//               receipt_no)
+//           VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+//           [
+//             paymentId,
+//             saleId,
+//             data.method,
+//             total,
+//             0,
+//             now,
+//             now,
+//             data.createdBy ?? "",
+//             data?.mpesaData?.phone ?? "",
+//             data?.mpesaData?.customer_name ?? "Unknown Customer",
+//             data?.mpesaData?.receiptNumber ?? "",
+//             data?.receiptNo ?? "",
+
+//           ],
+
+//           (_, error) => {
+//             console.log(" Payment insert error", error);
+//             throw error;
+//           }
+//         );
+
+//       },
+
+//       (error) => {
+//         console.log(" Transaction error:", error);
+//         reject(error);
+//       },
+
+//       () => {
+
+//         resolve();
+//       }
+
+//     );
+
+//   });
+// };
 export const finalizeSale = async (
   db: SQLiteDatabase,
   cartItems: CartItem[],
   data: {
     receiptNo: any;
-    method: string;
+    method: string; // "CASH", "MPESA", or "SPLIT"
     phone?: string;
-    paidAmount?: string;
-    business_id?: string,
-    createdBy: string,
-    mpesaData?: any
+    cashAmount?: number;  // Added for split
+    mpesaAmount?: number; // Added for split
+    business_id?: string;
+    createdBy: string;
+    mpesaData?: any;
   }
 ): Promise<void> => {
-
-
   if (!cartItems || cartItems.length === 0) {
-    console.log(" Cart is empty");
+    console.log("Cart is empty");
     return;
   }
+
   const now = new Date().toISOString();
   const saleId = uuidv4();
-
-  const total = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
-
+  const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return new Promise((resolve, reject) => {
-
     db.transaction(
-
       (tx) => {
-        // INSERT SALE
+        // 1. INSERT SALE
         tx.executeSql(
-          `INSERT INTO Sale
-          (sale_id,total,createdBy,receipt_number,payment_method,phone,synced,created_at,updatedAt)
+          `INSERT INTO Sale 
+          (sale_id, total, createdBy, receipt_number, payment_method, phone, synced, created_at, updatedAt) 
           VALUES (?,?,?,?,?,?,?,?,?)`,
-          [
-            saleId,
-            total,
-            data.createdBy,
-            data.receiptNo,
-            data.method,
-            data.phone ?? null,
-            0,
-            now,
-            now
-          ],
+          [saleId, total, data.createdBy, data.receiptNo, data.method, data.phone ?? null, 0, now, now],
           (_, result) => {
-            if (result.rowsAffected === 0) {
-              throw new Error("Sale insert failed");
-            }
-            console.log(" Sale inserted");
+            if (result.rowsAffected === 0) throw new Error("Sale insert failed");
           },
-          (_, error) => {
-            console.log(" Sale insert error", error);
-            throw error;
-          }
+          (_, error) => { throw error; }
         );
 
+        // 2. PROCESS ITEMS, STOCK & LOGS
         for (const item of cartItems) {
           const saleItemId = uuidv4();
           const itemTotal = item.price * item.quantity;
 
-          // INSERT SALE ITEM
           tx.executeSql(
-            `INSERT INTO SaleItems
-            (sale_item_id,sale_id,product_id,quantity,price,total,synced,created_at,updatedAt)
-            VALUES (?,?,?,?,?,?,?,?,?)`,
-            [
-              saleItemId,
-              saleId,
-              item.product_id,
-              item.quantity,
-              item.price,
-              itemTotal,
-              0,
-              now,
-              now
-            ],
-            () => console.log(" SaleItem inserted"),
-            (_, error) => {
-              console.log(" SaleItem error", error);
-              throw error;
-            }
+            `INSERT INTO SaleItems (sale_item_id, sale_id, product_id, quantity, price, total, synced, created_at, updatedAt) VALUES (?,?,?,?,?,?,?,?,?)`,
+            [saleItemId, saleId, item.product_id, item.quantity, item.price, itemTotal, 0, now, now]
           );
 
-          // UPDATE PRODUCT STOCK
           tx.executeSql(
-            `UPDATE Product
-             SET quantity = quantity - ?, synced = 0, updatedAt = ?
-             WHERE product_id = ? AND quantity >= ?`,
-            [
-              item.quantity,
-              now,
-              item.product_id,
-              item.quantity
-            ],
+            `UPDATE Product SET quantity = quantity - ?, synced = 0, updatedAt = ? WHERE product_id = ? AND quantity >= ?`,
+            [item.quantity, now, item.product_id, item.quantity],
             (_, res) => {
-
-              if (res.rowsAffected === 0) {
-                console.log(" Not enough stock for", item.product_id);
-                throw new Error("Insufficient stock");
-              }
-
-              console.log("📉 Stock updated");
-
-            },
-            (_, error) => {
-              console.log(" Stock update error", error);
-              throw error;
+              if (res.rowsAffected === 0) throw new Error(`Insufficient stock for ${item.product_id}`);
             }
           );
-
-          // INVENTORY LOG
-          const inventoryId = uuidv4();
 
           tx.executeSql(
-            `INSERT INTO Inventory_log
-            (inventory_log_id,
-            business,
-            product_id,
-            quantity,
-            reference_id,
-            reference_type,
-            createdBy,
-            synced,
-            createdAt,
-            updatedAt)
-            VALUES (?,?,?,?,?,?,?,?,?,?)`,
-            [
-              inventoryId,
-              data.business_id,
-              item.product_id,
-              item.quantity,
-              saleId,
-              "SALE",
-              data.createdBy,
-              0,
-              now,
-              now
-            ],
-            
-            (_, error) => {
-              console.log(" Inventory log error", error);
-              throw error;
-            }
+            `INSERT INTO Inventory_log (inventory_log_id, business, product_id, quantity, reference_id, reference_type, createdBy, synced, createdAt, updatedAt) VALUES (?,?,?,?,?,?,?,?,?,?)`,
+            [uuidv4(), data.business_id, item.product_id, item.quantity, saleId, "SALE", data.createdBy, 0, now, now]
           );
-
         }
 
-        // INSERT PAYMENT
-        const paymentId = uuidv4();
+        // 3. INSERT PAYMENTS (Handling Split Logic)
+        const paymentsToRecord = [];
 
-        tx.executeSql(
-          `INSERT INTO Payments
-          (payment_id,sale_id,method,amount,synced,created_at,updatedAt,createdBy,customer_phone,      
-              customer_name,       
-              mpesa_receipt, 
-              receipt_no)
-          VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
-          [
-            paymentId,
-            saleId,
-            data.method,
-            total,
-            0,
-            now,
-            now,
-            data.createdBy ?? "",
-            data?.mpesaData?.phone ?? "",
-            data?.mpesaData?.customer_name ?? "Unknown Customer",
-            data?.mpesaData?.receiptNumber ?? "",
-            data?.receiptNo ?? "",
-
-          ],
-        
-          (_, error) => {
-            console.log(" Payment insert error", error);
-            throw error;
+        if (data.method === 'SPLIT') {
+          if ((data.cashAmount ?? 0) > 0) {
+            paymentsToRecord.push({ method: 'CASH', amount: data.cashAmount, isMpesa: false });
           }
-        );
+          if ((data.mpesaAmount ?? 0) > 0) {
+            paymentsToRecord.push({ method: 'MPESA', amount: data.mpesaAmount, isMpesa: true });
+          }
+        } else {
+          // Single payment method (Normal flow)
+          paymentsToRecord.push({
+            method: data.method,
+            amount: total,
+            isMpesa: data.method === 'MPESA'
+          });
+        }
 
+        for (const pay of paymentsToRecord) {
+          tx.executeSql(
+            `INSERT INTO Payments 
+            (payment_id, sale_id, method, amount, synced, created_at, updatedAt, createdBy, customer_phone, customer_name, mpesa_receipt, receipt_no) 
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+            [
+              uuidv4(),
+              saleId,
+              pay.method,
+              pay.amount,
+              0,
+              now,
+              now,
+              data.createdBy ?? "",
+              pay.isMpesa ? (data?.mpesaData?.phone ?? data.phone ?? "") : "",
+              pay.isMpesa ? (data?.mpesaData?.customer_name ?? "Unknown Customer") : "",
+              pay.isMpesa ? (data?.mpesaData?.receiptNumber ?? "") : "",
+              data?.receiptNo ?? ""
+            ],
+            () => console.log(`✅ ${pay.method} Payment recorded`),
+            (_, error) => { throw error; }
+          );
+        }
       },
-
       (error) => {
-        console.log(" Transaction error:", error);
+        console.log("Transaction error:", error);
         reject(error);
       },
-
       () => {
-       
         resolve();
       }
-
     );
-
   });
 };
-
 export const createRefund = async (
   db: SQLiteDatabase,
   saleId: string,

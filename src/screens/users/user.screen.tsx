@@ -2,12 +2,13 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { ScrollView } from 'react-native-gesture-handler'
 import PageHeader from '../../components/pageHeader'
-import { getDetailedUserStats, getProductSalesReport, getSalesByCategory, getTopProducts } from '../../services/analytics.service'
+import { fetchClocks, getDetailedUserStats, getProductSalesReport, getSalesByCategory, getTopProducts, getUserClockByDay } from '../../services/analytics.service'
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme } from '../../context/themeContext'
 import StartCard from '../../components/startCard'
 import DataGraph from '../dashbordItems/DataGraph'
 import SalesReportTable from '../reports/components/salesTable'
+import { FineDate, FormatDate } from '../../../utils/formatDate'
 const filters = [
     { title: "Today", value: "today" },
     { title: "Week", value: "week" },
@@ -30,7 +31,7 @@ const UserScreen = ({ route }: any) => {
     const [customDate, setCustomDate] = useState<string | undefined>();
     const [startDate, setStartDate] = useState<string | undefined>();
     const [endDate, setEndDate] = useState<string | undefined>();
-    const [hasMore, setHasMore] = useState(true);
+    const [sessions, setSessions] = useState([]);
     const [page, setPage] = useState<any>(1);
     const [loading, setLoading] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
@@ -44,6 +45,9 @@ const UserScreen = ({ route }: any) => {
     const fetchAnalytics = async () => {
         // Ensure you use the correct ID property from your user object
         const id = user.user_id || user._id;
+
+        const Clocks: any = await getUserClockByDay(id, customDate)
+        setSessions(Clocks.sessions)
 
         // Fetch Transaction Count (Quantity of sales)
         const totalTransactions = await getDetailedUserStats(
@@ -61,11 +65,39 @@ const UserScreen = ({ route }: any) => {
         const reportData: any = await getProductSalesReport(id, selectedFilter as any, customDate, undefined, undefined, page, 20);
         setReports(reportData)
     };
-
+    console.log(sessions)
     useEffect(() => {
         fetchAnalytics();
 
     }, [selectedFilter, customDate, startDate, endDate]);
+    const calculateWorkingMinutes = (checkIn: string, checkOut: string | null) => {
+        if (!checkOut) return 0;
+        const start = new Date(checkIn).getTime();
+        const end = new Date(checkOut).getTime();
+        return Math.floor((end - start) / (1000 * 60));
+    };
+
+    const formatHours = (minutes: number) => {
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return `${h}h ${m}m`;
+    };
+
+    const totalMinutes = sessions.reduce(
+        (sum, s) => sum + calculateWorkingMinutes(s.check_in_time, s.check_out_time),
+        0
+    );
+
+    const sessionsWithTotals = sessions.map((s) => {
+        const minutes = calculateWorkingMinutes(s.check_in_time, s.check_out_time);
+        return {
+            ...s,
+            check_in_time: FormatDate(s.check_in_time),
+            check_out_time: FormatDate(s.check_out_time),
+            working_hours: minutes > 0 ? formatHours(minutes) : "—",
+            total_hours: formatHours(totalMinutes), // ✅ same total for each row
+        };
+    });
 
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -114,7 +146,7 @@ const UserScreen = ({ route }: any) => {
                 <DataGraph pressed={() => setShowbyCategory(!showbyCategory)} title={`Top Performing ${showbyCategory ? "Categories" : "Products"}`} data={showbyCategory ? topCategoryProducts ?? topCategoryProducts : topProducts ?? topProducts} />
 
                 <SalesReportTable
-                    onTablePressed={()=>setTablePressed(!tablePressed)}
+                    onTablePressed={() => setTablePressed(!tablePressed)}
                     headers={[
                         { key: 'product_name', label: 'Name', width: 180 },
                         { key: 'quantity_sold', label: 'Quantity' },
@@ -124,6 +156,19 @@ const UserScreen = ({ route }: any) => {
                     onEndReached={loadMore}
                     loading={loading || loadingMore}
                     rowKey={(item) => `${item.product_id}`}
+                />
+                <SalesReportTable
+                    onTablePressed={() => setTablePressed(!tablePressed)}
+                    headers={[
+                        { key: 'check_in_time', label: 'Check In', width: 140 },
+                        { key: 'check_out_time', label: 'Check Out', width: 140 },
+                        { key: 'working_hours', label: 'Working Hours', width: 120 },
+                        { key: 'total_hours', label: 'Total Hours', width: 120 },
+                    ]}
+                    data={sessionsWithTotals}
+                    onEndReached={loadMore}
+
+                    rowKey={(item) => `${item.check_in_time}`}
                 />
                 {/* CUSTOM MODAL */}
                 {showDatePicker && (
@@ -139,6 +184,7 @@ const UserScreen = ({ route }: any) => {
                         }}
                     />
                 )}
+
 
             </ScrollView>
         </View>

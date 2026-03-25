@@ -731,3 +731,105 @@ export const fetchPayments = async (
     });
   });
 };
+
+export const getClockSummaryByDay = async (date?: string) => {
+  const db = await getDBConnection();
+
+  // Default to today if no date is passed
+  const selectedDate = date || new Date().toISOString().split("T")[0];
+
+  const query = `
+        SELECT 
+        u.user_id,
+        u.name,
+        c.check_in_time,
+        c.check_out_time
+      FROM Clock c
+      JOIN Users u ON u.user_id = c.user_id
+      WHERE DATE(c.check_in_time) = DATE(?)
+      ORDER BY u.name, c.check_in_time;
+  `;
+
+  const results = await db.executeSql(query, [selectedDate]);
+
+  const rows = results[0].rows;
+  let data = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    data.push(rows.item(i));
+  }
+
+  return data;
+};
+
+export const getUserClockByDay = async (
+  user_id: string,
+  date?: string
+) => {
+  const db = await getDBConnection();
+
+  const selectedDate =
+    date || new Date().toISOString().split("T")[0];
+
+  const query = `
+    SELECT 
+      u.user_id,
+      u.name,
+      c.check_in_time,
+      c.check_out_time
+    FROM Clock c
+    JOIN User u ON u.user_id = c.user_id
+    WHERE c.user_id = ?
+    AND DATE(c.check_in_time) = DATE(?)
+    ORDER BY c.check_in_time
+  `;
+
+  const results = await db.executeSql(query, [
+    user_id,
+    selectedDate,
+  ]);
+
+  const rows = results[0].rows;
+
+  // Structure it like your accordion expects
+  const sessions = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows.item(i);
+
+    sessions.push({
+      check_in_time: row.check_in_time,
+      check_out_time: row.check_out_time,
+    });
+  }
+
+  return {
+    user_id,
+    name: rows.length > 0 ? rows.item(0).name : "",
+    sessions,
+  };
+};
+
+export const fetchClocks = async (): Promise<any[]> => {
+  const db = await getDBConnection();
+
+  return new Promise((resolve, reject) => {
+    db.transaction(tx => {
+      tx.executeSql(
+        `SELECT * FROM Clock`,
+        [],
+        (_, { rows }) => {
+          const sales = rows.raw();
+
+          console.log("Sales from DB:", sales); // 👈 log here
+
+          resolve(sales);
+        },
+        (_, error) => {
+          reject(error);
+          return false;
+        }
+      );
+    });
+  });
+};

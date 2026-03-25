@@ -13,7 +13,7 @@ import {
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useBusiness, Business } from "../context/BusinessContext";
 import { useUpdatebusinessMutation } from "../services/businessApi";
-import Geolocation from "react-native-geolocation-service";
+
 import { PermissionsAndroid } from "react-native";
 import { useTheme } from "../context/themeContext";
 
@@ -60,14 +60,14 @@ const BusinessProfileScreen = () => {
         const hasPermission = await requestLocationPermission();
         if (!hasPermission) return;
 
-        Geolocation.getCurrentPosition(
-            (position) => {
-                const { latitude, longitude } = position.coords;
-                setData(prev => ({ ...prev, latitude, longitude }));
-            },
-            () => { },
-            { enableHighAccuracy: true }
-        );
+        // Geolocation.getCurrentPosition(
+        //     (position) => {
+        //         const { latitude, longitude } = position.coords;
+        //         setData(prev => ({ ...prev, latitude, longitude }));
+        //     },
+        //     () => { },
+        //     { enableHighAccuracy: true }
+        // );
     };
 
     useEffect(() => {
