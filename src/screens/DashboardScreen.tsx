@@ -30,6 +30,8 @@ import RadialFab from "../components/multiFab";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { clockIn, clockOut } from "../services/users.service";
+import { NativeModules } from "react-native";
+import { TouchableOpacity } from "react-native";
 const Dashboard = () => {
   const { user } = useSelector((state: any) => state.auth);
   const { colors, isDarkMode } = useTheme();
@@ -44,6 +46,7 @@ const Dashboard = () => {
   const [TopProducts, setTopProducts] = useState([]);
   const [datasets, setDatasets] = useState<any[]>([]);
   const { refreshTheme } = useTheme();
+  const { Kiosk } = NativeModules;
   const fetchHourlySales = async () => {
     try {
       const productDatasets = await getHourlySalesByProduct(
@@ -95,7 +98,7 @@ const Dashboard = () => {
     };
   }, [socket]);
 
- 
+
 
   const [startHour, endHour] = (() => {
     if (business?.working_hrs) {
@@ -161,6 +164,14 @@ const Dashboard = () => {
           endHour={endHour} title="Hourly Sales" datasets={datasets || []} />
 
         <PieChart title="Monthly sales" data={monthlySales} />
+        {/* <View className="flex px-10 py-3 flex-row justify-between w-full ">
+          <TouchableOpacity onPress={() => Kiosk.lock()}>
+            <Text className="text-white">LOCK APP</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => Kiosk.unlock()}>
+            <Text className="text-white">UN LOCK APP</Text>
+          </TouchableOpacity>
+        </View> */}
 
       </ScrollView>
 

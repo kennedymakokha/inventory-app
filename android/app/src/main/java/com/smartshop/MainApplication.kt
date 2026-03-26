@@ -2,7 +2,7 @@ package com.smartshop
 
 // 1. ADD THIS IMPORT (The Package, not just the Module)
 import com.smartshop.customgeo.CustomGeoPackage 
-
+import com.smartshop.kiosk.KioskPackage
 import android.app.Application
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
@@ -23,6 +23,7 @@ class MainApplication : Application(), ReactApplication {
             PackageList(this).packages.apply {
               // 2. ADD THE PACKAGE INSTANCE HERE
               add(CustomGeoPackage())
+              add(KioskPackage())
             }
 
         override fun getJSMainModuleName(): String = "index"

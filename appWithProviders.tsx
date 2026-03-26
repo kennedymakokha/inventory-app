@@ -17,6 +17,8 @@ import { createInventorylogTable } from './src/services/inventory.service';
 import { AuthStack } from './src/navigations/auth/stack';
 import AppWithAuth from './appWithAuth';
 import "./global.css"
+import LockScreen from './src/screens/LockScreen';
+import { SafeAreaView } from 'react-native-safe-area-context';
 // "RNCustomGeolocation" matches getName() in your Java file
 const { RNCustomGeolocation } = NativeModules;
 const geoEventEmitter = new NativeEventEmitter(RNCustomGeolocation);
@@ -25,7 +27,9 @@ const AppWithProviders = () => {
     const { token } = useAuthContext();
     const { business } = useBusiness();
     const { user } = useSelector((state: any) => state.auth);
+    const [shouldLock, setShouldLock] = React.useState(false);
 
+    const { Kiosk } = NativeModules;
     const [dbReady, setDbReady] = React.useState(false);
     const [isWithinZones, setisWithinZones] = React.useState(true);
 
@@ -77,7 +81,9 @@ const AppWithProviders = () => {
                         ["primary_color", pColor],
                         ["secondary_color", sColor]
                     ]);
+
                     await clockIn({ user_id: `${user?._id}`, business_id: `${user.business._id}` })
+                    setShouldLock(false);
                     Alert.alert("Zone Check", "Welcome to the business zone!");
                 } else {
                     // --- EXITING ZONE ---
@@ -87,7 +93,7 @@ const AppWithProviders = () => {
                         ["primary_color", "#868688"],
                         ["secondary_color", "#fff"]
                     ]);
-
+                    setShouldLock(true);
                     Alert.alert("Zone Check", "You have left the authorized zone!");
                 }
 
@@ -175,8 +181,11 @@ const AppWithProviders = () => {
                     ["primary_color", pColor],
                     ["secondary_color", sColor]
                 ]);
+                setShouldLock(shouldBeInactive);
 
-                if (shouldBeInactive) await clockOut(user?._id);
+                if (shouldBeInactive) {
+                    await clockOut(user?._id);
+                }
 
                 // Force context update
                 setTimeout(() => refreshTheme(), 200);
@@ -187,6 +196,27 @@ const AppWithProviders = () => {
         const timer = setInterval(checkStatus, 15000); // 15s check is enough
         return () => clearInterval(timer);
     }, [isWithinZones, business, user, refreshTheme]);
+
+    useEffect(() => {
+        const applyLock = async () => {
+            try {
+                if (shouldLock) {
+                    console.log("🔒 Locking device...");
+                    Kiosk.lock();
+                } else {
+                    console.log("🔓 Unlocking device...");
+                    Kiosk.unlock();
+                }
+            } catch (e) {
+                console.error("Kiosk error:", e);
+            }
+        };
+
+        // Small delay ensures UI is active
+        const timeout = setTimeout(applyLock, 300);
+
+        return () => clearTimeout(timeout);
+    }, [shouldLock]);
     /* ---------- DB Setup ---------- */
     useEffect(() => {
         const setupDB = async () => {
@@ -233,8 +263,13 @@ const AppWithProviders = () => {
 
     return (
         <View style={{ flex: 1 }}>
-            <StatusBar animated backgroundColor={colors.primary} />
-            <AppWithAuth />
+            <StatusBar animated backgroundColor={colors.primary}  />
+            <SafeAreaView style={styles.container}>
+                  <AppWithAuth />
+                  {/* {shouldLock ? <LockScreen adminPin="2468" /> : <AppWithAuth />}  */}
+            </SafeAreaView>
+          
+          
         </View>
     );
 };
@@ -243,18 +278,18 @@ const AppWithProviders = () => {
 export default AppWithProviders
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#1e293b'
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#1e293b'
-  },
-  loadingText: {
-    color: 'white',
-    marginTop: 10
-  }
+    container: {
+        flex: 1,
+        backgroundColor: '#1e293b'
+    },
+    center: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#1e293b'
+    },
+    loadingText: {
+        color: 'white',
+        marginTop: 10
+    }
 });
