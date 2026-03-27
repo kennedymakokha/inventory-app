@@ -32,6 +32,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { clockIn, clockOut } from "../services/users.service";
 import { NativeModules } from "react-native";
 import { TouchableOpacity } from "react-native";
+import { useAppStatus } from "../hooks/useAppStatus";
+
 const Dashboard = () => {
   const { user } = useSelector((state: any) => state.auth);
   const { colors, isDarkMode } = useTheme();
@@ -47,6 +49,13 @@ const Dashboard = () => {
   const [datasets, setDatasets] = useState<any[]>([]);
   const { refreshTheme } = useTheme();
   const { Kiosk } = NativeModules;
+
+  const {
+    isWithinZones,
+    setIsWithinZones,
+    shouldLock,
+    evaluateStatus
+  } = useAppStatus({ user, business, refreshTheme });
   const fetchHourlySales = async () => {
     try {
       const productDatasets = await getHourlySalesByProduct(
@@ -80,26 +89,104 @@ const Dashboard = () => {
     fetchAnalytics(filter)
   }, []);
 
+
+
+  // inside your component
+  const { applyThemeDirectly } = useTheme();
+  // const { evaluateStatus } = useAppStatus({ user, business, refreshTheme });
+
   useEffect(() => {
-
     if (!socket) return;
+    socket.emit("registerDevice", user._id);
+    /* ---------------- BUSINESS UPDATE ---------------- */
+    const handleBusinessUpdate = async (data: any) => {
+      try {
+        console.log("📡 Business update received:", data);
 
-    const handleNotification = async (data: Business) => {
-      await updateBusiness(data);
-      await AsyncStorage.setItem("primary_color", data.primary_color ?? "#3c58a8");
-      await AsyncStorage.setItem("secondary_color", data.secondary_color ?? "#fff");
-      await refreshTheme();
+        // 1. Update business (source of truth)
+        await updateBusiness(data);
+
+        // 2. ⚡ INSTANT UI UPDATE (no AsyncStorage delay)
+        if (data.primary_color || data.secondary_color) {
+          applyThemeDirectly(
+            data.primary_color || "#3c58a8",
+            data.secondary_color || "#ffffff"
+          );
+        }
+
+        // 3. 🔥 Re-evaluate app state (lock, clock, etc.)
+        await evaluateStatus();
+
+      } catch (err) {
+        console.error("❌ Socket business update error:", err);
+      }
     };
 
-    socket.on("notification", handleNotification);
+    /* ---------------- FORCE LOCK ---------------- */
+    const handleForceLock = async () => {
+      console.log("🔒 Server forced lock");
 
+      await AsyncStorage.setItem("inactive", "true");
+
+      await evaluateStatus(); // engine handles lock
+    };
+
+    /* ---------------- FORCE UNLOCK ---------------- */
+    const handleForceUnlock = async () => {
+      console.log("🔓 Server forced unlock");
+
+      await AsyncStorage.setItem("inactive", "false");
+
+      await evaluateStatus();
+    };
+
+    /* ---------------- GEOFENCE OVERRIDE ---------------- */
+    const handleGeofenceOverride = async (inside: boolean) => {
+      console.log("📍 Server geofence override:", inside);
+
+      await AsyncStorage.setItem("lastZoneState", inside ? "true" : "false");
+
+      await evaluateStatus(inside);
+    };
+
+    /* ---------------- OPTIONAL: LIVE DASHBOARD REFRESH ---------------- */
+    const handleNewSale = async () => {
+      console.log("💰 New sale → refreshing dashboard");
+
+      const filter = user.role === "admin" ? "month" : "today";
+
+      await fetchHourlySales();
+      await loadDashboard();
+      await fetchAnalytics(filter);
+    };
+
+    /* ---------------- ATTACH EVENTS ---------------- */
+    socket.on("business:update", handleBusinessUpdate);
+    socket.on("force:lock", handleForceLock);
+    socket.on("force:unlock", handleForceUnlock);
+    socket.on("geofence:update", handleGeofenceOverride);
+    socket.on("sales:new", handleNewSale);
+
+    socket.on("connect", () => {
+      console.log("🔌 Socket connected:", socket.id);
+    });
+
+    socket.on("disconnect", () => {
+      console.log("⚠️ Socket disconnected");
+    });
+
+    /* ---------------- CLEANUP ---------------- */
     return () => {
-      socket.off("notification", handleNotification);
+      socket.off("business:update", handleBusinessUpdate);
+      socket.off("force:lock", handleForceLock);
+      socket.off("force:unlock", handleForceUnlock);
+      socket.off("geofence:update", handleGeofenceOverride);
+      socket.off("sales:new", handleNewSale);
+      socket.off("connect");
+      socket.off("disconnect");
     };
-  }, [socket]);
 
-
-
+  }, [socket, updateBusiness, evaluateStatus]);
   const [startHour, endHour] = (() => {
     if (business?.working_hrs) {
       // Example format: "8-17"
@@ -164,14 +251,14 @@ const Dashboard = () => {
           endHour={endHour} title="Hourly Sales" datasets={datasets || []} />
 
         <PieChart title="Monthly sales" data={monthlySales} />
-        {/* <View className="flex px-10 py-3 flex-row justify-between w-full ">
+        <View className="flex px-10 py-3 flex-row justify-between w-full ">
           <TouchableOpacity onPress={() => Kiosk.lock()}>
             <Text className="text-white">LOCK APP</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => Kiosk.unlock()}>
             <Text className="text-white">UN LOCK APP</Text>
           </TouchableOpacity>
-        </View> */}
+        </View>
 
       </ScrollView>
 

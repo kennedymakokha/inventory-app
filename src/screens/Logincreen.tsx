@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Alert, TouchableOpacity, Image } from 'react-native';
-import axios from 'axios';
+import { View, Text, Alert, TouchableOpacity, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Input, { InputContainer } from '../components/Input';
-import { authorizedFetch } from '../middleware/auth.middleware';
-
+import Input from '../components/Input';
 import Button from '../components/Button';
 import { useAuthContext } from '../context/authContext';
 import { User } from '../../models';
@@ -16,20 +13,19 @@ import { useBusiness } from '../context/BusinessContext';
 import { useTheme } from '../context/themeContext';
 import Toast from '../components/Toast';
 
-
 const LoginScreen = ({ navigation }: any) => {
     const [msg, setMsg] = useState({ msg: "", state: "" });
-    const [loading, setLoading] = useState(false)
+    const [loading, setLoading] = useState(false);
 
     const [item, setItem] = useState({ phone_number: "", password: '' });
-    const [loginUser, { error }] = useLoginMutation();
-    const dispatch = useDispatch()
+
+    const [loginUser] = useLoginMutation();
+    const dispatch = useDispatch();
+
     const { login } = useAuthContext();
     const { setUser } = useUser();
     const { refreshTheme } = useTheme();
-    const { business, updateBusiness, isLoading } = useBusiness();
-
-
+    const { updateBusiness } = useBusiness();
 
     const handleChange = (key: keyof User, value: string) => {
         setMsg({ msg: "", state: "" });
@@ -40,10 +36,8 @@ const LoginScreen = ({ navigation }: any) => {
         }));
     };
 
-
-    const handleLogin = async (e?: any) => {
+    const handleLogin = async () => {
         try {
-
             setMsg({ msg: "", state: "" });
 
             if (!item.phone_number || !item.password) {
@@ -56,42 +50,43 @@ const LoginScreen = ({ navigation }: any) => {
             const data = await loginUser(item).unwrap();
 
             if (data.ok) {
-                // Update Redux / AsyncStorage if needed
                 dispatch(setCredentials({ ...data }));
+
                 await AsyncStorage.setItem("accessToken", data.token);
                 await AsyncStorage.setItem("userId", data.user._id);
 
-                //  Update context with logged-in user
-
                 if (data.exp) {
                     await AsyncStorage.setItem("tokenExpiry", data.exp.toString());
+
                     await login(data.token);
                     setUser(data.user);
                     updateBusiness(data.user.business);
+
+                    // ✅ Set default theme ONLY (status engine will override if needed)
                     if (data.user.business) {
                         const { primary_color, secondary_color } = data.user.business;
 
-                        // 1. Save the "Seeds"
-                        await AsyncStorage.setItem("primary_color", primary_color ?? "#3c58a8");
-                        await AsyncStorage.setItem("secondary_color", secondary_color ?? "#fff");
+                        await AsyncStorage.multiSet([
+                            ["primary_color", primary_color ?? "#3c58a8"],
+                            ["secondary_color", secondary_color ?? "#fff"]
+                        ]);
 
-                        // 2. Refresh the context
-                        // The Provider will now call createTheme(p, s) and update the whole UI
                         await refreshTheme();
                     }
                 }
 
-                setLoading(false);
                 setMsg({ msg: "Login successful! Redirecting...", state: "success" });
             } else {
-                setLoading(false);
-                setMsg({ msg: "Login successful! Redirecting...", state: "error" });
+                setMsg({ msg: "Login failed", state: "error" });
             }
+
+            setLoading(false);
         } catch (error: any) {
             console.error(error);
-            setLoading(false)
+            setLoading(false);
+
             setMsg({
-                msg: error.message || error.data || "Error occurred, try again ",
+                msg: error.message || error.data || "Error occurred, try again",
                 state: "error",
             });
         }
@@ -99,36 +94,39 @@ const LoginScreen = ({ navigation }: any) => {
 
     return (
         <View className="flex-1 justify-center items-center px-5 bg-secondary-900">
-            <View className="sm:flex-1 flex sm:border  border-white sm:rounded  rounded-bl-[40%] sm:px-10 size-full items-center justify-center  sm:size-1/2">
-                <View className="items-center justify-center">
-                    <Image
-                        className="w-60 h-60"
-                        source={require('./../assets/logo.png')}
-                        resizeMode="cover" // or 'contain', 'stretch'
-                    />
-                </View>
+            <View className="sm:flex-1 flex sm:border border-white sm:rounded rounded-bl-[40%] sm:px-10 size-full items-center justify-center sm:size-1/2">
+
+                <Image
+                    className="w-60 h-60"
+                    source={require('./../assets/logo.png')}
+                    resizeMode="cover"
+                />
 
                 <Input
                     label="Phone Number"
-                    placeholder="Phone nunber"
+                    placeholder="Phone number"
                     value={item.phone_number}
                     onChangeText={(text: string) => handleChange("phone_number", text)}
                     keyboardType="numeric"
                 />
+
                 <Input
                     label="Password"
                     placeholder="Password"
                     value={item.password}
                     onChangeText={(text: string) => handleChange("password", text)}
-                    keyboardType="password"
                 />
+
                 <Button handleclick={handleLogin} loading={loading} title="Login" />
-                <TouchableOpacity onPress={() => navigation.navigate('forgetPass')} >
-                    <Text className="text-center text-secondary-100">Forgot Password?</Text>
+
+                <TouchableOpacity onPress={() => navigation.navigate('forgetPass')}>
+                    <Text className="text-center text-secondary-100">
+                        Forgot Password?
+                    </Text>
                 </TouchableOpacity>
+
                 {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
             </View>
-
         </View>
     );
 };

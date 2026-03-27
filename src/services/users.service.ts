@@ -140,6 +140,7 @@ export const clockIn = async (item: {
   const existing = await db.executeSql(checkQuery, [item.user_id]);
 
   if (existing[0].rows.length > 0) {
+    return
     throw new Error("User already clocked in");
   }
 

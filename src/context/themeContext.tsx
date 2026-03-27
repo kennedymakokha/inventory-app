@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Theme } from '../utils/theme';
 
-// ... (keep your lightenColor and darkenColor functions here)
+/* ---------------- COLOR HELPERS ---------------- */
 const lightenColor = (hex: string, percent: number) => {
   const num = parseInt(hex.replace('#', ''), 16);
   const r = Math.min(255, ((num >> 16) + Math.round(255 * (percent / 100))));
@@ -10,120 +10,144 @@ const lightenColor = (hex: string, percent: number) => {
   const b = Math.min(255, ((num & 0x0000ff) + Math.round(255 * (percent / 100))));
   return `rgb(${r}, ${g}, ${b})`;
 };
-const darkenColor = (hex: string, percent: number) => {
-  // Remove the hash if it exists and parse to an integer
-  const num = parseInt(hex.replace('#', ''), 16);
 
-  // Calculate how much to subtract (0-255 based on percentage)
+const darkenColor = (hex: string, percent: number) => {
+  const num = parseInt(hex.replace('#', ''), 16);
   const amount = Math.round(255 * (percent / 100));
 
-  // Extract R, G, B and subtract the amount, ensuring we don't go below 0
   const r = Math.max(0, (num >> 16) - amount);
   const g = Math.max(0, ((num >> 8) & 0x00ff) - amount);
   const b = Math.max(0, (num & 0x0000ff) - amount);
 
   return `rgb(${r}, ${g}, ${b})`;
 };
+
+/* ---------------- TYPES ---------------- */
 type Colors = {
-  background: string; card: string; elevated: string; text: string;
-  subText: string; border: string; inputBg: string; placeholder: string;
-  chipInactive: string; chipTextInactive: string; primary: string;
-  primaryLight: string; primaryDark: string; secondary: string;
-  success: string; danger: string; dropzone: string;
+  background: string;
+  card: string;
+  elevated: string;
+  text: string;
+  subText: string;
+  border: string;
+  inputBg: string;
+  placeholder: string;
+  chipInactive: string;
+  chipTextInactive: string;
+  primary: string;
+  primaryLight: string;
+  primaryDark: string;
+  secondary: string;
+  success: string;
+  danger: string;
+  dropzone: string;
 };
 
 type ThemeContextType = {
   isDarkMode: boolean;
   setDarkMode: (value: boolean) => void;
   colors: Colors;
-  refreshTheme: () => Promise<void>; // Added this
+  refreshTheme: () => Promise<void>;
+  applyThemeDirectly: (primary: string, secondary: string) => void; // 🔥 optional fast path
 };
 
+/* ---------------- CONTEXT ---------------- */
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+/* ---------------- PROVIDER ---------------- */
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [isDarkMode, setDarkMode] = useState(true);
-  const [dynamicPrimary, setDynamicPrimary] = useState(Theme.primary);
-  const [dynamicSecondary, setDynamicSecondary] = useState(Theme.secondary);
 
-  const [colors, setColors] = useState<Colors>({
-    ...Theme.light,
-    primary: Theme.primary,
-    primaryLight: lightenColor(Theme.primary, 90),
-    primaryDark: darkenColor(Theme.primary, 50),
-    secondary: Theme.secondary,
-    success: Theme.success,
-    danger: Theme.danger,
-    dropzone: "#f3f4f6"
+  const [colors, setColors] = useState<Colors>(() => {
+    const base = Theme.light;
+    return {
+      ...base,
+      primary: Theme.primary,
+      primaryLight: lightenColor(Theme.primary, 90),
+      primaryDark: darkenColor(Theme.primary, 50),
+      secondary: Theme.secondary,
+      success: Theme.success,
+      danger: Theme.danger,
+      dropzone: "#f3f4f6"
+    };
   });
 
-  // Function to load colors from Storage
-  // Inside ThemeProvider
-  const [tick, setTick] = useState(0); // A "force update" counter
+  /* ---------------- CORE THEME BUILDER ---------------- */
+  const buildTheme = (primary: string, secondary: string, dark: boolean): Colors => {
+    const base = dark ? Theme.dark : Theme.light;
 
-  const loadThemeColors = async () => {
+    return {
+      ...base,
+      primary,
+      primaryLight: lightenColor(primary, 90),
+      primaryDark: darkenColor(primary, 50),
+      secondary,
+      success: Theme.success,
+      danger: Theme.danger,
+      dropzone: "#f3f4f6"
+    };
+  };
+
+  /* ---------------- REFRESH FROM STORAGE ---------------- */
+  const refreshTheme = async () => {
     try {
       const storedPrimary = await AsyncStorage.getItem("primary_color");
       const storedSecondary = await AsyncStorage.getItem("secondary_color");
 
-      // Even if the colors haven't changed, updating state 
-      // triggers the useEffect that builds the 'colors' object
-      if (storedPrimary) setDynamicPrimary(storedPrimary);
-      if (storedSecondary) setDynamicSecondary(storedSecondary);
+      const primary = storedPrimary || Theme.primary;
+      const secondary = storedSecondary || Theme.secondary;
 
-      setTick(t => t + 1); // Increment to force the second useEffect to run
-      console.log("Theme Refreshed to:", storedPrimary);
+      const newTheme = buildTheme(primary, secondary, isDarkMode);
+
+      console.log("🎨 Applying theme:", primary);
+
+      setColors(newTheme); // 🔥 triggers UI update instantly
+
     } catch (e) {
-      console.log("Error loading theme", e);
+      console.log("❌ Theme load error:", e);
     }
   };
 
-  // Add 'tick' to this dependency array to be 100% sure it runs
-  useEffect(() => {
-    const base = isDarkMode ? Theme.dark : Theme.light;
-    setColors({
-      ...base,
-      primary: dynamicPrimary,
-      primaryLight: lightenColor(dynamicPrimary, 90),
-      primaryDark: darkenColor(dynamicPrimary, 50),
-      secondary: dynamicSecondary,
-      success: Theme.success,
-      danger: Theme.danger,
-      dropzone: "#f3f4f6"
-    });
-  }, [isDarkMode, dynamicPrimary, dynamicSecondary, tick]);
+  /* ---------------- DIRECT APPLY (SOCKET FAST PATH) ---------------- */
+  const applyThemeDirectly = (primary: string, secondary: string) => {
+    const newTheme = buildTheme(primary, secondary, isDarkMode);
+    setColors(newTheme);
 
-  // Initial load
+    // optional persistence
+    AsyncStorage.multiSet([
+      ["primary_color", primary],
+      ["secondary_color", secondary]
+    ]);
+
+    console.log("⚡ Theme applied instantly:", primary);
+  };
+
+  /* ---------------- HANDLE DARK MODE ---------------- */
   useEffect(() => {
-    loadThemeColors();
+    refreshTheme();
+  }, [isDarkMode]);
+
+  /* ---------------- INITIAL LOAD ---------------- */
+  useEffect(() => {
+    refreshTheme();
   }, []);
 
-  // Update colors whenever DarkMode OR Dynamic colors change
-  useEffect(() => {
-    const base = isDarkMode ? Theme.dark : Theme.light;
-    setColors({
-      ...base,
-      primary: dynamicPrimary,
-      primaryLight: lightenColor(dynamicPrimary, 90),
-      primaryDark: darkenColor(dynamicPrimary, 50),
-      secondary: dynamicSecondary,
-      success: Theme.success,
-      danger: Theme.danger,
-    });
-  }, [isDarkMode, dynamicPrimary, dynamicSecondary]);
-
   return (
-    <ThemeContext.Provider value={{
-      isDarkMode,
-      setDarkMode,
-      colors,
-      refreshTheme: loadThemeColors // Exposed to trigger updates
-    }}>
+    <ThemeContext.Provider
+      value={{
+        isDarkMode,
+        setDarkMode,
+        colors,
+        refreshTheme,
+        applyThemeDirectly
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   );
 };
 
+/* ---------------- HOOK ---------------- */
 export const useTheme = () => {
   const context = useContext(ThemeContext);
   if (!context) throw new Error("useTheme must be used within ThemeProvider");
