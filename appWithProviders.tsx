@@ -29,10 +29,8 @@ const AppWithProviders = () => {
     const { token } = useAuthContext();
     const { business } = useBusiness();
     const { user } = useSelector((state: any) => state.auth);
-    const { colors, refreshTheme } = useTheme();
-
+    const { colors,  } = useTheme();
     const { Kiosk } = NativeModules;
-
     const [dbReady, setDbReady] = React.useState(false);
 
     // ✅ GLOBAL STATUS ENGINE
@@ -46,12 +44,10 @@ const AppWithProviders = () => {
     /* ---------------- GEO TRACKING ---------------- */
     const startProfessionalTracking = async () => {
         const settings = await RNCustomGeolocation.checkLocationSettings();
-
         if (!settings.isLocationReady) {
             RNCustomGeolocation.openLocationSettings();
             return;
         }
-
         RNCustomGeolocation.startBackgroundService();
     };
 
@@ -59,7 +55,7 @@ const AppWithProviders = () => {
         if (user?.role === 'sales') {
             startProfessionalTracking();
         }
-
+        console.log("tracking")
         return () => RNCustomGeolocation.stopBackgroundService();
     }, [user]);
 
@@ -67,11 +63,8 @@ const AppWithProviders = () => {
     useEffect(() => {
         const handleTransition = async (data: any) => {
             const inside = data.isInside;
-
             setIsWithinZones(inside);
-
             await AsyncStorage.setItem("lastZoneState", inside ? "true" : "false");
-
             await evaluateStatus(inside); // 🔥 REQUIRED
         };
 
@@ -85,13 +78,23 @@ const AppWithProviders = () => {
                 `${business.business_name}`,
                 parseFloat(business.latitude),
                 parseFloat(business.longitude),
-                150
+                15
             );
         }
 
         return () => subscription.remove();
     }, [business]);
+    useEffect(() => {
+        const restore = async () => {
+            const savedZone = await AsyncStorage.getItem("lastZoneState");
+            const zoneState = savedZone === "true";
 
+            setIsWithinZones(zoneState);
+            evaluateStatus(zoneState);
+        };
+
+        restore();
+    }, []);
     /* ---------------- INITIAL CHECK (LOGIN FIX) ---------------- */
     useEffect(() => {
         const init = async () => {
@@ -100,7 +103,6 @@ const AppWithProviders = () => {
                 const zoneState = savedZone === "true";
 
                 setIsWithinZones(zoneState);
-
                 await evaluateStatus(zoneState); // 🔥 RUN IMMEDIATELY
             }
         };
@@ -141,7 +143,6 @@ const AppWithProviders = () => {
                 setDbReady(false);
                 return;
             }
-
             try {
                 await getDBConnection();
                 await createUserTable();
@@ -155,7 +156,6 @@ const AppWithProviders = () => {
                 await createInventorylogTable();
                 await createCashRegisterTable();
                 await createCLockTable();
-
                 setDbReady(true);
             } catch (err) {
                 console.error("CRITICAL DB INIT FAILURE:", err);
@@ -176,7 +176,6 @@ const AppWithProviders = () => {
             </View>
         );
     }
-
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
             <StatusBar animated backgroundColor={colors.primary} />

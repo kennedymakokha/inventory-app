@@ -40,7 +40,15 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
         params.putString("fenceId", geofencingEvent.getTriggeringGeofences().get(0).getRequestId());
 
         // Send to React Native
-        sendEvent(context, "onGeofenceTransition", params);
+            Intent serviceIntent = new Intent(context, GeofenceHeadlessService.class);
+        serviceIntent.putExtra("isInside", isInside);
+        serviceIntent.putExtra("fenceId", geofencingEvent.getTriggeringGeofences().get(0).getRequestId());
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            context.startForegroundService(serviceIntent);
+        } else {
+            context.startService(serviceIntent);
+        }
     }
     private void sendNotification(Context context, String title, String message) {
         String CHANNEL_ID = "Geofence_Alerts";

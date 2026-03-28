@@ -18,6 +18,7 @@ import { PersistGate } from 'redux-persist/integration/react';
 import { SocketProvider } from './src/context/socketContext';
 import AppWithProviders from './appWithProviders';
 import { NavigationContainer } from '@react-navigation/native';
+import './geofenceTask';
 const Root = () => (
     <Provider store={store}>
         <PersistGate

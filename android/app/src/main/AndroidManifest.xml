@@ -34,7 +34,9 @@
         android:foregroundServiceType="location"
         android:enabled="true"
         android:exported="false" />
-
+      <service
+        android:name=".GeofenceHeadlessService"
+        android:permission="android.permission.BIND_JOB_SERVICE" />
       <receiver android:name=".customgeo.GeofenceBroadcastReceiver" android:enabled="true" android:exported="true" />   
 
       <receiver
