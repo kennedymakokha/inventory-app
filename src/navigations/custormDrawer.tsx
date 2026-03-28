@@ -190,8 +190,6 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => 
         {/* Navigation Links */}
         {menuItem("Home", "home-outline", "dashboard", "sales")}
         {menuItem("Business", "briefcase-outline", "business", "admin")}
-        {menuItem("Products", "swap-horizontal-outline", "products", "admin")}
-        {menuItem("Categories", "grid-outline", "categories", "admin")}
         {!isInactive && menuItem("Sales", "cart-outline", "sales", "sales")}
         {menuItem("Reports", "book-outline", "salesreport", "sales")}
         {menuItem("Settings", "settings-outline", "settings", "sales")}

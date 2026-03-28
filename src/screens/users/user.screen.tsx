@@ -1,236 +1,282 @@
-import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native'
-import React, { useEffect, useState } from 'react'
-import { ScrollView } from 'react-native-gesture-handler'
-import PageHeader from '../../components/pageHeader'
-import { fetchClocks, getDetailedUserStats, getProductSalesReport, getSalesByCategory, getTopProducts, getUserClockByDay } from '../../services/analytics.service'
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import {
+    View,
+    Text,
+    StyleSheet,
+    TouchableOpacity,
+    ScrollView,
+    ActivityIndicator,
+    RefreshControl,
+    Platform
+} from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useTheme } from '../../context/themeContext'
-import StartCard from '../../components/startCard'
-import DataGraph from '../dashbordItems/DataGraph'
-import SalesReportTable from '../reports/components/salesTable'
-import { FineDate, FormatDate } from '../../../utils/formatDate'
+
+import PageHeader from '../../components/pageHeader';
+import StartCard from '../../components/startCard';
+import DataGraph from '../dashbordItems/DataGraph';
+import SalesReportTable from '../reports/components/salesTable';
+
+import { useTheme } from '../../context/themeContext';
+import { FormatDate } from '../../../utils/formatDate';
+import { 
+    getDetailedUserStats, 
+    getProductSalesReport, 
+    getSalesByCategory, 
+    getTopProducts, 
+    getUserClockByDay 
+} from '../../services/analytics.service';
+
 const filters = [
-    { title: "Today", value: "today" },
-    { title: "Week", value: "week" },
-    { title: "Month", value: "month" },
-    { title: "Year", value: "year" },
-    { title: "Custom", value: "custom" },
+    { title: "Today", value: "today", icon: "today-outline" },
+    { title: "Week", value: "week", icon: "calendar-outline" },
+    { title: "Month", value: "month", icon: "stats-chart-outline" },
+    { title: "Custom", value: "custom", icon: "options-outline" },
 ];
 
 const UserScreen = ({ route }: any) => {
     const { user } = route.params;
-    const { colors } = useTheme();
+    const { colors, isDarkMode } = useTheme();
+
+    // States
+    const [selectedFilter, setSelectedFilter] = useState("today");
+    const [customDate, setCustomDate] = useState<string | undefined>();
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showbyCategory, setShowbyCategory] = useState(false);
-    const [tablePressed, setTablePressed] = useState(false);
-    const [selectedFilter, setSelectedFilter] = useState("today");
+    
+    const [loading, setLoading] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
+
     const [stats, setStats] = useState({ totalTransactions: 0, totalSales: 0, cashTotal: 0, mpesaTotal: 0, cashCount: 0, mpesaCount: 0 });
     const [topProducts, setTopProducts] = useState([]);
     const [topCategoryProducts, setTopCategoryProducts] = useState([]);
     const [reports, setReports] = useState([]);
-    const [customDate, setCustomDate] = useState<string | undefined>();
-    const [startDate, setStartDate] = useState<string | undefined>();
-    const [endDate, setEndDate] = useState<string | undefined>();
-    const [sessions, setSessions] = useState([]);
-    const [page, setPage] = useState<any>(1);
-    const [loading, setLoading] = useState(false);
-    const [loadingMore, setLoadingMore] = useState(false);
-    const loadMore = () => {
-        // if (!hasMore || loadingMore) return;
+    const [sessions, setSessions] = useState<any[]>([]);
 
-        // const nextPage = page + 1;
-        // setPage(nextPage);
-        // fetchAnalytics(nextPage, true);
-    };
-    const fetchAnalytics = async () => {
-        // Ensure you use the correct ID property from your user object
+    const fetchAnalytics = useCallback(async () => {
         const id = user.user_id || user._id;
+        setLoading(true);
+        try {
+            const [clocks, totalStats, products, categories, reportData] = await Promise.all([
+                getUserClockByDay(id, customDate),
+                getDetailedUserStats(id, selectedFilter as any, customDate),
+                getTopProducts(id, selectedFilter as any, customDate),
+                getSalesByCategory(id, selectedFilter as any, customDate),
+                getProductSalesReport(id, selectedFilter as any, customDate, undefined, undefined, 1, 30)
+            ]);
 
-        const Clocks: any = await getUserClockByDay(id, customDate)
-        setSessions(Clocks.sessions)
+            setSessions(clocks?.sessions || []);
+            setStats(totalStats);
+            setTopProducts(products);
+            setTopCategoryProducts(categories);
+            setReports(reportData);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    }, [user, selectedFilter, customDate]);
 
-        // Fetch Transaction Count (Quantity of sales)
-        const totalTransactions = await getDetailedUserStats(
-            id,
-            selectedFilter as any,
-            customDate,
-            startDate,
-            endDate
-        );
-        setStats(totalTransactions);
-        const productsResult: any = await getTopProducts(id, selectedFilter as any, customDate);
-        setTopProducts(productsResult);
-        const productsByCategoryResult: any = await getSalesByCategory(id, selectedFilter as any, customDate);
-        setTopCategoryProducts(productsByCategoryResult);
-        const reportData: any = await getProductSalesReport(id, selectedFilter as any, customDate, undefined, undefined, page, 20);
-        setReports(reportData)
-    };
-    console.log(sessions)
     useEffect(() => {
         fetchAnalytics();
+    }, [fetchAnalytics]);
 
-    }, [selectedFilter, customDate, startDate, endDate]);
-    const calculateWorkingMinutes = (checkIn: string, checkOut: string | null) => {
-        if (!checkOut) return 0;
-        const start = new Date(checkIn).getTime();
-        const end = new Date(checkOut).getTime();
-        return Math.floor((end - start) / (1000 * 60));
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchAnalytics();
     };
 
-    const formatHours = (minutes: number) => {
-        const h = Math.floor(minutes / 60);
-        const m = minutes % 60;
-        return `${h}h ${m}m`;
-    };
+    // Calculate session data with "Active" state support
+    const sessionData = useMemo(() => {
+        const calcMins = (start: string, end: string | null) => {
+            if (!end) return 0;
+            return Math.floor((new Date(end).getTime() - new Date(start).getTime()) / (1000 * 60));
+        };
+        const formatH = (mins: number) => `${Math.floor(mins / 60)}h ${mins % 60}m`;
 
-    const totalMinutes = sessions.reduce(
-        (sum, s) => sum + calculateWorkingMinutes(s.check_in_time, s.check_out_time),
-        0
-    );
+        const totalMins = sessions?.reduce((sum, s) => sum + calcMins(s.check_in_time, s.check_out_time), 0);
 
-    const sessionsWithTotals = sessions.map((s) => {
-        const minutes = calculateWorkingMinutes(s.check_in_time, s.check_out_time);
-        return {
+        return sessions.map(s => ({
             ...s,
             check_in_time: FormatDate(s.check_in_time),
-            check_out_time: FormatDate(s.check_out_time),
-            working_hours: minutes > 0 ? formatHours(minutes) : "—",
-            total_hours: formatHours(totalMinutes), // ✅ same total for each row
-        };
-    });
+            check_out_time: s.check_out_time ? FormatDate(s.check_out_time) : "Still Active",
+            working_hours: s.check_out_time ? formatH(calcMins(s.check_in_time, s.check_out_time)) : "—",
+            total_hours: formatH(totalMins)
+        }));
+    }, [sessions]);
 
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
-
-            {/* FILTERS */}
-            <PageHeader
-                component={() => (
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                        <View style={styles.filterContainer}>
-                            {filters.map(filter => (
-                                <TouchableOpacity
-                                    key={filter.value}
-                                    onPress={() => {
-                                        if (filter.value === "custom") {
-                                            setShowDatePicker(true);
-                                        }
-                                        setSelectedFilter(filter.value);
-                                    }}
-                                    style={[
-                                        styles.chip,
-                                        {
-                                            backgroundColor:
-                                                selectedFilter === filter.value
-                                                    ? colors.primary
-                                                    : colors.chipInactive
-                                        }
-                                    ]}
-                                >
-                                    <Text style={{
-                                        color: selectedFilter === filter.value
-                                            ? '#fff'
-                                            : colors.chipTextInactive
-                                    }}>
-                                        {filter.title}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </ScrollView>
-                )}
+            <PageHeader 
+                title={user.name} 
+                subtitle={user.role || "Staff Member"} 
             />
 
-            {/* STATS */}
-            <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
-                <StartCard {...stats} />
-                <DataGraph pressed={() => setShowbyCategory(!showbyCategory)} title={`Top Performing ${showbyCategory ? "Categories" : "Products"}`} data={showbyCategory ? topCategoryProducts ?? topCategoryProducts : topProducts ?? topProducts} />
+            {/* MODERN FILTER BAR */}
+            <View style={{ backgroundColor: colors.card, borderBottomWidth: 1, borderColor: colors.border }}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterBar}>
+                    {filters.map(filter => (
+                        <TouchableOpacity
+                            key={filter.value}
+                            onPress={() => {
+                                setSelectedFilter(filter.value);
+                                if (filter.value === "custom") setShowDatePicker(true);
+                                else setCustomDate(undefined);
+                            }}
+                            style={[
+                                styles.filterChip,
+                                { backgroundColor: selectedFilter === filter.value ? colors.primary : colors.background }
+                            ]}
+                        >
+                            <Ionicons 
+                                name={filter.icon as any} 
+                                size={16} 
+                                color={selectedFilter === filter.value ? "#fff" : colors.subText} 
+                            />
+                            <Text style={[styles.filterText, { color: selectedFilter === filter.value ? "#fff" : colors.text }]}>
+                                {filter.title}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+            </View>
 
-                <SalesReportTable
-                    onTablePressed={() => setTablePressed(!tablePressed)}
-                    headers={[
-                        { key: 'product_name', label: 'Name', width: 180 },
-                        { key: 'quantity_sold', label: 'Quantity' },
-                        { key: 'total_sales', label: 'Sales' },
-                    ]}
-                    data={reports}
-                    onEndReached={loadMore}
-                    loading={loading || loadingMore}
-                    rowKey={(item) => `${item.product_id}`}
-                />
-                <SalesReportTable
-                    onTablePressed={() => setTablePressed(!tablePressed)}
-                    headers={[
-                        { key: 'check_in_time', label: 'Check In', width: 140 },
-                        { key: 'check_out_time', label: 'Check Out', width: 140 },
-                        { key: 'working_hours', label: 'Working Hours', width: 120 },
-                        { key: 'total_hours', label: 'Total Hours', width: 120 },
-                    ]}
-                    data={sessionsWithTotals}
-                    onEndReached={loadMore}
+            <ScrollView 
+                showsVerticalScrollIndicator={false}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+            >
+                {/* HERO STATS */}
+                <View style={styles.contentPadding}>
+                    <StartCard {...stats} />
+                    
+                    {/* CHART SECTION */}
+                    <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                        <DataGraph 
+                            pressed={() => setShowbyCategory(!showbyCategory)} 
+                            title={`Top ${showbyCategory ? "Categories" : "Products"}`} 
+                            data={showbyCategory ? topCategoryProducts : topProducts} 
+                        />
+                    </View>
 
-                    rowKey={(item) => `${item.check_in_time}`}
-                />
-                {/* CUSTOM MODAL */}
-                {showDatePicker && (
-                    <DateTimePicker
-                        value={customDate ? new Date(customDate) : new Date()}
-                        mode="date"
-                        display="default"
-                        onChange={(e, date) => {
-                            setShowDatePicker(false);
-                            if (date)
-                                setCustomDate(date.toISOString());
+                    {/* SALES TABLE */}
+                    <View style={styles.sectionHeader}>
+                        <Ionicons name="cart-outline" size={20} color={colors.primary} />
+                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Sales Performance</Text>
+                    </View>
+                    <View style={[styles.tableContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                        <SalesReportTable
+                            headers={[
+                                { key: 'product_name', label: 'Item', width: 160 },
+                                { key: 'quantity_sold', label: 'Qty' },
+                                { key: 'total_sales', label: 'Total' },
+                            ]}
+                            data={reports}
+                            loading={loading && !refreshing}
+                            rowKey={(item: any) => `${item.product_id}`}
+                        />
+                    </View>
 
-                        }}
-                    />
-                )}
-
-
+                    {/* ATTENDANCE TABLE */}
+                    <View style={styles.sectionHeader}>
+                        <Ionicons name="time-outline" size={20} color={colors.primary} />
+                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Staff Attendance</Text>
+                    </View>
+                    <View style={[styles.tableContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                        <SalesReportTable
+                            headers={[
+                                { key: 'check_in_time', label: 'In', width: 130 },
+                                { key: 'check_out_time', label: 'Out', width: 130 },
+                                { key: 'working_hours', label: 'Dur.', width: 80 },
+                            ]}
+                            data={sessionData}
+                            loading={loading && !refreshing}
+                            rowKey={(item: any) => `${item.check_in_time}`}
+                        />
+                        {sessionData.length > 0 && (
+                            <View style={[styles.totalFooter, { borderTopColor: colors.border }]}>
+                                <Text style={{ color: colors.subText }}>Total Work Time: </Text>
+                                <Text style={{ color: colors.primary, fontWeight: '800' }}>{sessionData[0].total_hours}</Text>
+                            </View>
+                        )}
+                    </View>
+                </View>
+                <View style={{ height: 40 }} />
             </ScrollView>
-        </View>
-    )
-}
 
-export default UserScreen;
+            {showDatePicker && (
+                <DateTimePicker
+                    value={customDate ? new Date(customDate) : new Date()}
+                    mode="date"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={(e, date) => {
+                        setShowDatePicker(false);
+                        if (date) setCustomDate(date.toISOString());
+                    }}
+                />
+            )}
+        </View>
+    );
+};
 
 const styles = StyleSheet.create({
-    filterContainer: {
-        flexDirection: "row",
-        padding: 10,
-    },
-    chip: {
+    filterBar: {
         paddingHorizontal: 16,
-        paddingVertical: 6,
-        borderRadius: 20,
-        marginRight: 10,
+        paddingVertical: 12,
+        gap: 10,
     },
-    card: {
-        flex: 1,
-        height: 120,
-        borderRadius: 5,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    title: {
-        fontWeight: "bold",
-        fontSize: 16,
-        marginTop: 6,
-    },
-    modalOverlay: {
-        flex: 1,
-        justifyContent: 'center',
+    filterChip: {
+        flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.6)'
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 12,
+        gap: 6,
+        borderWidth: 1,
+        borderColor: 'transparent',
+        ...Platform.select({
+            ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
+            android: { elevation: 2 }
+        })
     },
-    modalBox: {
-        width: '80%',
-        padding: 20,
-        borderRadius: 8
+    filterText: {
+        fontSize: 13,
+        fontWeight: '600',
     },
-    confirmBtn: {
-        backgroundColor: '#22c55e',
-        padding: 12,
-        borderRadius: 5,
-        alignItems: 'center'
+    contentPadding: {
+        padding: 16,
+        gap: 20
+    },
+    sectionCard: {
+        borderRadius: 20,
+        padding: 10,
+        borderWidth: 1,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginTop: 10,
+        marginBottom: -10,
+        paddingHorizontal: 4
+    },
+    sectionTitle: {
+        fontSize: 17,
+        fontWeight: '800',
+        letterSpacing: 0.5
+    },
+    tableContainer: {
+        borderRadius: 20,
+        overflow: 'hidden',
+        borderWidth: 1,
+        elevation: 2,
+    },
+    totalFooter: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        padding: 15,
+        borderTopWidth: 1,
     }
 });
+
+export default UserScreen;

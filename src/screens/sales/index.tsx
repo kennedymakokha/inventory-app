@@ -24,9 +24,6 @@ import { RootState } from "../../../store";
 
 const LIMIT = 20;
 
-if (Platform.OS === "android") {
-    UIManager.setLayoutAnimationEnabledExperimental?.(true);
-}
 
 export default function GroupedProductsForSale() {
 

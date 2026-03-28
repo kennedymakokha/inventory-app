@@ -8,17 +8,16 @@ import {
     ScrollView,
     ActivityIndicator,
     KeyboardAvoidingView,
-    Platform
+    Platform,
+    SafeAreaView
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useBusiness, Business } from "../context/BusinessContext";
 import { useUpdatebusinessMutation } from "../services/businessApi";
-
-import { PermissionsAndroid } from "react-native";
 import { useTheme } from "../context/themeContext";
 
 const BusinessProfileScreen = () => {
-    const { colors } = useTheme();
+    const { colors, isDarkMode } = useTheme();
     const { business, updateBusiness, isLoading } = useBusiness();
     const [updateBusinessRemotely, { isLoading: isUpdating }] = useUpdatebusinessMutation();
 
@@ -26,65 +25,20 @@ const BusinessProfileScreen = () => {
     const [showKey, setShowKey] = useState(false);
 
     const [data, setData] = useState<Business>({
-        _id: "",
-        business_name: "",
-        postal_address: "",
-        phone_number: "",
-        contact_number: "",
-        kra_pin: "",
-        printQr: false,
-        working_hrs: "8-17",
-        api_key: "",
-        latitude: 0,
-        longitude: 0,
-        primary_color: "",
-        secondary_color: "",
-        logo: "",
-        state: "inactive",
-        strictMpesa: false,
+        _id: "", business_name: "", postal_address: "", phone_number: "",
+        contact_number: "", kra_pin: "", printQr: false, working_hrs: "8-17",
+        api_key: "", latitude: 0, longitude: 0, primary_color: "",
+        secondary_color: "", logo: "", state: "inactive", strictMpesa: false,
     });
-
-    const requestLocationPermission = async () => {
-        if (Platform.OS === "ios") return true;
-        try {
-            const granted = await PermissionsAndroid.request(
-                PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
-            );
-            return granted === PermissionsAndroid.RESULTS.GRANTED;
-        } catch {
-            return false;
-        }
-    };
-
-    const getCurrentLocation = async () => {
-        const hasPermission = await requestLocationPermission();
-        if (!hasPermission) return;
-
-        // Geolocation.getCurrentPosition(
-        //     (position) => {
-        //         const { latitude, longitude } = position.coords;
-        //         setData(prev => ({ ...prev, latitude, longitude }));
-        //     },
-        //     () => { },
-        //     { enableHighAccuracy: true }
-        // );
-    };
 
     useEffect(() => {
         if (business && !isEditing) {
-            setData({
-                ...business,
-                printQr: business.printQr ?? false,
-                strictMpesa: business.strictMpesa ?? false,
-            });
+            setData({ ...business, printQr: business.printQr ?? false, strictMpesa: business.strictMpesa ?? false });
         }
     }, [business]);
 
     const handleChange = (key: keyof Business, value: any) => {
-        setData(prev => ({
-            ...prev,
-            [key]: key === "latitude" || key === "longitude" ? Number(value) : value
-        }));
+        setData(prev => ({ ...prev, [key]: value }));
     };
 
     const handleSave = async () => {
@@ -92,235 +46,155 @@ const BusinessProfileScreen = () => {
             const updated = await updateBusinessRemotely(data).unwrap();
             updateBusiness(updated);
             setIsEditing(false);
-        } catch (err) {
-            console.error(err);
-        }
+        } catch (err) { console.error(err); }
     };
 
-    const renderRow = (fields: any[]) => (
-        <View style={{ flexDirection: "row", gap: 10, marginBottom: 12 }}>
-            {fields.map(field => (
-                <View key={field.key} style={{ flex: 1 }}>
-                    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                        <View style={styles.header}>
-                            <Ionicons name={field.icon} size={16} color={colors.primary} />
-                            <Text style={[styles.label, { color: colors.primary }]}>{field.label}</Text>
-                        </View>
-
-                        {isEditing ? (
-                            <TextInput
-                                style={[styles.input, { color: colors.text }]}
-                                value={String(data[field.key])}
-                                onChangeText={(t) => handleChange(field.key, t)}
-                                secureTextEntry={field.secure && !showKey}
-                            />
-                        ) : (
-                            <Text style={{ color: colors.text }}>
-                                {field.secure && !showKey ? "••••••••" : data[field.key]}
-                            </Text>
-                        )}
-                    </View>
-                </View>
-            ))}
-        </View>
-    );
-
-    const renderRadio = (label: string, key: keyof Business) => (
-        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, marginBottom: 16 }]}>
-            <Text style={[styles.label, { color: colors.primary }]}>{label}</Text>
-            <View style={styles.radioRow}>
-                {["Yes", "No"].map(val => {
-                    const boolVal = val === "Yes";
-                    return (
-                        <TouchableOpacity
-                            key={val}
-                            style={styles.radioItem}
-                            onPress={() => setData(prev => ({ ...prev, [key]: boolVal }))}
-                        >
-                            <View style={[styles.radioOuter, data[key] === boolVal && styles.radioActive]}>
-                                {data[key] === boolVal && <View style={styles.radioInner} />}
-                            </View>
-                            <Text style={{ color: colors.text }}>{val}</Text>
-                        </TouchableOpacity>
-                    );
-                })}
+    const renderField = (label: string, key: keyof Business, icon: string, secure: boolean = false) => (
+        <View style={[styles.fieldCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.fieldHeader}>
+                <Ionicons name={icon} size={14} color={colors.primary} />
+                <Text style={[styles.fieldLabel, { color: colors.subText }]}>{label}</Text>
             </View>
+            {isEditing ? (
+                <TextInput
+                    style={[styles.input, { color: colors.text, backgroundColor: isDarkMode ? '#0F172A' : '#F8FAFC' }]}
+                    value={String(data[key])}
+                    onChangeText={(t) => handleChange(key, t)}
+                    secureTextEntry={secure && !showKey}
+                    placeholder={`Enter ${label}`}
+                    placeholderTextColor={colors.subText}
+                />
+            ) : (
+                <Text style={[styles.valueText, { color: colors.text }]} numberOfLines={1}>
+                    {secure && !showKey ? "••••••••••••" : data[key] || "---"}
+                </Text>
+            )}
         </View>
     );
 
-    if (isLoading) return <ActivityIndicator style={{ flex: 1 }} />;
+    if (isLoading) return <ActivityIndicator style={{ flex: 1 }} color={colors.primary} />;
 
     return (
-        <View style={{ flex: 1, backgroundColor: colors.background }}>
-            <KeyboardAvoidingView style={{ flex: 1 }}
-                behavior={Platform.OS === "ios" ? "padding" : undefined}
-                keyboardVerticalOffset={80}
-            >  <ScrollView
-                style={{ flex: 1 }}
-                contentContainerStyle={{ padding: 16, paddingBottom: 200, flexGrow: 1 }}
-                showsVerticalScrollIndicator={false}
-            >
-
-                    {renderRow([{ label: "Business Name", key: "business_name", icon: "business-outline" }])}
-
-                    {renderRow([
-                        { label: "Phone", key: "phone_number", icon: "call-outline" },
-                        { label: "Contact", key: "contact_number", icon: "person-outline" }
-                    ])}
-
-                    {renderRow([
-                        { label: "Latitude", key: "latitude", icon: "navigate-outline" },
-                        { label: "Longitude", key: "longitude", icon: "compass-outline" }
-                    ])}
-
-                    {renderRow([
-                        { label: "KRA PIN", key: "kra_pin", icon: "document-text-outline" },
-                        { label: "Postal", key: "postal_address", icon: "location-outline" }
-                    ])}
-
-                    {renderRow([
-                        { label: "API Key", key: "api_key", icon: "key-outline", secure: true },
-                        { label: "State", key: "state", icon: "toggle-outline" }
-                    ])}
-
-                    {renderRow([
-                        { label: "Primary Color", key: "primary_color", icon: "color-palette-outline" },
-                        { label: "Secondary Color", key: "secondary_color", icon: "color-fill-outline" }
-                    ])}
-
-                    {renderRow([
-                        { label: "Logo URL", key: "logo", icon: "image-outline" }
-                    ])}
-
-                    {renderRadio("Print QR", "printQr")}
-
-                    {data.api_key && data.api_key.trim() !== "" && (
-                        <View style={{ marginBottom: 16 }}>
-                            {renderRadio("Strict Mpesa", "strictMpesa")}
-                        </View>
-                    )}
-                    {/* Working Hours Radio Group */}
-                    {/* Working Hours */}
-                    <View style={{ marginBottom: 16 }}>
-                        <Text style={[styles.label, { color: colors.primary }]}>Working Hours</Text>
-                        <View style={{ flexDirection: "row", gap: 16, marginTop: 8, flexWrap: "wrap" }}>
-                            {[
-                                { label: "8 AM - 5 PM", value: "8-17" },
-                                { label: "9 AM - 6 PM", value: "9-18" },
-                                { label: "24 Hours", value: "00-24" },
-                            ].map(opt => (
-                                <TouchableOpacity
-                                className="gap-x-3"
-                                    key={opt.value}
-                                    style={styles.radioItem}
-                                    onPress={() => isEditing && handleChange("working_hrs", opt.value)} // only change in edit mode
-                                >
-                                    <View
-                                        style={[
-                                            styles.radioOuter,
-                                            data.working_hrs === opt.value && styles.radioActive,
-                                        ]}
-                                    >
-                                        {data.working_hrs === opt.value && <View style={styles.radioInner} />}
-                                    </View>
-                                    <Text style={{ color: colors.text }}>{opt.label}</Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+            <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                    
+                    {/* SECTION 1: IDENTITY */}
+                    <Text style={[styles.sectionTitle, { color: colors.primary }]}>Business Identity</Text>
+                    <View style={styles.row}>
+                        <View style={{ flex: 1 }}>{renderField("Business Name", "business_name", "business")}</View>
                     </View>
-                    <View style={styles.bottomBar}>
-                        <TouchableOpacity style={styles.btn} onPress={getCurrentLocation}>
-                            <Text style={styles.btnText}>Use Location</Text>
-                        </TouchableOpacity>
+                    <View style={styles.row}>
+                        <View style={{ flex: 1 }}>{renderField("Phone", "phone_number", "call")}</View>
+                        <View style={{ flex: 1 }}>{renderField("Contact Person", "contact_number", "person")}</View>
+                    </View>
 
-                        <TouchableOpacity
-                            style={[styles.btn, { backgroundColor: colors.primary }]}
-                            onPress={isEditing ? handleSave : () => setIsEditing(true)}
+                    {/* SECTION 2: LOGISTICS & TAX */}
+                    <Text style={[styles.sectionTitle, { color: colors.primary, marginTop: 24 }]}>Location & Tax</Text>
+                    <View style={styles.row}>
+                        <View style={{ flex: 1 }}>{renderField("Latitude", "latitude", "location")}</View>
+                        <View style={{ flex: 1 }}>{renderField("Longitude", "longitude", "compass")}</View>
+                    </View>
+                    <View style={styles.row}>
+                        <View style={{ flex: 1 }}>{renderField("KRA PIN", "kra_pin", "document-text")}</View>
+                        <View style={{ flex: 1 }}>{renderField("Postal Address", "postal_address", "mail")}</View>
+                    </View>
+
+                    {/* SECTION 3: SYSTEM CONFIG */}
+                    <Text style={[styles.sectionTitle, { color: colors.primary, marginTop: 24 }]}>System Configuration</Text>
+                    {renderField("API Access Key", "api_key", "key", true)}
+                    <View style={[styles.row, { marginTop: 12 }]}>
+                        <View style={{ flex: 1 }}>{renderField("Primary Color", "primary_color", "color-palette")}</View>
+                        <View style={{ flex: 1 }}>{renderField("Secondary Color", "secondary_color", "color-fill")}</View>
+                    </View>
+                    <View style={[styles.row, { marginTop: 12 }]}>
+                        <View style={{ flex: 1 }}>{renderField("Logo URL", "logo", "image")}</View>
+                        <View style={{ flex: 1 }}>{renderField("Terminal State", "state", "shield-checkmark")}</View>
+                    </View>
+
+                    {/* SECTION 4: WORKING HOURS (RADIO SELECTION) */}
+                    <Text style={[styles.sectionTitle, { color: colors.primary, marginTop: 24 }]}>Operational Hours</Text>
+                    <View style={[styles.hoursContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                        {[
+                            { label: "8 AM - 5 PM", value: "8-17" },
+                            { label: "9 AM - 6 PM", value: "9-18" },
+                            { label: "24 Hours", value: "00-24" },
+                        ].map((opt) => (
+                            <TouchableOpacity
+                                key={opt.value}
+                                style={styles.hourOption}
+                                onPress={() => isEditing && handleChange("working_hrs", opt.value)}
+                            >
+                                <Ionicons 
+                                    name={data.working_hrs === opt.value ? "radio-button-on" : "radio-button-off"} 
+                                    size={20} 
+                                    color={data.working_hrs === opt.value ? colors.primary : colors.subText} 
+                                />
+                                <Text style={[styles.hourLabel, { color: colors.text }]}>{opt.label}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+
+                    {/* SECTION 5: TOGGLES */}
+                    <Text style={[styles.sectionTitle, { color: colors.primary, marginTop: 24 }]}>Feature Access</Text>
+                    <View style={styles.row}>
+                        <TouchableOpacity 
+                            style={[styles.toggleBtn, { backgroundColor: colors.card, borderColor: data.printQr ? colors.primary : colors.border }]}
+                            onPress={() => isEditing && handleChange("printQr", !data.printQr)}
                         >
-                            <Text style={styles.btnText}>
-                                {isEditing ? "Save" : "Edit"}
-                            </Text>
+                            <Ionicons name="qr-code" size={18} color={data.printQr ? colors.primary : colors.subText} />
+                            <Text style={[styles.toggleText, { color: colors.text }]}>Receipt QR</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity 
+                            style={[styles.toggleBtn, { backgroundColor: colors.card, borderColor: data.strictMpesa ? colors.primary : colors.border }]}
+                            onPress={() => isEditing && handleChange("strictMpesa", !data.strictMpesa)}
+                        >
+                            <Ionicons name="card" size={18} color={data.strictMpesa ? colors.primary : colors.subText} />
+                            <Text style={[styles.toggleText, { color: colors.text }]}>Strict Mpesa</Text>
                         </TouchableOpacity>
                     </View>
-
                 </ScrollView>
+
+                {/* STICKY ACTION BAR */}
+                <View style={[styles.footer, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
+                    <TouchableOpacity style={[styles.actionBtn, styles.secondaryBtn]} onPress={() => {/* Location Logic */}}>
+                        <Ionicons name="navigate-outline" size={20} color={colors.primary} />
+                        <Text style={[styles.btnText, { color: colors.primary }]}>Locate</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                        style={[styles.actionBtn, { backgroundColor: colors.primary }]} 
+                        onPress={isEditing ? handleSave : () => setIsEditing(true)}
+                    >
+                        {isUpdating ? <ActivityIndicator color="#fff" /> : (
+                            <Text style={[styles.btnText, { color: '#fff' }]}>{isEditing ? "Save Configuration" : "Edit Details"}</Text>
+                        )}
+                    </TouchableOpacity>
+                </View>
             </KeyboardAvoidingView>
-        </View>
+        </SafeAreaView>
     );
 };
 
-export default BusinessProfileScreen;
-
 const styles = StyleSheet.create({
-    card: {
-        padding: 12,
-        borderRadius: 8,
-        borderWidth: 1,
-    },
-    bottomBar: {
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        padding: 16,
-        backgroundColor: "#111", // or colors.card
-        borderTopWidth: 1,
-        borderColor: "#333",
-    },
-    header: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 5,
-        marginBottom: 5,
-    },
-    label: {
-        fontSize: 12,
-        fontWeight: "600",
-    },
-    input: {
-        borderWidth: 1,
-        borderRadius: 6,
-        padding: 8,
-    },
-    btn: {
-        marginTop: 15,
-        padding: 14,
-        backgroundColor: "#4CAF50",
-        borderRadius: 8,
-        alignItems: "center",
-    },
-    btnText: {
-        color: "#fff",
-        fontWeight: "bold",
-    },
-    radioRow: {
-        flexDirection: "row",
-        justifyContent: "flex-start", // or "space-between" if you want them spread
-        marginTop: 10,
-    },
-
-    radioItem: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginRight: 20, // <-- Add spacing between each radio button
-    },
-
-    radioOuter: {
-        width: 18,
-        height: 18,
-        borderRadius: 9,
-        borderWidth: 2,
-        borderColor: "#999",
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    radioInner: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: "#4CAF50",
-    },
-    radioActive: {
-        borderColor: "#4CAF50",
-    },
+    scrollContent: { padding: 16, paddingBottom: 150 },
+    sectionTitle: { fontSize: 12, fontWeight: "800", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 12 },
+    row: { flexDirection: "row", gap: 12, marginBottom: 12 },
+    fieldCard: { flex: 1, padding: 12, borderRadius: 12, borderWidth: 1, minHeight: 65, justifyContent: 'center' },
+    fieldHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 },
+    fieldLabel: { fontSize: 10, fontWeight: "700", textTransform: 'uppercase' },
+    valueText: { fontSize: 14, fontWeight: "600" },
+    input: { padding: 4, fontSize: 14, fontWeight: "600", borderRadius: 4 },
+    hoursContainer: { padding: 8, borderRadius: 12, borderWidth: 1, gap: 4 },
+    hourOption: { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 12 },
+    hourLabel: { fontWeight: '600', fontSize: 14 },
+    toggleBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 12, borderWidth: 1, gap: 10 },
+    toggleText: { fontWeight: '700', fontSize: 13 },
+    footer: { position: 'absolute', bottom: 0, width: '100%', padding: 16, flexDirection: 'row', gap: 12, borderTopWidth: 1 },
+    actionBtn: { flex: 1, height: 54, borderRadius: 12, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', gap: 8 },
+    secondaryBtn: { borderWidth: 1, borderColor: '#CBD5E1' },
+    btnText: { fontWeight: '700', fontSize: 15 }
 });
+
+export default BusinessProfileScreen;

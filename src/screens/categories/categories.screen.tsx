@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import {
     FlatList,
-    ScrollView,
     Text,
     TouchableOpacity,
     View,
     StyleSheet,
     LayoutAnimation,
-    RefreshControl
+    RefreshControl,
+    ActivityIndicator
 } from 'react-native';
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 import { getDBConnection } from '../../services/db-service';
 import { CategoryItem } from '../../../models';
@@ -24,14 +25,13 @@ import { useSelector } from 'react-redux';
 import Toast from '../../components/Toast';
 import SwipeableCard from '../../components/SwipeableCard';
 import { validateItem } from '../validations/category.validation';
-
 import { useTheme } from '../../context/themeContext';
 
 const CategoryScreen = () => {
-
     const { query } = useSearch();
     const { user } = useSelector((state: any) => state.auth);
     const { business } = user;
+    const { colors, isDarkMode } = useTheme();
 
     const initialState = {
         category_name: "",
@@ -42,7 +42,7 @@ const CategoryScreen = () => {
 
     const swipeRefs = useRef<any>({});
     const currentlyOpenSwipe = useRef<any>(null);
-    const { colors, isDarkMode } = useTheme();
+    
     const [categories, setCategories] = useState<CategoryItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
@@ -51,7 +51,6 @@ const CategoryScreen = () => {
     const [item, setItem] = useState(initialState);
     const [msg, setMsg] = useState({ msg: "", state: "" });
 
-    // Load categories
     const loadCategories = async () => {
         setLoading(true);
         try {
@@ -59,9 +58,10 @@ const CategoryScreen = () => {
             const storedCategories = await getCategories(db);
             setCategories(storedCategories);
         } catch (err) {
-            console.log(" loadCategories error:", err);
+            console.log("loadCategories error:", err);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     useEffect(() => {
@@ -74,15 +74,10 @@ const CategoryScreen = () => {
         setRefreshing(false);
     };
 
-    const arr: any = []
-    
-
     const handleAddCategory = async () => {
         if (!validateItem(item, setMsg)) return;
-
         try {
             const db = await getDBConnection();
-
             if (item.category_id) {
                 await updateCategory(item);
                 swipeRefs.current[item.category_id]?.close();
@@ -91,12 +86,11 @@ const CategoryScreen = () => {
                 await saveCategoryItems(db, item);
                 setMsg({ msg: "Category added!", state: "success" });
             }
-
             setItem(initialState);
             setModalVisible(false);
             await onRefresh();
         } catch (err: any) {
-            setMsg({ msg: err.message || " Error saving category.", state: "error" });
+            setMsg({ msg: err.message || "Error saving category.", state: "error" });
         }
     };
 
@@ -123,28 +117,57 @@ const CategoryScreen = () => {
             onDelete={() => handleDelete(item)}
         >
             <TouchableOpacity
-                activeOpacity={0.9}
+                activeOpacity={0.7}
                 style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
             >
-                <Text style={[styles.nameText, { color: colors.text }]}>{item?.category_name}</Text>
-                <Text style={{ color: colors.subText, fontSize: 12, marginTop: 4 }}>
-                    {item?.description || ""}
-                </Text>
+                <View style={styles.cardHeader}>
+                    <View style={[styles.iconBox, { backgroundColor: colors.primary + '15' }]}>
+                        <Ionicons name="grid-outline" size={18} color={colors.primary} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={[styles.nameText, { color: colors.text }]}>{item?.category_name}</Text>
+                        <Text style={[styles.descText, { color: colors.subText }]} numberOfLines={1}>
+                            {item?.description || "No description provided"}
+                        </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color={colors.border} />
+                </View>
             </TouchableOpacity>
         </SwipeableCard>
     );
+
     return (
-        <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: 16 }}>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
             <PageHeader />
-            <FlatList
-                data={filteredCategories}
-                keyExtractor={(item) => item.category_id}
-                renderItem={renderCategoryCard}
-                contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 16, paddingTop: 12 }}
-                onEndReachedThreshold={0.5}
-                onEndReached={loadCategories}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-            />
+            
+            {loading && !refreshing ? (
+                <View style={styles.center}>
+                    <ActivityIndicator size="large" color={colors.primary} />
+                </View>
+            ) : (
+                <FlatList
+                    data={filteredCategories}
+                    keyExtractor={(item) => item.category_id}
+                    renderItem={renderCategoryCard}
+                    contentContainerStyle={styles.listContainer}
+                    showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl 
+                            refreshing={refreshing} 
+                            onRefresh={onRefresh} 
+                            tintColor={colors.primary}
+                        />
+                    }
+                    ListEmptyComponent={
+                        <View style={styles.emptyState}>
+                            <Ionicons name="search-outline" size={48} color={colors.border} />
+                            <Text style={[styles.emptyText, { color: colors.subText }]}>
+                                {query ? `No categories matching "${query}"` : "No categories found"}
+                            </Text>
+                        </View>
+                    }
+                />
+            )}
 
             {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
 
@@ -176,13 +199,13 @@ const CategoryScreen = () => {
 
             <RadialFab
                 mainColor={colors.primary}
-                mainIcon="menu"
-                radius={120}
+                mainIcon="apps-outline"
+                radius={100}
                 angle={90}
                 actions={[
-                    { icon: 'add-outline', label: 'Add Category', onPress: () => setModalVisible(true) },
-                    { icon: 'cloud-upload-outline', label: 'Upload', onPress: () => setUploadModalVisible(true) },
-                    { icon: 'settings-outline', label: 'Settings', onPress: () => console.log('Settings') },
+                    { icon: 'add-outline', label: 'New Category', onPress: () => setModalVisible(true) },
+                    { icon: 'cloud-upload-outline', label: 'Bulk Import', onPress: () => setUploadModalVisible(true) },
+                    { icon: 'sync-outline', label: 'Refresh', onPress: onRefresh },
                 ]}
             />
         </View>
@@ -190,24 +213,55 @@ const CategoryScreen = () => {
 };
 
 const styles = StyleSheet.create({
-    filterContainer: {
-        paddingHorizontal: 2,
-        paddingVertical: 8,
-        alignItems: 'center'
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    listContainer: { 
+        paddingHorizontal: 16, 
+        paddingTop: 16, 
+        paddingBottom: 120 
     },
     card: {
         width: '100%',
-        padding: 14,
-        borderRadius: 5,
-        marginBottom: 16,
+        padding: 12,
+        borderRadius: 12,
+        marginBottom: 12,
         borderWidth: 1,
-        shadowOffset: { width: 0, height: 4 },
-        shadowRadius: 10,
-        elevation: 6,
+        // Modern subtle shadow
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12
+    },
+    iconBox: {
+        width: 40,
+        height: 40,
+        borderRadius: 10,
+        justifyContent: 'center',
+        alignItems: 'center'
     },
     nameText: {
         fontWeight: '700',
+        fontSize: 15,
+        marginBottom: 2
+    },
+    descText: {
+        fontSize: 12,
+        fontWeight: '500'
+    },
+    emptyState: {
+        marginTop: 100,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 12
+    },
+    emptyText: {
         fontSize: 14,
+        fontWeight: '600'
     }
 });
 

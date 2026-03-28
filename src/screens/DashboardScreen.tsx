@@ -1,280 +1,237 @@
-import { useEffect, useState, useCallback } from "react";
-import { View, Text, ScrollView } from "react-native";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { 
+  View, 
+  Text, 
+  ScrollView, 
+  TouchableOpacity, 
+  RefreshControl, 
+  StyleSheet, 
+  Platform 
+} from "react-native";
 import { useSelector } from "react-redux";
-import { useSettings } from "../context/SettingsContext";
-import { Theme } from "../utils/theme";
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { NativeModules } from "react-native";
+
+// Custom Components
 import PageHeader from "../components/pageHeader";
+import StartCard from "../components/startCard";
+import DataGraph from "./dashbordItems/DataGraph";
+import PieChart from "./dashbordItems/PieChart";
+import MultiLineChart from "./dashbordItems/lineGraph";
+import RadialFab from "../components/multiFab";
+
+// Context & Services
+import { useTheme } from "../context/themeContext";
+import { useSocket } from "../context/socketContext";
+import { useBusiness } from "../context/BusinessContext";
+import { useAppStatus } from "../hooks/useAppStatus";
 import {
   getDetailedUserStats,
   getHourlySalesByProduct,
   getLowStockProducts,
   getMonthlySales,
   getSalesByCategory,
-  getTodaySales,
-  getTodayTransactions,
   getTopProducts,
   SalesFilter,
 } from "../services/analytics.service";
 
-import DataGraph from "./dashbordItems/DataGraph";
-import PieChart from "./dashbordItems/PieChart";
-import MultiLineChart from "./dashbordItems/lineGraph";
-import Icon from 'react-native-vector-icons/FontAwesome'
-import { formatNumber } from "../../utils/formatNumbers";
-import { useSocket } from "../context/socketContext";
-import { Business, useBusiness } from "../context/BusinessContext";
-import { useTheme } from "../context/themeContext";
-import StartCard from "../components/startCard";
-import RadialFab from "../components/multiFab";
-
-import DateTimePicker from '@react-native-community/datetimepicker';
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { clockIn, clockOut } from "../services/users.service";
-import { NativeModules } from "react-native";
-import { TouchableOpacity } from "react-native";
-import { useAppStatus } from "../hooks/useAppStatus";
-
 const Dashboard = () => {
   const { user } = useSelector((state: any) => state.auth);
-  const { colors, isDarkMode } = useTheme();
-  const [stats, setStats] = useState({ totalTransactions: 0, totalSales: 0, cashTotal: 0, mpesaTotal: 0, cashCount: 0, mpesaCount: 0 });
-  const [showbyCategory, setShowbyCategory] = useState(false);
+  const { colors, isDarkMode, applyThemeDirectly, refreshTheme } = useTheme();
   const { socket } = useSocket();
-  const { business, updateBusiness, isLoading } = useBusiness();
-  const [topCategoryProducts, setTopCategoryProducts] = useState([])
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [lowstcks, setlowstcks] = useState<any[]>([]);
-  const [monthlySales, setMonthlySales] = useState<any[]>([]);
-  const [TopProducts, setTopProducts] = useState([]);
-  const [datasets, setDatasets] = useState<any[]>([]);
-  const { refreshTheme } = useTheme();
+  const { business, updateBusiness } = useBusiness();
   const { Kiosk } = NativeModules;
 
-  const {
-    isWithinZones,
-    setIsWithinZones,
-    shouldLock,
-    evaluateStatus
-  } = useAppStatus({ user, business, refreshTheme });
-  const fetchHourlySales = async () => {
-    try {
-      const productDatasets = await getHourlySalesByProduct(
-        user.role,
-        user.user_id
-      );
-      setDatasets(productDatasets);
-    } catch (error) {
-      console.error("Error fetching hourly sales:", error);
+  // States
+  const [refreshing, setRefreshing] = useState(false);
+  const [stats, setStats] = useState({ totalTransactions: 0, totalSales: 0, cashTotal: 0, mpesaTotal: 0, cashCount: 0, mpesaCount: 0 });
+  const [showbyCategory, setShowbyCategory] = useState(false);
+  const [topCategoryProducts, setTopCategoryProducts] = useState([]);
+  const [topProducts, setTopProducts] = useState([]);
+  const [lowStocks, setLowStocks] = useState<any[]>([]);
+  const [monthlySales, setMonthlySales] = useState<any[]>([]);
+  const [datasets, setDatasets] = useState<any[]>([]);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const { evaluateStatus } = useAppStatus({ user, business, refreshTheme });
+
+  // Hourly range logic
+  const [startHour, endHour] = useMemo(() => {
+    if (business?.working_hrs) {
+      const parts = business.working_hrs.split("-");
+      const start = parseInt(parts[0], 10);
+      const end = parseInt(parts[1], 10);
+      if (!isNaN(start) && !isNaN(end)) return [start, end];
     }
-  };
+    return [8, 17];
+  }, [business]);
 
-  const loadDashboard = useCallback(async () => {
-
-
-    const mS = await getMonthlySales(user.role, user._id);
-
-    const stcks = await getLowStockProducts();
-
-    setMonthlySales(mS);
-
-    setlowstcks(stcks);
-
-
+  const fetchAnalytics = useCallback(async (filter: SalesFilter, customDate?: string) => {
+    const id = user.role !== "admin" ? user.user_id || user._id : "";
+    try {
+      const [totalStats, tProducts, tCategories] = await Promise.all([
+        getDetailedUserStats(id, filter, customDate),
+        getTopProducts(id, filter, customDate),
+        getSalesByCategory(id, filter, customDate)
+      ]);
+      setStats(totalStats);
+      setTopProducts(tProducts);
+      setTopCategoryProducts(tCategories);
+    } catch (err) {
+      console.error("Analytics Error:", err);
+    }
   }, [user]);
 
+  const loadData = useCallback(async () => {
+    const filter = user.role === "admin" ? "month" : "today";
+    try {
+      const [hourly, monthly, stocks] = await Promise.all([
+        getHourlySalesByProduct(user.role, user.user_id || user._id),
+        getMonthlySales(user.role, user._id),
+        getLowStockProducts()
+      ]);
+      setDatasets(hourly);
+      setMonthlySales(monthly);
+      setLowStocks(stocks);
+      await fetchAnalytics(filter);
+    } catch (err) {
+      console.error("Dashboard Load Error:", err);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [user, fetchAnalytics]);
+
   useEffect(() => {
-    const filter = user.role === "admin" ? "month" : "today"
-    fetchHourlySales();
-    loadDashboard();
-    fetchAnalytics(filter)
-  }, []);
+    loadData();
+  }, [loadData]);
 
-
-
-  // inside your component
-  const { applyThemeDirectly } = useTheme();
-  // const { evaluateStatus } = useAppStatus({ user, business, refreshTheme });
-
+  // Socket Logic
   useEffect(() => {
     if (!socket) return;
     socket.emit("registerDevice", user._id);
-    /* ---------------- BUSINESS UPDATE ---------------- */
-    const handleBusinessUpdate = async (data: any) => {
-      try {
-        console.log("📡 Business update received:", data);
 
-        // 1. Update business (source of truth)
-        await updateBusiness(data);
-
-        // 2. ⚡ INSTANT UI UPDATE (no AsyncStorage delay)
-        if (data.primary_color || data.secondary_color) {
-          applyThemeDirectly(
-            data.primary_color || "#3c58a8",
-            data.secondary_color || "#ffffff"
-          );
-        }
-
-        // 3. 🔥 Re-evaluate app state (lock, clock, etc.)
-        await evaluateStatus();
-
-      } catch (err) {
-        console.error("❌ Socket business update error:", err);
+    socket.on("business:update", async (data: any) => {
+      await updateBusiness(data);
+      if (data.primary_color || data.secondary_color) {
+        applyThemeDirectly(data.primary_color || "#3c58a8", data.secondary_color || "#ffffff");
       }
-    };
-
-    /* ---------------- FORCE LOCK ---------------- */
-    const handleForceLock = async () => {
-      console.log("🔒 Server forced lock");
-
-      await AsyncStorage.setItem("inactive", "true");
-
-      await evaluateStatus(); // engine handles lock
-    };
-
-    /* ---------------- FORCE UNLOCK ---------------- */
-    const handleForceUnlock = async () => {
-      console.log("🔓 Server forced unlock");
-
-      await AsyncStorage.setItem("inactive", "false");
-
       await evaluateStatus();
-    };
-
-    /* ---------------- GEOFENCE OVERRIDE ---------------- */
-    const handleGeofenceOverride = async (inside: boolean) => {
-      console.log("📍 Server geofence override:", inside);
-
-      await AsyncStorage.setItem("lastZoneState", inside ? "true" : "false");
-
-      await evaluateStatus(inside);
-    };
-
-    /* ---------------- OPTIONAL: LIVE DASHBOARD REFRESH ---------------- */
-    const handleNewSale = async () => {
-      console.log("💰 New sale → refreshing dashboard");
-
-      const filter = user.role === "admin" ? "month" : "today";
-
-      await fetchHourlySales();
-      await loadDashboard();
-      await fetchAnalytics(filter);
-    };
-
-    /* ---------------- ATTACH EVENTS ---------------- */
-    socket.on("business:update", handleBusinessUpdate);
-    socket.on("force:lock", handleForceLock);
-    socket.on("force:unlock", handleForceUnlock);
-    socket.on("geofence:update", handleGeofenceOverride);
-    socket.on("sales:new", handleNewSale);
-
-    socket.on("connect", () => {
-      console.log("🔌 Socket connected:", socket.id);
     });
 
-    socket.on("disconnect", () => {
-      console.log("⚠️ Socket disconnected");
+    socket.on("force:lock", async () => {
+      await AsyncStorage.setItem("inactive", "true");
+      await evaluateStatus();
     });
 
-    /* ---------------- CLEANUP ---------------- */
+    socket.on("sales:new", loadData);
+
     return () => {
-      socket.off("business:update", handleBusinessUpdate);
-      socket.off("force:lock", handleForceLock);
-      socket.off("force:unlock", handleForceUnlock);
-      socket.off("geofence:update", handleGeofenceOverride);
-      socket.off("sales:new", handleNewSale);
-      socket.off("connect");
-      socket.off("disconnect");
+      socket.off("business:update");
+      socket.off("force:lock");
+      socket.off("sales:new");
     };
+  }, [socket, updateBusiness, evaluateStatus, loadData, applyThemeDirectly]);
 
-  }, [socket, updateBusiness, evaluateStatus]);
-  const [startHour, endHour] = (() => {
-    if (business?.working_hrs) {
-      // Example format: "8-17"
-      const parts = business.working_hrs.split("-");
-      if (parts.length === 2) {
-        const start = parseInt(parts[0], 10);
-        const end = parseInt(parts[1], 10);
-        if (!isNaN(start) && !isNaN(end)) {
-          return [start, end];
-        }
-      }
-    }
-    return [8, 17]; // default
-  })();
-
-
-  const fetchAnalytics = async (filter: SalesFilter, customDate?: string) => {
-    // Ensure you use the correct ID property from your user object
-    const id = user.role !== "admin" ? user.user_id || user._id : "";
-
-    // Fetch Transaction Count (Quantity of sales)
-    const totalTransactions = await getDetailedUserStats(
-      id,
-      filter,
-      customDate,
-
-    );
-    const topProducts: any = await getTopProducts(id, filter, customDate,);
-    setTopProducts(topProducts);
-    setStats(totalTransactions);
-    const productsByCategoryResult: any = await getSalesByCategory(id, filter, customDate,);
-    setTopCategoryProducts(productsByCategoryResult);
-  };
   return (
-    <View style={{ flex: 1 }}>
-      <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <PageHeader 
+        title="Dashboard" 
+        subtitle={business?.name || "Overview"} 
+      />
 
-        {lowstcks.length > 0 && (
-          <PageHeader
-            component={() => (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={{ flexDirection: "row", gap: 12, marginBottom: 6 }}>
-                  {lowstcks.map((item, i) => (
-                    <View style={{ backgroundColor: colors.danger }} className="px-3 py-1 rounded-sm" key={i}>
-                      <Text style={{ color: colors.text }}>{item.product_name}</Text>
-                    </View>
-                  ))}
+      <ScrollView 
+        style={{ flex: 1 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} tintColor={colors.primary} />}
+      >
+        {/* INVENTORY ALERTS */}
+        {lowStocks.length > 0 && (
+          <View style={styles.alertSection}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="warning" size={18} color={colors.danger} />
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Low Stock Alerts</Text>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
+              {lowStocks.map((item, i) => (
+                <View key={i} style={[styles.stockBadge, { backgroundColor: colors.danger + '15', borderColor: colors.danger }]}>
+                  <Text style={{ color: colors.danger, fontWeight: '700', fontSize: 12 }}>{item.product_name}</Text>
                 </View>
-              </ScrollView>
-            )}
-          />
+              ))}
+            </ScrollView>
+          </View>
         )}
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {/* SUMMARY CARDS */}
+        <View style={{ marginTop: 10 }}>
           <StartCard {...stats} />
-        </ScrollView>
-
-        <DataGraph pressed={() => setShowbyCategory(!showbyCategory)} title={`Top Performing ${showbyCategory ? "Categories" : "Products"}`} data={showbyCategory ? topCategoryProducts ?? topCategoryProducts : TopProducts ?? TopProducts} />
-
-
-        <MultiLineChart startHour={startHour} // optional business start hour
-          endHour={endHour} title="Hourly Sales" datasets={datasets || []} />
-
-        <PieChart title="Monthly sales" data={monthlySales} />
-        <View className="flex px-10 py-3 flex-row justify-between w-full ">
-          <TouchableOpacity onPress={() => Kiosk.lock()}>
-            <Text className="text-white">LOCK APP</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => Kiosk.unlock()}>
-            <Text className="text-white">UN LOCK APP</Text>
-          </TouchableOpacity>
         </View>
 
+        <View style={styles.contentPadding}>
+          
+          {/* TOP PERFORMERS CHART */}
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <DataGraph 
+              pressed={() => setShowbyCategory(!showbyCategory)} 
+              title={`Top ${showbyCategory ? "Categories" : "Products"}`} 
+              data={showbyCategory ? topCategoryProducts : topProducts} 
+            />
+          </View>
+
+          {/* HOURLY SALES TREND */}
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <MultiLineChart 
+              startHour={startHour} 
+              endHour={endHour} 
+              title="Hourly Sales Trend" 
+              datasets={datasets || []} 
+            />
+          </View>
+
+          {/* MONTHLY PIE CHART */}
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <PieChart title="Monthly Sales Distribution" data={monthlySales} />
+          </View>
+
+          {/* KIOSK CONTROLS */}
+          <View style={styles.kioskRow}>
+             <TouchableOpacity 
+              onPress={() => Kiosk.lock()}
+              style={[styles.kioskBtn, { backgroundColor: colors.danger + '20' }]}
+             >
+                <Ionicons name="lock-closed" size={20} color={colors.danger} />
+                <Text style={{ color: colors.danger, fontWeight: '700' }}>Lock Kiosk</Text>
+             </TouchableOpacity>
+
+             <TouchableOpacity 
+              onPress={() => Kiosk.unlock()}
+              style={[styles.kioskBtn, { backgroundColor: '#22c55e20' }]}
+             >
+                <Ionicons name="lock-open" size={20} color="#22c55e" />
+                <Text style={{ color: '#22c55e', fontWeight: '700' }}>Unlock Kiosk</Text>
+             </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={{ height: 100 }} />
       </ScrollView>
 
+      {/* FLOATING ACTION MENU */}
       <RadialFab
         mainColor={colors.primary}
-        mainIcon="menu"
+        mainIcon="filter-outline"
         radius={120}
         angle={90}
         actions={[
-          { icon: 'today-outline', label: 'T', onPress: () => fetchAnalytics('today') },
-          { icon: 'calendar-outline', label: 'W', onPress: () => fetchAnalytics('week') },
-          { icon: 'stats-chart-outline', label: 'M', onPress: () => fetchAnalytics('month') },
-          { icon: 'bar-chart-outline', label: 'Y', onPress: () => fetchAnalytics('year') },
-          { icon: 'person-outline', label: 'C', onPress: () => setShowDatePicker(true) },
+          { icon: 'today-outline', label: 'Today', onPress: () => fetchAnalytics('today') },
+          { icon: 'calendar-outline', label: 'Week', onPress: () => fetchAnalytics('week') },
+          { icon: 'stats-chart-outline', label: 'Month', onPress: () => fetchAnalytics('month') },
+          { icon: 'bar-chart-outline', label: 'Year', onPress: () => fetchAnalytics('year') },
+          { icon: 'time-outline', label: 'Date', onPress: () => setShowDatePicker(true) },
         ]}
       />
+
       {showDatePicker && (
         <DateTimePicker
           value={new Date()}
@@ -282,23 +239,68 @@ const Dashboard = () => {
           display="default"
           themeVariant={isDarkMode ? "dark" : "light"}
           onChange={async (event, date) => {
-            if (event.type === 'dismissed') {
-              setShowDatePicker(false);
-              return;
-            }
-
+            setShowDatePicker(false);
             if (date) {
               const formattedDate = date.toISOString().split('T')[0];
-
               await fetchAnalytics('custom', formattedDate);
-              setShowDatePicker(false);
             }
           }}
         />
       )}
     </View>
-
   );
 };
+
+const styles = StyleSheet.create({
+  contentPadding: {
+    padding: 16,
+    gap: 20
+  },
+  alertSection: {
+    paddingVertical: 10,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  stockBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  card: {
+    borderRadius: 24,
+    padding: 12,
+    borderWidth: 1,
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8 },
+      android: { elevation: 4 }
+    })
+  },
+  kioskRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 20
+  },
+  kioskBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 16,
+    gap: 8
+  }
+});
 
 export default Dashboard;

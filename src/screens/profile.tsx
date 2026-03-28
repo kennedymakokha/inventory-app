@@ -7,23 +7,25 @@ import {
     TouchableOpacity,
     ScrollView,
     ActivityIndicator,
+    SafeAreaView,
+    KeyboardAvoidingView,
+    Platform
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { useSettings } from "../context/SettingsContext";
-import { Theme } from "../utils/theme";
 import { useUser } from "../context/UserContext";
 import { useTheme } from "../context/themeContext";
+import { useSelector } from "react-redux";
 
 const fields = [
-    { label: "Name", key: "name", icon: "person-outline" },
-    { label: "Email", key: "email", icon: "mail-outline", locked: true },
-    { label: "Phone Number", key: "phone_number", icon: "call-outline" },
+    { label: "Full Name", key: "name", icon: "person", locked: false },
+    { label: "Email Address", key: "email", icon: "mail", locked: true },
+    { label: "Phone Number", key: "phone_number", icon: "call", locked: false },
 ];
 
 const UserProfileScreen = () => {
-
-    const { colors } = useTheme();
-    const { user, updateUser, isLoading, isUpdating } = useUser();
+    const { colors, isDarkMode } = useTheme();
+    const { user } = useSelector((state: any) => state.auth);
+    const { updateUser, isLoading, isUpdating } = useUser();
 
     const [isEditing, setIsEditing] = useState(false);
     const [data, setData] = useState(user ?? {
@@ -37,8 +39,8 @@ const UserProfileScreen = () => {
         if (user) setData(user);
     }, [user]);
 
-    const handleChange = (key: keyof typeof data, value: string) => {
-        setData(prev => ({ ...prev, [key]: value }));
+    const handleChange = (key: string, value: string) => {
+        setData((prev: any) => ({ ...prev, [key]: value }));
     };
 
     const handleSave = async () => {
@@ -48,85 +50,147 @@ const UserProfileScreen = () => {
         }
     };
 
-    const startEditing = () => {
-        if (user) setData(user);
-        setIsEditing(true);
-    };
-
-    const renderField = (
-        label: string,
-        key: keyof typeof data,
-        icon: any,
-        locked?: boolean
-    ) => (
+    const renderField = (label: string, key: string, icon: string, locked?: boolean) => (
         <View
-            style={[styles.fieldCard, { borderColor: colors.border, backgroundColor: colors.card }]}
             key={key}
+            style={[
+                styles.fieldCard,
+                {
+                    backgroundColor: colors.card,
+                    borderColor: colors.border,
+                    opacity: isEditing && locked ? 0.6 : 1
+                }
+            ]}
         >
             <View style={styles.fieldHeader}>
-                <Ionicons name={icon} size={18} color={colors.primary} />
-                <Text style={[styles.label, { color: colors.primary }]}>{label}</Text>
+                <Ionicons name={icon} size={14} color={colors.primary} />
+                <Text style={[styles.label, { color: colors.subText }]}>{label}</Text>
+                {locked && <Ionicons name="lock-closed" size={12} color={colors.subText} style={{ marginLeft: 'auto' }} />}
             </View>
 
             {isEditing && !locked ? (
                 <TextInput
-                    style={[styles.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
-                    value={data[key]}
+                    style={[
+                        styles.input,
+                        {
+                            backgroundColor: isDarkMode ? '#0F172A' : '#F8FAFC',
+                            color: colors.text,
+                            borderColor: colors.border
+                        }
+                    ]}
+                    value={(data as any)[key]}
                     onChangeText={(text) => handleChange(key, text)}
+                    placeholder={`Enter ${label}`}
+                    placeholderTextColor={colors.subText}
                 />
             ) : (
-                <View style={styles.valueRow}>
-                    <Text style={[styles.value, { color: colors.text }]}>{data[key]}</Text>
-                </View>
+                <Text style={[styles.value, { color: colors.text }]}>
+                    {(data as any)[key] || "Not provided"}
+                </Text>
             )}
         </View>
     );
 
-    if (isLoading) {
-        return (
-            <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-                <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={{ marginTop: 10, color: colors.text }}>Loading User Profile...</Text>
-            </View>
-        );
-    }
+    // if (isLoading) {
+    //     return (
+    //         <View style={[styles.center, { backgroundColor: colors.background }]}>
+    //             <ActivityIndicator size="large" color={colors.primary} />
+    //         </View>
+    //     );
+    // }
 
     return (
-        <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
-            {fields.map(field =>
-                renderField(field.label, field.key as keyof typeof data, field.icon, field.locked)
-            )}
-            {isUpdating && (
-                <View style={styles.overlay}>
-                    <ActivityIndicator size="large" color="#fff" />
-                    <Text style={styles.overlayText}>Saving changes...</Text>
-                </View>
-            )}
-            <TouchableOpacity
-                disabled={isUpdating}
-                style={[styles.button, { backgroundColor: colors.primary, borderColor: colors.border, opacity: isUpdating ? 0.7 : 1 }]}
-                onPress={isEditing ? handleSave : startEditing}
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === "ios" ? "padding" : undefined}
             >
-                <Ionicons name={isEditing ? "save-outline" : "create-outline"} size={18} color="#fff" />
-                <Text style={styles.buttonText}>{isEditing ? "Save Changes" : "Edit Profile"}</Text>
-            </TouchableOpacity>
-        </ScrollView>
+                <ScrollView
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                >
+                    {/* AVATAR HEADER */}
+                    <View style={styles.avatarSection}>
+                        <View style={[styles.avatarCircle, { backgroundColor: colors.primary + '20' }]}>
+                            <Text style={[styles.avatarText, { color: colors.primary }]}>
+                                {data.name?.charAt(0).toUpperCase() || "U"}
+                            </Text>
+                        </View>
+                        <Text style={[styles.userName, { color: colors.text }]}>{data.name}</Text>
+                        <Text style={[styles.userRole, { color: colors.subText }]}>System Operator</Text>
+                    </View>
+
+                    {/* FIELDS */}
+                    <Text style={[styles.sectionTitle, { color: colors.primary }]}>Account Details</Text>
+                    {fields.map(field => renderField(field.label, field.key, field.icon, field.locked))}
+
+                    {/* ACTIONS */}
+                    <View style={styles.actionContainer}>
+                        {isEditing ? (
+                            <View style={styles.row}>
+                                <TouchableOpacity
+                                    style={[styles.btn, styles.cancelBtn, { borderColor: colors.border }]}
+                                    onPress={() => setIsEditing(false)}
+                                >
+                                    <Text style={[styles.btnText, { color: colors.text }]}>Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.btn, { backgroundColor: colors.primary, flex: 2 }]}
+                                    onPress={handleSave}
+                                    disabled={isUpdating}
+                                >
+                                    {isUpdating ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Save Profile</Text>}
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
+                            <TouchableOpacity
+                                style={[styles.btn, { backgroundColor: colors.primary }]}
+                                onPress={() => setIsEditing(true)}
+                            >
+                                <Ionicons name="create-outline" size={20} color="#fff" />
+                                <Text style={styles.btnText}>Edit Profile</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 };
 
-export default UserProfileScreen;
-
 const styles = StyleSheet.create({
-    container: { flex: 1, padding: 20 },
-    loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
-    fieldCard: { borderWidth: 1, borderRadius: 5, padding: 14, marginBottom: 16 },
-    fieldHeader: { flexDirection: "row", alignItems: "center", marginBottom: 6, gap: 6 },
-    label: { fontSize: 13 },
-    valueRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-    value: { fontSize: 16, fontWeight: "500" },
-    input: { borderWidth: 1, borderRadius: 10, padding: 10, fontSize: 15 },
-    button: { flexDirection: "row", justifyContent: "center", alignItems: "center", marginTop: 20, padding: 14, borderRadius: 5, gap: 8 },
-    buttonText: { color: "white", fontWeight: "600", fontSize: 16 },
-    overlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center", zIndex: 1000 },
-    overlayText: { color: "#fff", marginTop: 10, fontSize: 16, fontWeight: "500" },
+    center: { flex: 1, justifyContent: "center", alignItems: "center" },
+    scrollContent: { padding: 20, paddingBottom: 40 },
+    avatarSection: { alignItems: 'center', marginBottom: 32, marginTop: 10 },
+    avatarCircle: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 16
+    },
+    avatarText: { fontSize: 40, fontWeight: '800' },
+    userName: { fontSize: 22, fontWeight: '800' },
+    userRole: { fontSize: 14, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 },
+    sectionTitle: { fontSize: 12, fontWeight: "800", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 16 },
+    fieldCard: { padding: 16, borderRadius: 16, borderWidth: 1, marginBottom: 12 },
+    fieldHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
+    label: { fontSize: 11, fontWeight: "700", textTransform: 'uppercase' },
+    value: { fontSize: 16, fontWeight: "600" },
+    input: { padding: 12, borderRadius: 10, fontSize: 16, fontWeight: "600", borderWidth: 1 },
+    actionContainer: { marginTop: 20 },
+    row: { flexDirection: 'row', gap: 12 },
+    btn: {
+        height: 56,
+        borderRadius: 12,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 8
+    },
+    cancelBtn: { flex: 1, borderWidth: 1 },
+    btnText: { color: "white", fontWeight: "700", fontSize: 16 },
 });
+
+export default UserProfileScreen;

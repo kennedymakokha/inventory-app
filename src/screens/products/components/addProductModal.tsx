@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
@@ -6,45 +6,50 @@ import {
     TouchableOpacity,
     StyleSheet,
     ScrollView,
+    KeyboardAvoidingView,
     Platform
 } from 'react-native';
+import Ionicons from "react-native-vector-icons/Ionicons";
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Camera, CameraType } from 'react-native-camera-kit';
+import { Picker } from '@react-native-picker/picker';
 import { InputContainer, TextArea } from '../../../components/Input';
 import Toast from '../../../components/Toast';
 import Button from '../../../components/Button';
-import { Picker } from '@react-native-picker/picker';
-import DateTimePicker from '@react-native-community/datetimepicker';
-
-import { Animated } from 'react-native';
 import { useTheme } from '../../../context/themeContext';
 
 const AddProductModal = ({
     modalVisible,
     msg,
     setMsg,
-    setItem,
-    PostLocally,
+    item,           
+    setItem,        
+    PostLocally,    
     loading,
     categories,
-    initialData,
     setModalVisible,
+    onClose,
     isDarkMode
 }: any) => {
-
-    const [isScannerOpen, setIsScannerOpen] = useState(false);
-    const [showDatePicker, setShowDatePicker] = useState(false);
     const { colors } = useTheme();
-    const [item, setData] = useState(initialData);
-    const buying = parseFloat(item.Bprice) || 0;
-    const selling = parseFloat(item.price) || 0;
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
 
+    const buying = parseFloat(item?.Bprice) || 0;
+    const selling = parseFloat(item?.price) || 0;
     const profit = selling - buying;
     const margin = buying > 0 ? ((profit / buying) * 100).toFixed(1) : 0;
 
     const handleChange = (key: string, value: any) => {
-        setMsg({ msg: "", state: "" });
+        if (msg?.msg) setMsg({ msg: "", state: "" });
         setItem((prev: any) => ({ ...prev, [key]: value }));
+    };
+
+    const validateAndSubmit = () => {
+        if (!item?.product_name || !item?.price || !item?.category_id) {
+            setMsg({ msg: "Missing Name, Price, or Category", state: "error" });
+            return;
+        }
+        PostLocally();
     };
 
     const handleBarcodeRead = (event: any) => {
@@ -52,389 +57,179 @@ const AddProductModal = ({
         if (data) {
             handleChange("barcode", data);
             setIsScannerOpen(false);
-            setMsg({ msg: "Barcode Scanned Successfully", state: "success" });
+            setMsg({ msg: "Barcode Scanned", state: "success" });
         }
     };
-    const isFormValid =
-        item.product_name &&
-        item.category_id &&
-        selling > 0 &&
-        item.initial_stock;
 
-    const fadeAnim = useState(new Animated.Value(0))[0];
-
-    React.useEffect(() => {
-        Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-        }).start();
-    }, []);
-
-
-    useEffect(() => setData(initialData), [initialData]);
     return (
         <Modal
             animationType="slide"
+            transparent={true}
             visible={modalVisible}
-            onRequestClose={() => setModalVisible(false)}
+            onRequestClose={onClose}
         >
-            <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <View style={styles.overlay}>
+                <TouchableOpacity 
+                    style={{ flex: 1 }} 
+                    activeOpacity={1} 
+                    onPress={onClose} 
+                />
 
-                {/* ================= SCANNER MODAL ================= */}
-                <Modal
-                    visible={isScannerOpen}
-                    animationType="fade"
-                    onRequestClose={() => setIsScannerOpen(false)}
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === "ios" ? "padding" : "height"}
+                    style={[styles.modalContainer, { backgroundColor: colors.background }]}
                 >
-                    <View style={styles.scannerContainer}>
-                        <Camera
-                            style={{ flex: 1 }}
-                            cameraType={CameraType.Back}
-                            scanBarcode
-                            onReadCode={handleBarcodeRead}
-                            showFrame
-                            laserColor="#22c55e"
-                            frameColor="#ffffff"
-                        />
+                    <View style={[styles.handle, { backgroundColor: isDarkMode ? '#334155' : '#e2e8f0' }]} />
 
-                        <View style={styles.scannerOverlay}>
-                            <Text style={styles.scannerText}>
-                                Align barcode inside the frame
-                            </Text>
-
-                            <TouchableOpacity
-                                onPress={() => setIsScannerOpen(false)}
-                                style={styles.closeScannerBtn}
-                            >
-                                <Icon name="close" size={26} color="white" />
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </Modal>
-
-                {/* ================= FORM ================= */}
-                <ScrollView
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={styles.scrollContent}
-                >
-                    <Animated.Text
-                        style={[
-                            styles.header,
-                            { color: colors.primaryLight, textTransform: 'uppercase', opacity: fadeAnim }
-                        ]}
+                    <ScrollView 
+                        showsVerticalScrollIndicator={false} 
+                        contentContainerStyle={styles.scrollContent}
                     >
-                        {item.product_id ? "Update Product" : "Add New Product"}
-                    </Animated.Text>
-                    {/* PRODUCT NAME */}
-                    <InputContainer
-                        label="Product Name"
-                        placeholder="Enter product name"
-                        value={item.product_name}
-                        onChangeText={(text: string) =>
-                            handleChange("product_name", text)
-                        }
-                        isDarkMode={isDarkMode}
-                    />
-
-                    {/* BARCODE FIELD */}
-                    <View style={styles.barcodeWrapper}>
-                        <InputContainer
-                            label="Barcode"
-                            placeholder="Scan barcode"
-                            value={item.barcode}
-                            onChangeText={() => console.log("first")}
-                            disabled={false}
-                            isDarkMode={isDarkMode}
-                        />
-
-                        <TouchableOpacity
-                            onPress={() => setIsScannerOpen(true)}
-                            style={styles.scanBtn}
-                        >
-                            <Icon
-                                name="qrcode-scan"
-                                size={22}
-                                color={isDarkMode ? '#fbbf24' : '#2563eb'}
-                            />
-                        </TouchableOpacity>
-                    </View>
-
-                    {/* CATEGORY */}
-                    <View style={styles.sectionSpacing}>
-                        <Text style={[styles.label, { color: colors.text }]}>
-                            Category
-                        </Text>
-
-                        <View style={[
-                            styles.pickerContainer,
-                            { backgroundColor: colors.primaryLight, borderColor: colors.border }
-                        ]}>
-                            <Picker
-                                selectedValue={item.category_id}
-                                onValueChange={(val) =>
-                                    handleChange("category_id", val)
-                                }
-                                dropdownIconColor={colors.text}
-                                style={{ color: colors.text }}
-                            >
-                                <Picker.Item
-                                    label="Select Category"
-                                    value=""
-                                    color={colors.placeholder}
-                                />
-                                {categories?.map((cat: any) => (
-                                    <Picker.Item
-                                        key={cat.id}
-                                        label={cat.category_name}
-                                        value={cat.category_id}
-                                        color={colors.text}
-                                    />
-                                ))}
-                            </Picker>
-                        </View>
-                    </View>
-
-                    {/* PRICE ROW */}
-                    <View style={styles.priceRow}>
-                        <View style={{ flex: 1 }}>
-                            <InputContainer
-                                label="Buying Price"
-                                placeholder="0.00"
-
-                                value={item.Bprice}
-                                onChangeText={(text: string) =>
-                                    handleChange("Bprice", text)
-                                }
-                                keyboardType="phone-pad"
-                                isDarkMode={isDarkMode}
-                            />
-                        </View>
-                        {buying > 0 && selling > 0 && (
-                            <View
-                                style={{
-                                    backgroundColor: isDarkMode ? '#0f172a' : '#f1f5f9',
-                                    padding: 14,
-                                    height: 48,
-                                    borderRadius: 6,
-                                    marginTop: 1,
-                                    borderWidth: 1,
-                                    borderColor: profit < 0 ? '#ef4444' : '#22c55e',
-                                }}
-                            >
-                                <Text style={{
-                                    color: profit < 0 ? '#ef4444' : '#22c55e',
-                                    fontWeight: '700'
-                                }}>
-                                    P: {profit}  |  M: {margin}%
+                        <View style={styles.headerRow}>
+                            <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
+                                <Ionicons name="cube-outline" size={26} color={colors.primary} />
+                            </View>
+                            <View>
+                                <Text style={[styles.title, { color: colors.text }]}>
+                                    {item?.product_id ? "Edit Product" : "New Product"}
+                                </Text>
+                                <Text style={{ color: colors.subText, fontSize: 13 }}>
+                                    Inventory & Pricing Details
                                 </Text>
                             </View>
-                        )}
-                        <View style={{ flex: 1 }}>
+                        </View>
+
+                        <View style={styles.form}>
                             <InputContainer
-                                label="Selling Price"
-                                placeholder="0.00"
-                                value={item.price}
-                                onChangeText={(text: string) =>
-                                    handleChange("price", text)
-                                }
-                                keyboardType="phone-pad"
-                                isDarkMode={isDarkMode}
+                                label="Product Name"
+                                placeholder="e.g. Fresh Milk 1L"
+                                value={item?.product_name || ""}
+                                onChangeText={(text: string) => handleChange("product_name", text)}
                             />
-                        </View>
-                    </View>
 
-                    {/* STOCK */}
-                    <InputContainer
-                        label="Initial Stock Quantity"
-                        placeholder="e.g. 50"
-                        value={item.initial_stock}
-                        onChangeText={(text: string) =>
-                            handleChange("initial_stock", text)
-                        }
-                        keyboardType="phone-pad"
-                        isDarkMode={isDarkMode}
-                    />
+                            <View style={styles.barcodeWrapper}>
+                                <InputContainer
+                                    label="Barcode"
+                                    placeholder="Tap icon to scan"
+                                    value={item?.barcode || ""}
+                                    onChangeText={(text: string) => handleChange("barcode", text)}
+                                />
+                                <TouchableOpacity onPress={() => setIsScannerOpen(true)} style={styles.scanBtn}>
+                                    <Icon name="qrcode-scan" size={24} color={colors.primary} />
+                                </TouchableOpacity>
+                            </View>
 
-                    {/* EXPIRY DATE */}
-                    <View style={styles.sectionSpacing}>
-                        <Text style={[styles.label, { color: colors.text }]}>
-                            Expiry Date (Optional)
-                        </Text>
+                            <View style={styles.inputGap}>
+                                <Text style={[styles.label, { color: colors.primary }]}>Category</Text>
+                                <View style={[styles.pickerContainer, { backgroundColor: isDarkMode ? '#1e293b' : '#f8fafc', borderColor: colors.border }]}>
+                                    <Picker
+                                        selectedValue={item?.category_id}
+                                        onValueChange={(val) => handleChange("category_id", val)}
+                                        dropdownIconColor={colors.text}
+                                        style={{ color: colors.text }}
+                                    >
+                                        <Picker.Item label="Select Category" value="" color={colors.subText} />
+                                        {categories?.map((cat: any) => (
+                                            <Picker.Item key={cat.category_id} label={cat.category_name} value={cat.category_id} />
+                                        ))}
+                                    </Picker>
+                                </View>
+                            </View>
 
-                        <TouchableOpacity
-                            onPress={() => setShowDatePicker(true)}
-                            style={[
-                                styles.dateBtn,
-                                { backgroundColor: colors.inputBg, borderColor: colors.border }
-                            ]}
-                        >
-                            <Text
-                                style={{
-                                    color: item.expiryDate
-                                        ? colors.text
-                                        : colors.placeholder
-                                }}
-                            >
-                                {item.expiryDate
-                                    ? new Date(item.expiryDate).toLocaleDateString()
-                                    : "Set Expiry Date"}
-                            </Text>
+                            <View style={styles.priceRow}>
+                                <View style={{ flex: 1 }}>
+                                    <InputContainer
+                                        label="Buying Price"
+                                        placeholder="0.00"
+                                        value={item?.Bprice?.toString()}
+                                        onChangeText={(text: string) => handleChange("Bprice", text)}
+                                        keyboardType="numeric"
+                                    />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <InputContainer
+                                        label="Selling Price"
+                                        placeholder="0.00"
+                                        value={item?.price?.toString()}
+                                        onChangeText={(text: string) => handleChange("price", text)}
+                                        keyboardType="numeric"
+                                    />
+                                </View>
+                            </View>
 
-                            <Icon name="calendar" size={20} color={colors.placeholder} />
-                        </TouchableOpacity>
-                    </View>
+                            {buying > 0 && selling > 0 && (
+                                <View style={[styles.infoBox, { backgroundColor: profit < 0 ? '#FEF2F2' : '#F0FDF4' }]}>
+                                    <Ionicons name={profit < 0 ? "alert-circle" : "trending-up"} size={18} color={profit < 0 ? '#EF4444' : '#22C55E'} />
+                                    <Text style={[styles.infoText, { color: profit < 0 ? '#B91C1C' : '#15803D' }]}>
+                                        Profit: {profit.toFixed(2)} | Margin: {margin}%
+                                    </Text>
+                                </View>
+                            )}
 
-                    {showDatePicker && (
-                        <DateTimePicker
-                            value={item.expiryDate ? new Date(item.expiryDate) : new Date()}
-                            mode="date"
-                            display="default"
-                            onChange={(e, date) => {
-                                setShowDatePicker(false);
-                                if (date)
-                                    handleChange("expiryDate", date.toISOString());
-                            }}
-                        />
-                    )}
-
-                    {/* DESCRIPTION */}
-                    <TextArea
-                        placeholder="Additional notes..."
-                        value={item.description}
-                        onChangeText={(text: string) =>
-                            handleChange("description", text)
-                        }
-
-                    />
-
-                    {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
-
-                    {/* FOOTER BUTTONS */}
-                    <View style={styles.footerBtns}>
-                        <View style={{ flex: 1 }}>
-                            <Button
-                                loading={loading}
-                                handleclick={() => setModalVisible(false)}
-                                outline
-                                title="Cancel"
+                            <InputContainer
+                                label="Current Stock"
+                                placeholder="0"
+                                value={item?.initial_stock?.toString()}
+                                onChangeText={(text: string) => handleChange("initial_stock", text)}
+                                keyboardType="numeric"
                             />
+
+                            {/* DESCRIPTION ADDED HERE */}
+                            <View style={{ marginTop: 5 }}>
+                                <Text style={[styles.label, { color: colors.primary }]}>Description / Notes</Text>
+                                <TextArea
+                                    placeholder="Additional product details (flavor, size, etc.)"
+                                    value={item?.description || ""}
+                                    onChangeText={(text: string) => handleChange("description", text)}
+                                />
+                            </View>
                         </View>
 
-                        <View style={{
-                            position: 'absolute',
-                            bottom: item.product_id ? 55 : 25,
-                            left: 24,
-                            right: 24,
-                        }}>
-                            <Button
-                                loading={loading}
-                                handleclick={PostLocally}
-                                title={item.product_id ? "Update" : "Save Product"}
-                                disabled={item.product_id ? false : !isFormValid}
-                            />
-                        </View>
-                    </View>
+                        {msg?.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
 
-                </ScrollView>
+                        <View style={styles.buttonRow}>
+                            <View style={{ flex: 1 }}>
+                                <Button handleclick={onClose} outline title="Cancel" />
+                            </View>
+                            <View style={{ flex: 2 }}>
+                                <Button loading={loading} handleclick={validateAndSubmit} title={item?.product_id ? "Update Product" : "Save Product"} />
+                            </View>
+                        </View>
+                    </ScrollView>
+                </KeyboardAvoidingView>
             </View>
+
+            <Modal visible={isScannerOpen} animationType="fade">
+                <View style={{ flex: 1, backgroundColor: '#000' }}>
+                    <Camera style={{ flex: 1 }} cameraType={CameraType.Back} scanBarcode onReadCode={handleBarcodeRead} showFrame />
+                    <TouchableOpacity onPress={() => setIsScannerOpen(false)} style={styles.closeScanner}>
+                        <Ionicons name="close-circle" size={60} color="white" />
+                    </TouchableOpacity>
+                </View>
+            </Modal>
         </Modal>
     );
 };
 
 const styles = StyleSheet.create({
-
-    container: { flex: 1 },
-
-    scrollContent: {
-        padding: 24,
-        paddingBottom: 120,
-    },
-
-    header: {
-        fontSize: 22,
-        fontWeight: '700',
-        textAlign: 'center',
-        marginBottom: 30,
-    },
-
-    barcodeWrapper: {
-        position: 'relative',
-    },
-
-    scanBtn: {
-        position: 'absolute',
-        right: 12,
-        bottom: 30,
-    },
-
-    sectionSpacing: {
-        marginTop: 12,
-        marginBottom: 6,
-    },
-
-    label: {
-        fontWeight: '600',
-        marginBottom: 6,
-    },
-
-    pickerContainer: {
-        borderWidth: 1,
-        borderRadius: 5,
-        overflow: 'hidden',
-        marginBottom: 10
-    },
-
-    priceRow: {
-        flexDirection: 'row',
-        gap: 12,
-    },
-
-    dateBtn: {
-        borderWidth: 1,
-        height: 55,
-        borderRadius: 5,
-        paddingHorizontal: 15,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-
-    footerBtns: {
-        flexDirection: 'row',
-        gap: 12,
-        marginTop: 60,
-    },
-
-    scannerContainer: {
-        flex: 1,
-        backgroundColor: '#000',
-    },
-
-    scannerOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: 60,
-    },
-
-    scannerText: {
-        color: 'white',
-        backgroundColor: 'rgba(0,0,0,0.6)',
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: 10,
-    },
-
-    closeScannerBtn: {
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        padding: 14,
-        borderRadius: 50,
-    },
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+    modalContainer: { borderTopLeftRadius: 30, borderTopRightRadius: 30, maxHeight: '92%', elevation: 20 },
+    handle: { width: 45, height: 6, borderRadius: 10, alignSelf: 'center', marginVertical: 15 },
+    scrollContent: { paddingHorizontal: 24, paddingBottom: 40 },
+    headerRow: { flexDirection: 'row', alignItems: 'center', gap: 15, marginBottom: 25 },
+    iconCircle: { width: 54, height: 54, borderRadius: 27, justifyContent: 'center', alignItems: 'center' },
+    title: { fontSize: 22, fontWeight: '800' },
+    form: { gap: 10 },
+    barcodeWrapper: { position: 'relative' },
+    scanBtn: { position: 'absolute', right: 12, bottom: 25 },
+    inputGap: { marginTop: 5 },
+    label: { fontSize: 12, fontWeight: '700', textTransform: 'uppercase', marginBottom: 8, marginLeft: 4 },
+    pickerContainer: { borderWidth: 1, borderRadius: 12, height: 55, justifyContent: 'center', overflow: 'hidden' },
+    priceRow: { flexDirection: 'row', gap: 12 },
+    infoBox: { flexDirection: 'row', padding: 14, borderRadius: 12, gap: 10, alignItems: 'center' },
+    infoText: { fontSize: 14, fontWeight: '700' },
+    buttonRow: { flexDirection: 'row', gap: 12, marginTop: 35, alignItems: 'center' },
+    closeScanner: { position: 'absolute', bottom: 50, alignSelf: 'center' }
 });
 
 export default AddProductModal;

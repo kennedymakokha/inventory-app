@@ -87,9 +87,9 @@ const CSVUploadModal = ({
                         )}
                     </TouchableOpacity>
 
-                    {msg.msg && (
+                    {msg?.msg && (
                         <View style={{ marginBottom: 15 }}>
-                            <Toast msg={msg.msg} state={msg.state} />
+                            <Toast msg={msg?.msg} state={msg?.state} />
                         </View>
                     )}
 

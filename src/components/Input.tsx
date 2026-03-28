@@ -1,12 +1,8 @@
-// components/Input.tsx
 import React from 'react';
-import { View, Text, TextInput, TextInputProps } from 'react-native';
-import Icon from 'react-native-vector-icons/Entypo';
+import { View, Text, TextInput, StyleSheet } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons'; // Switched to Ionicons for consistency
 import { useTheme } from '../context/themeContext';
 import { InputProps } from '../../models';
-
-
-
 
 export const Input: React.FC<InputProps> = ({
     value,
@@ -20,22 +16,34 @@ export const Input: React.FC<InputProps> = ({
     keyboardType,
     multiline = false,
 }) => {
-    const { colors } = useTheme();
+    const { colors, isDarkMode } = useTheme();
 
-    // Dynamic background
+    // Context-aware background colors
     const containerBg = latlng === 'yes' && !editable
-        ? colors.border
-        : colors.inputBg;
+        ? (isDarkMode ? '#1E293B' : '#E2E8F0') 
+        : colors.card;
 
     return (
-        <View style={{ width: '100%', marginBottom: 16, borderRadius: 5, backgroundColor: containerBg, paddingVertical: 4 }}>
-            {label && <Text style={{ marginLeft: 8, marginBottom: 4, fontWeight: 'bold', color: colors.primary }}>{label}</Text>}
-
-            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12 }}>
+        <View style={[styles.wrapper, { marginBottom: 16 }]}>
+            {label && (
+                <Text style={[styles.label, { color: colors.primary }]}>
+                    {label}
+                </Text>
+            )}
+            <View 
+                style={[
+                    styles.inputContainer, 
+                    { 
+                        backgroundColor: containerBg, 
+                        borderColor: colors.border,
+                        opacity: editable ? 1 : 0.7 
+                    }
+                ]}
+            >
                 <TextInput
-                    style={{ flex: 1, color: colors.text, fontSize: 16, paddingVertical: 8 }}
+                    style={[styles.textInput, { color: colors.text }]}
                     placeholder={placeholder}
-                    placeholderTextColor={colors.placeholder}
+                    placeholderTextColor={colors.subText}
                     value={value?.toString()}
                     onChangeText={onChangeText}
                     secureTextEntry={hide}
@@ -43,13 +51,15 @@ export const Input: React.FC<InputProps> = ({
                     multiline={multiline}
                     editable={editable}
                     cursorColor={colors.primary}
+                    selectionColor={colors.primary + '40'}
                 />
                 {hide !== undefined && setHide && (
                     <Icon
-                        name={hide ? 'eye' : 'eye-with-line'}
-                        size={24}
+                        name={hide ? 'eye-outline' : 'eye-off-outline'}
+                        size={20}
                         color={colors.subText}
                         onPress={setHide}
+                        style={styles.icon}
                     />
                 )}
             </View>
@@ -57,41 +67,40 @@ export const Input: React.FC<InputProps> = ({
     );
 };
 
-export const InputContainer: React.FC<InputProps & { isDarkMode?: boolean }> = ({
+export const InputContainer: React.FC<InputProps> = ({
     value,
     onChangeText,
     editable = true,
     placeholder,
+    label,
     hide,
-    setHide,
     multiline = false,
 }) => {
     const { colors } = useTheme();
 
     return (
-        <View style={{
-            width: '100%',
-            height: 56,
-            marginBottom: 16,
-            borderRadius: 5,
-            backgroundColor: colors.inputBg,
-            borderWidth: 1,
-            borderColor: colors.border,
-            justifyContent: 'center',
-            paddingHorizontal: 12,
-        }}>
-            <TextInput
-                style={{ color: colors.text, fontSize: 16, fontWeight: '500' }}
-                placeholder={placeholder}
-                placeholderTextColor={colors.placeholder}
-                value={value?.toString()}
-                onChangeText={onChangeText}
-                secureTextEntry={hide}
-                editable={editable}
-                multiline={multiline}
-                textAlignVertical="center"
-                cursorColor={colors.primary}
-            />
+        <View style={[styles.wrapper, { marginBottom: 12 }]}>
+            {label && (
+                <Text style={[styles.label, { color: colors.primary, fontSize: 11 }]}>
+                    {label}
+                </Text>
+            )}
+            <View style={[
+                styles.minimalContainer, 
+                { backgroundColor: colors.card, borderColor: colors.border }
+            ]}>
+                <TextInput
+                    style={[styles.textInput, { color: colors.text, height: 48 }]}
+                    placeholder={placeholder}
+                    placeholderTextColor={colors.subText}
+                    value={value?.toString()}
+                    onChangeText={onChangeText}
+                    secureTextEntry={hide}
+                    editable={editable}
+                    multiline={multiline}
+                    cursorColor={colors.primary}
+                />
+            </View>
         </View>
     );
 };
@@ -100,33 +109,81 @@ export const TextArea: React.FC<{
     value: string;
     onChangeText: (text: string) => void;
     placeholder?: string;
-}> = ({ value, onChangeText, placeholder }) => {
+    label?: string;
+}> = ({ value, onChangeText, placeholder, label }) => {
     const { colors } = useTheme();
 
     return (
-        <TextInput
-            style={{
-                minHeight: 100,
-                borderRadius: 5,
-                borderWidth: 1,
-                borderColor: colors.border,
-                backgroundColor: colors.inputBg,
-                color: colors.text,
-                fontSize: 16,
-                fontWeight: '500',
-                padding: 12,
-                marginVertical: 8,
-                textAlignVertical: 'top',
-            }}
-            placeholder={placeholder}
-            placeholderTextColor={colors.placeholder}
-            multiline
-            numberOfLines={4}
-            value={value?.toString()}
-            onChangeText={onChangeText}
-            cursorColor={colors.primary}
-        />
+        <View style={styles.wrapper}>
+            {label && (
+                <Text style={[styles.label, { color: colors.primary }]}>
+                    {label}
+                </Text>
+            )}
+            <TextInput
+                style={[
+                    styles.textArea,
+                    {
+                        borderColor: colors.border,
+                        backgroundColor: colors.card,
+                        color: colors.text,
+                    }
+                ]}
+                placeholder={placeholder}
+                placeholderTextColor={colors.subText}
+                multiline
+                numberOfLines={4}
+                value={value?.toString()}
+                onChangeText={onChangeText}
+                cursorColor={colors.primary}
+                textAlignVertical="top"
+            />
+        </View>
     );
 };
+
+const styles = StyleSheet.create({
+    wrapper: {
+        width: '100%',
+    },
+    label: {
+        fontSize: 12,
+        fontWeight: '800',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+        marginBottom: 8,
+        marginLeft: 4,
+    },
+    inputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderRadius: 12,
+        borderWidth: 1,
+        paddingHorizontal: 12,
+        height: 56,
+    },
+    minimalContainer: {
+        borderRadius: 10,
+        borderWidth: 1,
+        paddingHorizontal: 12,
+        justifyContent: 'center',
+    },
+    textInput: {
+        flex: 1,
+        fontSize: 15,
+        fontWeight: '600',
+    },
+    textArea: {
+        minHeight: 120,
+        borderRadius: 12,
+        borderWidth: 1,
+        padding: 16,
+        fontSize: 15,
+        fontWeight: '500',
+    },
+    icon: {
+        padding: 4,
+    }
+});
 
 export default Input;
