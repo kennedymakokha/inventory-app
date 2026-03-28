@@ -15,7 +15,7 @@ export function ReportStack() {
       <ReportStackNav.Screen
         name="salesReport"
         component={user.role === "admin" ? ReportsTabs : SalesReport}
-        options={{ headerShown: false }}
+        options={{ headerShown: user.role === "admin" ? false : true }}
       />
     </ReportStackNav.Navigator>
   );

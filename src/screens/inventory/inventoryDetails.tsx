@@ -6,6 +6,7 @@ import PageHeader from '../../components/pageHeader'
 import SalesReportTable from '../reports/components/salesTable'
 import { FormatDate } from '../../../utils/formatDate'
 import { getInventory, getInventoryLogs } from '../../services/inventory.service'
+import { useTheme } from '../../context/themeContext'
 
 const PAGE_SIZE = 20
 
@@ -17,7 +18,7 @@ const InventoryDetails: React.FC = ({ route, navigation }: any) => {
     const [loading, setLoading] = useState(true)
     const [loadingMore, setLoadingMore] = useState(false)
     const [hasMore, setHasMore] = useState(true)
-
+    const { colors } = useTheme();
     const headers = [
         { key: 'createdAt', label: 'Date' },
         { key: 'reference_type', label: 'Type' },
@@ -91,7 +92,7 @@ const InventoryDetails: React.FC = ({ route, navigation }: any) => {
         }))
     }, [data])
 
- 
+
 
     const EmptyState = () => {
         if (loading) return null
@@ -108,19 +109,13 @@ const InventoryDetails: React.FC = ({ route, navigation }: any) => {
     }
 
     return (
-        <View className="bg-slate-900 flex-1">
+        <View className=" flex-1 px-4"
+            style={{ flex: 1, backgroundColor: colors.background }}
+        >
 
-            <PageHeader
-                component={() => (
-                    <View className="flex-row justify-center py-3">
-                        <Text className="text-xl font-bold text-green-300">
-                            Inventory History
-                        </Text>
-                    </View>
-                )}
-            />
-
-            <Text className="text-lg font-bold text-slate-100 uppercase text-center my-2">
+            <Text
+                style={{ color: colors.primaryLight }}
+                className="text-lg font-bold  uppercase text-center my-2 ">
                 {product.product_name} Stocking History
             </Text>
 
@@ -141,7 +136,7 @@ const InventoryDetails: React.FC = ({ route, navigation }: any) => {
                         data={tableData}
                         onEndReached={loadMore}
                         loading={loadingMore}
-                        
+
                         rowKey={(item) => `${item.product_id}_${item.createdAt}`}
                     />
                 </>

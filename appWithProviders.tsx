@@ -178,7 +178,7 @@ const AppWithProviders = () => {
     }
 
     return (
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
             <StatusBar animated backgroundColor={colors.primary} />
             <SafeAreaView style={styles.container}>
                 <AppWithAuth />

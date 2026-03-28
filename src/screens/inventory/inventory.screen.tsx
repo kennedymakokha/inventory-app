@@ -9,6 +9,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { authStackParamList } from '../../../models';
 import { useNavigation } from '@react-navigation/native';
 import { getGroupedInventoryLogs } from '../../services/inventory.service';
+import { useTheme } from '../../context/themeContext';
 
 export default function InventoryScreen() {
     const initialState = {
@@ -54,9 +55,12 @@ export default function InventoryScreen() {
     const filteredData = uniqueInventory(inventories).filter((e: any) => e.product_name.includes(query))
     type NavigationProp = NativeStackNavigationProp<authStackParamList>;
     const navigation = useNavigation<NavigationProp>();
+    const { colors } = useTheme();
     return (
-        <View className="flex-1 min-h-[300px] bg-secondary-900 px-5">
-            <PageHeader />
+        <View className="flex-1 min-h-[300px]  px-4"
+            style={{ flex: 1, backgroundColor: colors.background }}
+        >
+            {/* <PageHeader /> */}
             <View className="flex-1 ">
                 {loading ? (
                     <SkeletonList />
@@ -64,14 +68,16 @@ export default function InventoryScreen() {
                     data={filteredData}
                     keyExtractor={(item: any) => item.inventory_id}
                     renderItem={({ item }: any) => (
-                        <TouchableOpacity onPress={() => navigation.navigate('inventory_Details', { product: item })} className={`flex-row justify-between ${item.synced === 0 ? "bg-green-100" : "bg-green-50"} p-4 rounded-lg shadow-md mt-2`}>
+                        <TouchableOpacity
+                            style={{ backgroundColor: colors.card }}
+                            onPress={() => navigation.navigate('inventory_Details', { product: item })} className={`flex-row justify-between ${item.synced === 0 ? "bg-green-100" : "bg-green-50"} p-4 rounded-lg shadow-md mt-2`}>
                             <View>
                                 <View >
-                                    <Text className="font-bold text-secondary-900  text-lg">
+                                    <Text style={{ color: colors.text }} className="font-bold  text-lg">
                                         {item.product_name}
                                     </Text>
                                 </View>
-                                <Text className="text-gray-600 dark:text-gray-300">
+                                <Text style={{ color: colors.subText }}>
                                     Stock: {item.qty}
                                 </Text>
 

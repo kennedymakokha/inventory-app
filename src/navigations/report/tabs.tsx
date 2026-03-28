@@ -55,11 +55,7 @@ export function ReportsTabs() {
         component={InventoryStack}
         initialParams={{ filter: "categories" }}
       />}
-      {user.role === "admin" && <Tab.Screen
-        name="products"
-        component={ProductScreen}
-        initialParams={{ filter: "products" }}
-      />}
+     
       {user.role === "admin" && <Tab.Screen
         name="users"
         component={UsersStack}

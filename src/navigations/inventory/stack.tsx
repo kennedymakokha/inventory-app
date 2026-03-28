@@ -10,25 +10,28 @@ import InventoryScreen from "../../screens/inventory/inventory.screen";
 
 export function InventoryStack() {
   const { isDarkMode } = useSettings();
-const InventoryStackNav = createNativeStackNavigator<InventoryStackParamList>();
+  const InventoryStackNav = createNativeStackNavigator<InventoryStackParamList>();
   return (
     <InventoryStackNav.Navigator screenOptions={defaultHeaderOptions(isDarkMode)}>
       <InventoryStackNav.Screen
         name="inventory_Dashboard"
         component={InventoryScreen}
-        options={{   headerShown: false, }}
+        options={{ headerShown: false, }}
       />
       <InventoryStackNav.Screen
         name="inventory_Details"
         component={InventoryDetails}
-        options={({ route }) => ({
-          header: () => (
-            <CustomHeaderWithSearch
-              noSearch
-              title={route.params?.product?.product_name || "Product Details"}
-            />
-          ),
-        })}
+        options={{ headerShown: false, }}
+      // options={({ route }) => ({
+      //   header: () => (
+      //     <CustomHeaderWithSearch
+      //       nodetail
+      //       center
+      //       noSearch
+      //       title={route.params?.product?.product_name || "Product Details"}
+      //     />
+      //   ),
+      // })}
       />
     </InventoryStackNav.Navigator>
   );

@@ -84,7 +84,7 @@ const SalesReportTable: React.FC<Props> = ({
       : colors.elevated;
 
     return (
-      <TouchableOpacity onPress={onTablePressed}
+      <TouchableOpacity activeOpacity={1} onPress={onTablePressed}
         style={{
           flexDirection: "row",
           backgroundColor: rowBg,

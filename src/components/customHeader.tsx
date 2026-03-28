@@ -76,9 +76,13 @@ function CustomHeader({ title, add }: { title: string; add?: boolean }) {
 export function CustomHeaderWithSearch({
   title,
   noSearch,
+  nodetail,
+  center,
 }: {
   title: string;
   noSearch?: boolean;
+  nodetail?: boolean
+  center?: boolean
 }) {
   const navigation = useNavigation<NavigationProp<authStackParamList>>();
   const { isDarkMode } = useSettings();
@@ -109,9 +113,9 @@ export function CustomHeaderWithSearch({
       className="flex-row justify-between items-center gap-x-2 p-4 w-full shadow-2xl"
     >
       <View className="flex-row items-center ">
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        {!center && <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back-sharp" size={24} color={primaryColor} />
-        </TouchableOpacity>
+        </TouchableOpacity>}
         <View className="flex-row items-center justify-between">
           <Text
             style={{ color: textColor }}
@@ -126,12 +130,12 @@ export function CustomHeaderWithSearch({
           </View>
         )}
       </View>
-      <View className="items-end">
+      {!nodetail && <View className="items-end">
         <Text style={{ color: textColor }} className="text-sm font-medium">{dateTime}</Text>
         <Text style={{ color: online ? onlineColor : offlineColor }} className="text-xs font-semibold mt-1">
           ● {online ? "Online" : "Offline"} | Terminal: {Initials(business.business_name)}-POS-01
         </Text>
-      </View>
+      </View>}
     </View>
   );
 }
