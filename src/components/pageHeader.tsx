@@ -45,11 +45,11 @@ const POSHeader = ({ component, title }: POSHeaderProps) => {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 5,
+    // paddingHorizontal: 20,
+    // paddingTop: 10,
+    // paddingBottom: 5,
     // Ensure it sits nicely below the absolute-positioned CustomHeader
-    marginTop: Platform.OS === 'ios' ? 90 : 70, 
+    // marginTop: Platform.OS === 'ios' ? 90 : 70, 
   },
   titleWrapper: {
     flexDirection: 'row',
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
   },
   contentArea: {
     width: '100%',
-    marginBottom: 10,
+    // marginBottom: 10,
   },
   searchContainer: {
     // Allows the SearchBar to stand out slightly from the background
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     height: 1,
     width: '100%',
     opacity: 0.3,
-    marginTop: 5,
+    // marginTop: 5,
   }
 });
 

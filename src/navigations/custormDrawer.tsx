@@ -108,10 +108,11 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => 
       <View style={styles.menuContainer}>
         <Text style={styles.sectionLabel}>Main Navigation</Text>
         {menuItem("Dashboard", "grid-outline", "dashboard", "sales")}
-        {menuItem("Inventory", "cube-outline", "inventory", "sales")}
+      
         {menuItem("Business", "briefcase-outline", "business", "admin")}
         {!isInactive && menuItem("Sales", "cart-outline", "sales", "sales")}
         {menuItem("Reports", "bar-chart-outline", "salesreport", "sales")}
+         {menuItem("Profile", "person-outline", "profile", "sales")}
         {menuItem("Settings", "settings-outline", "settings", "sales")}
       </View>
 
@@ -169,6 +170,7 @@ const styles = StyleSheet.create({
     top: Platform.OS === 'ios' ? 50 : 30,
     right: 0,
     paddingHorizontal: 12,
+    marginRight: 20,
     paddingVertical: 6,
     borderRadius: 12,
     alignItems: 'center',

@@ -109,6 +109,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   mainValue: {
+    textAlign: 'center',
     fontSize: 20,
     fontWeight: "900",
     paddingHorizontal: 12,

@@ -1,73 +1,128 @@
-import { useSettings } from "../../context/SettingsContext";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import React from "react";
+import { Platform, View, StyleSheet } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import { useTheme } from "../../context/themeContext";
+
+// Screens/Stacks
 import DashboardScreen from "../../screens/DashboardScreen";
-import CustomHeader from "../../components/customHeader";
 import ProductScreen from "../../screens/products/product.screen";
 import { CategoriesStack } from "../categories/stack";
 import { UsersStack } from "../users/stack";
 import CustomersScreen from "../../screens/customers/customers.screen";
-import { useTheme } from "../../context/themeContext";
+import CustomHeader from "../../components/customHeader";
 
 const Tab = createBottomTabNavigator();
+
 export function DashboardTabs() {
     const { colors, isDarkMode } = useTheme();
-    const tabBackground = colors.background
-    const activeTint = colors.primary;
-    const inactiveTint = colors.primaryLight;
 
     return (
         <Tab.Navigator
             screenOptions={({ route }) => ({
                 headerShown: false,
-                tabBarIcon: ({ color, size }) => {
-                    const icons: Record<string, string> = {
-                        home: "home",
-                        categories: "list",
-                        products: "pricetags",
-                        users: "people",
-                        Customers: "shield",
+                tabBarShowLabel: true,
+                tabBarHideOnKeyboard: true,
 
-                    };
-                    return <Ionicons name={icons[route.name]} size={size} color={color} />;
+                // Active/Inactive Styling
+                tabBarActiveTintColor: colors.primary,
+                tabBarInactiveTintColor: colors.subText,
+
+                // Label Styling
+                tabBarLabelStyle: {
+                    fontSize: 10,
+                    fontWeight: "700",
+                    marginBottom: Platform.OS === 'ios' ? 0 : 8,
                 },
-                tabBarActiveTintColor: activeTint,
-                tabBarInactiveTintColor: inactiveTint,
-                tabBarStyle: { backgroundColor: tabBackground, borderTopWidth: 0, height: 60 },
+
+                // The "Glass" Tab Bar Design
+                tabBarStyle: {
+                    position: 'absolute',
+                    backgroundColor: isDarkMode ? colors.card : colors.background,
+                    borderTopWidth: 0,
+                    height: Platform.OS === 'ios' ? 88 : 70,
+                    paddingTop: 10,
+                    // Shadow/Elevation
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: -4 },
+                    shadowOpacity: isDarkMode ? 0.3 : 0.05,
+                    shadowRadius: 10,
+                    elevation: 20,
+                },
+
+                tabBarIcon: ({ focused, color, size }) => {
+                    const icons: Record<string, string> = {
+                        home: focused ? "home" : "home-outline",
+                        categories: focused ? "grid" : "grid-outline",
+                        products: focused ? "bag-handle" : "bag-handle-outline",
+                        users: focused ? "people" : "people-outline",
+                        Customers: focused ? "shield-checkmark" : "shield-outline",
+                    };
+
+                    // Add a "Glow" effect to the active icon
+                    return (
+                        <View style={focused ? [styles.activeIconContainer, { backgroundColor: colors.primary + '15' }] : null}>
+                            <Ionicons
+                                name={icons[route.name]}
+                                size={focused ? 24 : 22}
+                                color={color}
+                            />
+                        </View>
+                    );
+                },
             })}
         >
             <Tab.Screen
                 name="home"
-                component={DashboardScreen
-                }
+                component={DashboardScreen}
                 initialParams={{ filter: "home" }}
-                options={{ header: () => <CustomHeader title="Home" /> }}
+                options={{
+                    tabBarLabel: "Dashboard",
+                    headerShown: false,
+
+                }}
             />
             <Tab.Screen
                 name="categories"
                 component={CategoriesStack}
                 initialParams={{ filter: "categories" }}
-                options={{ headerShown: false }}
+                options={{ tabBarLabel: "Inventory", headerShown: false }}
             />
             <Tab.Screen
                 name="products"
                 component={ProductScreen}
                 initialParams={{ filter: "products" }}
-                options={{ headerShown: false }}
+                options={{ tabBarLabel: "Items", headerShown: false, }}
             />
             <Tab.Screen
                 name="users"
                 component={UsersStack}
                 initialParams={{ filter: "users" }}
-                options={{ header: () => <CustomHeader title="Users" /> }}
+                options={{
+                    tabBarLabel: "Staff",
+                    headerShown: false,
+
+                }}
             />
             <Tab.Screen
                 name="Customers"
                 component={CustomersScreen}
                 initialParams={{ filter: "customers" }}
-                options={{ header: () => <CustomHeader title="Customers " /> }}
+                options={{
+                    tabBarLabel: "VIP",
+                    headerShown: false,
+                }}
             />
         </Tab.Navigator>
     );
 }
+
+const styles = StyleSheet.create({
+    activeIconContainer: {
+        padding: 6,
+        paddingHorizontal: 16,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    }
+});

@@ -1,171 +1,177 @@
 import React, { useRef, useState } from 'react';
-import { Text } from 'react-native';
-import { View, TouchableOpacity, Animated, Easing, StyleSheet } from 'react-native';
+import { Text, View, TouchableOpacity, Animated, Easing, StyleSheet, Platform } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-
-// Assuming you might want to pass colors in or use a default
-const DEFAULT_COLOR = '#000fff';
+import { useTheme } from '../context/themeContext';
 
 export interface ActionButton {
-  icon: keyof typeof Ionicons.glyphMap;
-  label?: string;
-  onPress: () => void;
-  color?: string;
+    icon: keyof typeof Ionicons.glyphMap;
+    label?: string;
+    onPress: () => void;
+    color?: string;
 }
 
 interface RadialFabProps {
-  actions?: ActionButton[];
-  mainAction?: () => void;
-  mainColor?: string;
-  mainIcon?: any; // Use specific icon type if preferred
-  position?: { bottom: number; right: number };
-  radius?: number;
-  angle?: number;
+    actions?: ActionButton[];
+    mainAction?: () => void;
+    mainColor?: string;
+    mainIcon?: any;
+    radius?: number;
+    angle?: number;
 }
 
 const RadialFab = ({
-  actions = [],
-  mainAction,
-  mainColor = DEFAULT_COLOR,
-  mainIcon = 'menu',
-  position = { bottom: 25, right: 25 },
-  radius = 90,
-  angle = 90,
+    actions = [],
+    mainAction,
+    mainColor,
+    mainIcon = 'add-outline', // Modern outline icon
+    radius = 100,
+    angle = 90,
 }: RadialFabProps) => {
-  const [open, setOpen] = useState(false);
-  const animation = useRef(new Animated.Value(0)).current;
+    const { colors } = useTheme();
+    const [open, setOpen] = useState(false);
+    const animation = useRef(new Animated.Value(0)).current;
 
-  const toggleFab = () => {
-    if (actions.length === 0) {
-      mainAction?.();
-      return;
-    }
+    // Use theme primary if no mainColor is provided
+    const activeColor = mainColor || colors.primary;
 
-    Animated.timing(animation, {
-      toValue: open ? 0 : 1,
-      duration: 300,
-      easing: Easing.out(Easing.back(1.5)), // Added a slight "bounce" effect
-      useNativeDriver: true,
-    }).start();
+    const toggleFab = () => {
+        if (actions.length === 0) {
+            mainAction?.();
+            return;
+        }
 
-    setOpen(!open);
-  };
+        Animated.timing(animation, {
+            toValue: open ? 0 : 1,
+            duration: 350,
+            easing: Easing.out(Easing.back(1.5)),
+            useNativeDriver: true,
+        }).start();
 
-  return (
-    // Fixed: Added zIndex and ensured container doesn't block touches when closed
-    <View
-      style={[
-        styles.container,
-        { bottom: position.bottom, right: position.right }
-      ]}
-      pointerEvents="box-none"
-    >
-      {actions.map((action, index) => {
-        // Calculate angle: if 3 items and 90 deg, they go 0, 45, 90
-        const step = actions.length > 1 ? angle / (actions.length - 1) : 0;
-        // Start from 0 (Left) to 90 (Up)
-        const theta = (step * index * Math.PI) / 180;
+        setOpen(!open);
+    };
 
-        const translateX = animation.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, -radius * Math.cos(theta)],
-        });
+    return (
+        <View
+            style={styles.container}
+            pointerEvents="box-none"
+        >
+            {actions.map((action, index) => {
+                const step = actions.length > 1 ? angle / (actions.length - 1) : 0;
+                const theta = (step * index * Math.PI) / 180;
 
-        const translateY = animation.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, -radius * Math.sin(theta)],
-        });
+                const translateX = animation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, -radius * Math.cos(theta)],
+                });
 
-        const scale = animation.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, 1],
-        });
+                const translateY = animation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, -radius * Math.sin(theta)],
+                });
 
-        return (
-          <Animated.View
-            key={index}
-            style={[
-              styles.smallFab,
-              {
-                transform: [{ translateX }, { translateY }, { scale }],
-                opacity: animation, // Direct mapping to animation value
-                backgroundColor: action.color || mainColor,
-              },
-            ]}
-          >
+                const scale = animation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 1],
+                });
+
+                return (
+                    <Animated.View
+                        key={index}
+                        style={[
+                            styles.smallFab,
+                            {
+                                transform: [{ translateX }, { translateY }, { scale }],
+                                opacity: animation,
+                                backgroundColor: action.color || activeColor,
+                            },
+                        ]}
+                    >
+                        <TouchableOpacity
+                            onPress={() => {
+                                action.onPress();
+                                toggleFab();
+                            }}
+                            style={styles.touchTarget}
+                        >
+                            {action.icon !== "" ? (
+                                <Ionicons name={action.icon} size={20} color="#fff" />
+                            ) : (
+                                <Text style={styles.labelText}>{action.label}</Text>
+                            )}
+                        </TouchableOpacity>
+                    </Animated.View>
+                );
+            })}
+
             <TouchableOpacity
-              onPress={() => {
-                action.onPress();
-                toggleFab();
-              }}
-              style={styles.touchTarget}
+                style={[styles.mainFab, { backgroundColor: activeColor }]}
+                onPress={toggleFab}
+                activeOpacity={0.9}
             >
-              {action.icon !== "" ? <Ionicons name={action.icon} size={20} color="#fff" /> : <Text>{action.label}</Text>}
+                <Animated.View style={{
+                    transform: [{
+                        rotate: animation.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: ['0deg', '135deg'] // Slight over-rotate for "X" effect
+                        })
+                    }]
+                }}>
+                    <Ionicons name={mainIcon} size={28} color="#fff" />
+                </Animated.View>
             </TouchableOpacity>
-          </Animated.View>
-        );
-      })}
-
-      <TouchableOpacity
-        style={[styles.mainFab, { backgroundColor: mainColor }]}
-        onPress={toggleFab}
-        activeOpacity={0.85}
-      >
-        {/* Added Rotation to the icon itself */}
-        <Animated.View style={{
-          transform: [{
-            rotate: animation.interpolate({
-              inputRange: [0, 1],
-              outputRange: ['0deg', '90deg']
-            })
-          }]
-        }}>
-          <Ionicons name={open ? 'close' : mainIcon} size={26} color="#fff" />
-        </Animated.View>
-      </TouchableOpacity>
-    </View>
-  );
+        </View>
+    );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    // Important: center these so translate works from middle
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 999,
-  },
-  mainFab: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 3 },
-  },
-  smallFab: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    position: 'absolute', // Stacked behind main FAB until animated
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  touchTarget: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  }
+    container: {
+        position: 'absolute',
+        justifyContent: 'center',
+        alignItems: 'center',
+        // --- POSITIONING ---
+        // 70px (TabBar) + 25px (Gap) = 95px from bottom
+        bottom: Platform.OS === 'ios' ? 110 : 95, 
+        right: 25,
+        // Ensure it sits above the Tab Navigator (elevation 25)
+        zIndex: 9999,
+        elevation: 30, 
+    },
+    mainFab: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOpacity: 0.4,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 6 },
+        elevation: 10,
+    },
+    smallFab: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        position: 'absolute',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
+        shadowOffset: { width: 0, height: 3 },
+        elevation: 8,
+    },
+    touchTarget: {
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    labelText: {
+        color: '#fff',
+        fontSize: 10,
+        fontWeight: 'bold'
+    }
 });
 
 export default RadialFab;

@@ -7,46 +7,36 @@ export const Theme: {
     success: string;
 } = {
     light: {
-        background: '#f1f5f9',
-        card: '#ffffff',
-        elevated: '#f8fafc',
-
-        // add slight blue influence
-        text: '#0f172a',
-        subText: '#64748b',
-
-        border: '#dbeafe', // 👈 subtle blue tint
-        inputBg: '#ffffff',
-
-        placeholder: '#94a3b8',
-
-        chipInactive: '#e2e8f0',
+        background: '#F8FAFC', // Pure Frost
+        card: '#FFFFFF',
+        elevated: '#F1F5F9',
+        text: '#0F172A', // Slate 900
+        subText: '#64748B', // Slate 500
+        border: '#DBEAFE', // Subtle Blue tint
+        inputBg: '#FFFFFF',
+        placeholder: '#94A3B8',
+        chipInactive: '#E2E8F0',
         chipTextInactive: '#475569',
     },
 
     dark: {
-        background: '#0b1120',
 
-        // mix in secondary (black) + primary (blue tone)
-        card: '#0f172a',       // 👈 slightly bluer than before
-        elevated: '#1e293b',   // 👈 richer surface with blue tint
-
-        text: '#f9fafb',
-        subText: '#9ca3af',
-
-        border: '#1e3a8a',     // 👈 deep blue border hint
-        inputBg: '#1f2937',
-
-        placeholder: '#6b7280',
-
-        chipInactive: '#1e293b',
-        chipTextInactive: '#d1d5db',
+        background: '#0F172A', // Midnight Blue
+        card: '#1E293B',       // Slate 800 (Richer blue surface)
+        elevated: '#334155',   // Slate 700 (Lighter surface for layering)
+        text: '#F1F5F9',       // Cloud White
+        subText: '#94A3B8',    // Mist Grey
+        border: '#1E3A8A',     // Deep Blue highlight
+        inputBg: '#0F172A',    // Matching background for depth
+        placeholder: '#475569',
+        chipInactive: '#334155',
+        chipTextInactive: '#CBD5E1'
     },
 
-    primary: '#3b82f6',
-    secondary: '#020617', // 👈 upgraded from pure black → richer black
-    danger: '#ef4444',
-    success: '#22c55e',
+   primary: '#6366F1',   // Upgraded Indigo
+  secondary: '#020617', // Richer Obsidian
+  danger: '#F43F5E',    // Rose Red
+  success: '#10B981',
 };
 
 

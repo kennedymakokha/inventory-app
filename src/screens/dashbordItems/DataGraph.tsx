@@ -1,115 +1,106 @@
+import { View, Text, StyleSheet, Animated, ScrollView, TouchableOpacity } from "react-native";
 import React, { useEffect, useRef } from "react";
-import { View, Text, StyleSheet, Animated, ScrollView, TouchableOpacity, Dimensions } from "react-native";
+import { useSettings } from "../../context/SettingsContext";
+import { Theme } from "../../utils/theme";
+import { getThemeAwareColor } from "./lineGraph";
 import { useTheme } from "../../context/themeContext";
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
 const DataGraph = ({ data = [], title, pressed }: any) => {
-  const chartHeight = 200;
-  const { colors, isDarkMode } = useTheme();
-  
-  // Use a ref to store animated values to persist across re-renders
-  const animatedValues = useRef<Animated.Value[]>([]).current;
 
-  // Initialize animated values based on data
-  if (animatedValues.length !== data.length) {
-    data.forEach((_: any, i: number) => {
-      if (!animatedValues[i]) animatedValues[i] = new Animated.Value(0);
-    });
+  const chartHeight = 220;
+  const { colors, isDarkMode } = useTheme();
+  // Keep Animated.Values in a ref
+  const animatedValuesRef = useRef<Animated.Value[]>([]);
+
+  // Sync animatedValues with data length
+  if (animatedValuesRef.current.length !== data.length) {
+    animatedValuesRef.current = data.map(
+      (_: any, i: any) => animatedValuesRef.current[i] || new Animated.Value(0)
+    );
   }
 
   useEffect(() => {
     if (!data || data.length === 0) return;
 
-    const animations = data.map((item: any, i: number) =>
-      Animated.spring(animatedValues[i], {
+    const animations = data.map((item: any, i: any) =>
+      Animated.timing(animatedValuesRef.current[i], {
         toValue: item.value,
-        friction: 7,
-        tension: 40,
+        duration: 600,
         useNativeDriver: false,
       })
     );
 
-    Animated.stagger(50, animations).start();
+    Animated.stagger(80, animations).start();
   }, [data]);
 
   const maxValue = Math.max(...data.map((item: any) => item?.value || 0), 1);
 
   return (
-    <TouchableOpacity 
-      activeOpacity={0.9} 
-      onPress={pressed} 
-      style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}
-    >
-      <View style={styles.header}>
-        <View style={[styles.indicator, { backgroundColor: colors.primary }]} />
-        <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-      </View>
+    <TouchableOpacity activeOpacity={1} onPress={pressed} style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.title, { color: colors.primary }]}>{title}</Text>
 
       {(!data || data.length === 0) ? (
-        <View style={styles.emptyState}>
-          <Text style={{ color: colors.subText, fontSize: 12 }}>No data available for this period</Text>
-        </View>
+        <Text style={{ color: colors.text, textAlign: "center", marginTop: 40 }}>
+          No data available
+        </Text>
       ) : (
-        <View style={styles.chartWrapper}>
-          {/* Y-AXIS LABELS */}
+        <View style={styles.chartRow}>
+          {/* Y Axis */}
           <View style={styles.yAxis}>
-            {[1, 0.5, 0].map((v, i) => (
-              <Text key={i} style={[styles.axisText, { color: colors.subText }]}>
+            {[1, 0.75, 0.5, 0.25, 0].map((v, i) => (
+              <Text key={i} style={[styles.yAxisText, { color: colors.text }]}>
                 {Math.round(maxValue * v)}
               </Text>
             ))}
           </View>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 20 }}>
-            <View>
-              {/* GRID LINES (Background) */}
-              <View style={[styles.gridLayer, { height: chartHeight }]}>
-                {[0.25, 0.5, 0.75, 1].map((v, i) => (
-                  <View 
-                    key={i} 
-                    style={[styles.gridLine, { 
-                        bottom: chartHeight * v, 
-                        borderTopColor: colors.primary,
-                        opacity: isDarkMode ? 0.1 : 0.5 
-                    }]} 
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={{ paddingRight: 10 }}>
+              {/* Grid Lines */}
+              <View style={styles.gridContainer}>
+                {[1, 0.75, 0.5, 0.25].map((g, i) => (
+                  <View
+                    key={i}
+                    style={[
+                      styles.gridLine,
+                      { top: chartHeight * (1 - g), borderColor: colors.border },
+                    ]}
                   />
                 ))}
               </View>
 
-              {/* BARS LAYER */}
-              <View style={[styles.barLayer, { height: chartHeight }]}>
+              {/* Bars */}
+              <View style={[styles.chartContainer, { borderColor: colors.border, height: chartHeight }]}>
                 {data.map((item: any, index: number) => {
-                  const height = animatedValues[index].interpolate({
+                  const barHeight = animatedValuesRef.current[index].interpolate({
                     inputRange: [0, maxValue],
                     outputRange: [0, chartHeight],
                   });
 
                   return (
-                    <View key={index} style={styles.barColumn}>
+                    <View key={index} style={styles.barWrapper}>
+                      <Text style={[styles.valueText, { color: colors.text }]}>{item.value}</Text>
                       <Animated.View
                         style={[
                           styles.bar,
-                          { 
-                            height, 
-                            backgroundColor: colors.primaryLight,
-                            borderColor: colors.card,
-                            // Gradient effect: lighter top, solid bottom
-                            opacity: animatedValues[index].interpolate({
-                                inputRange: [0, maxValue],
-                                outputRange: [0.3, 1]
-                            })
-                          },
+                          { height: barHeight, backgroundColor: getThemeAwareColor(isDarkMode) },
                         ]}
-                      >
-                         <View style={styles.barTip} />
-                      </Animated.View>
-                      <Text numberOfLines={1} style={[styles.xLabel, { color: colors.subText }]}>
-                        {item.key}
-                      </Text>
+                      />
                     </View>
                   );
                 })}
+              </View>
+
+              {/* X Axis */}
+              <View style={[styles.xAxis, { backgroundColor: colors.border }]} />
+
+              {/* Labels */}
+              <View style={styles.labelRow}>
+                {data.map((item: any, index: number) => (
+                  <Text key={index} style={[styles.label, { color: colors.text }]}>
+                    {item.key}
+                  </Text>
+                ))}
               </View>
             </View>
           </ScrollView>
@@ -121,89 +112,72 @@ const DataGraph = ({ data = [], title, pressed }: any) => {
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 4,
-    marginVertical: 10,
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  indicator: {
-    width: 4,
-    height: 16,
-    borderRadius: 2,
-    marginRight: 8,
+    borderRadius: 14,
+    padding: 16,
   },
   title: {
-    fontSize: 14,
-    fontWeight: "900",
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 18,
+    textAlign: "center",
   },
-  chartWrapper: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+  chartRow: {
+    flexDirection: "row",
   },
   yAxis: {
-    height: 200,
-    justifyContent: 'space-between',
-    paddingRight: 12,
-    paddingBottom: 20, // Align with bar bases
+    justifyContent: "space-between",
+    height: 220,
+    marginRight: 8,
   },
-  axisText: {
-    fontSize: 9,
-    fontWeight: '800',
+  yAxisText: {
+    fontSize: 11,
   },
-  gridLayer: {
-    position: 'absolute',
+  chartContainer: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    borderLeftWidth: 1,
+  },
+  barWrapper: {
+    width: 40,
+    alignItems: "center",
+    justifyContent: "flex-end",
+  },
+  bar: {
+    width: 26,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+  },
+  valueText: {
+    fontSize: 11,
+    marginBottom: 4,
+  },
+  xAxis: {
+    height: 1,
+    marginTop: 2,
+  },
+  labelRow: {
+    flexDirection: "row",
+    marginTop: 8,
+  },
+  label: {
+    width: 40,
+    textAlign: "center",
+    fontSize: 11,
+    transform: [{ rotate: "-35deg" }],
+  },
+  gridContainer: {
+    position: "absolute",
     left: 0,
     right: 0,
-    zIndex: 0,
+    height: 220,
   },
   gridLine: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
     borderTopWidth: 1,
-    borderStyle: 'dashed',
+    borderStyle: "dashed",
   },
-  barLayer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    zIndex: 1,
-  },
-  barColumn: {
-    width: 45,
-    alignItems: 'center',
-    marginRight: 4,
-  },
-  bar: {
-    width: 20,
-    borderRadius: 6,
-    justifyContent: 'flex-start',
-  },
-  barTip: {
-    width: '100%',
-    height: 4,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    borderRadius: 6,
-  },
-  xLabel: {
-    fontSize: 9,
-    fontWeight: '700',
-    marginTop: 8,
-    width: 40,
-    textAlign: 'center',
-  },
-  emptyState: {
-    height: 150,
-    justifyContent: 'center',
-    alignItems: 'center',
-  }
 });
 
 export default DataGraph;

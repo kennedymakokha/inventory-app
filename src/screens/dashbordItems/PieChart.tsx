@@ -125,11 +125,10 @@ const PieChart: React.FC<PieChartProps> = ({ data = [], title }) => {
 
 const styles = StyleSheet.create({
     container: {
-        marginHorizontal: 4,
-        marginVertical: 10,
+      
         borderRadius: 24,
         padding: 20,
-        borderWidth: 1,
+       
     },
     header: {
         flexDirection: 'row',

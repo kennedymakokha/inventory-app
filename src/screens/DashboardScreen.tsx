@@ -168,31 +168,31 @@ const Dashboard = () => {
         <View style={styles.contentPadding}>
 
           {/* TOP PERFORMERS CHART */}
-          {/* <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}> */}
+          <View style={[styles.card, {  borderColor: colors.border }]}>
             <DataGraph
               pressed={() => setShowbyCategory(!showbyCategory)}
               title={`Top ${showbyCategory ? "Categories" : "Products"}`}
               data={showbyCategory ? topCategoryProducts : topProducts}
             />
-          {/* </View> */}
+          </View>
 
           {/* HOURLY SALES TREND */}
-          {/* <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}> */}
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <MultiLineChart
               startHour={startHour}
               endHour={endHour}
               title="Hourly Sales Trend"
               datasets={datasets || []}
             />
-          {/* </View> */}
+          </View>
 
           {/* MONTHLY PIE CHART */}
-          {/* <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}> */}
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <PieChart title="Monthly Sales Distribution" data={monthlySales} />
-          {/* </View> */}
+          </View>
 
           {/* KIOSK CONTROLS */}
-          <View style={styles.kioskRow}>
+          {/* <View style={styles.kioskRow}>
             <TouchableOpacity
               onPress={() => Kiosk.lock()}
               style={[styles.kioskBtn, { backgroundColor: colors.danger + '20' }]}
@@ -208,7 +208,7 @@ const Dashboard = () => {
               <Ionicons name="lock-open" size={20} color="#22c55e" />
               <Text style={{ color: '#22c55e', fontWeight: '700' }}>Unlock Kiosk</Text>
             </TouchableOpacity>
-          </View>
+          </View> */}
         </View>
 
         <View style={{ height: 100 }} />
@@ -276,11 +276,11 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: 24,
-    padding: 12,
+    padding: 4,
     borderWidth: 1,
     ...Platform.select({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8 },
-      android: { elevation: 4 }
+      android: { }
     })
   },
   kioskRow: {
