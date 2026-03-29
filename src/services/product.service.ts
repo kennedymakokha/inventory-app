@@ -7,6 +7,7 @@ import { getDBConnection } from "./db-service";
 import { createTableIfNotExists } from "../utils/tableExists";
 import { ProductItem } from "../../models";
 import { v4 as uuidv4 } from "uuid";
+import getInitials from "../utils/initials";
 /* =========================================================
    TABLE CREATION
 ========================================================= */
@@ -85,8 +86,8 @@ export const createProduct = async (product: any) => {
     tx.executeSql(
       `INSERT INTO Inventory_log
       (inventory_log_id, product_id, quantity, business,
-       reference_type, note, createdBy, synced, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       reference_type, note, createdBy, synced, createdAt, updatedAt,batchNumber,expiryDate)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         inve_id,
         productId,
@@ -97,7 +98,9 @@ export const createProduct = async (product: any) => {
         createdBy,
         0, // synced
         now,
-        now
+        now,
+        product ? (product.product_name ? getInitials(product.product_name) + '-' + Date.now() : "GENERAL-" + Date.now()) : "",
+        product.expiryDate ? product.expiryDate.toISOString() : null
       ]
     );
 

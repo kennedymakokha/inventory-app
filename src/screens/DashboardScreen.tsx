@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { 
-  View, 
-  Text, 
-  ScrollView, 
-  TouchableOpacity, 
-  RefreshControl, 
-  StyleSheet, 
-  Platform 
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+  StyleSheet,
+  Platform
 } from "react-native";
 import { useSelector } from "react-redux";
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -71,7 +71,7 @@ const Dashboard = () => {
   const fetchAnalytics = useCallback(async (filter: SalesFilter, customDate?: string) => {
     const id = user.role !== "admin" ? user.user_id || user._id : "";
     try {
-      const [totalStats, tProducts, tCategories] = await Promise.all([
+      const [totalStats, tProducts, tCategories]: any = await Promise.all([
         getDetailedUserStats(id, filter, customDate),
         getTopProducts(id, filter, customDate),
         getSalesByCategory(id, filter, customDate)
@@ -136,12 +136,9 @@ const Dashboard = () => {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <PageHeader 
-        title="Dashboard" 
-        subtitle={business?.name || "Overview"} 
-      />
+      
 
-      <ScrollView 
+      <ScrollView
         style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} tintColor={colors.primary} />}
@@ -169,48 +166,48 @@ const Dashboard = () => {
         </View>
 
         <View style={styles.contentPadding}>
-          
+
           {/* TOP PERFORMERS CHART */}
-          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <DataGraph 
-              pressed={() => setShowbyCategory(!showbyCategory)} 
-              title={`Top ${showbyCategory ? "Categories" : "Products"}`} 
-              data={showbyCategory ? topCategoryProducts : topProducts} 
+          {/* <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}> */}
+            <DataGraph
+              pressed={() => setShowbyCategory(!showbyCategory)}
+              title={`Top ${showbyCategory ? "Categories" : "Products"}`}
+              data={showbyCategory ? topCategoryProducts : topProducts}
             />
-          </View>
+          {/* </View> */}
 
           {/* HOURLY SALES TREND */}
-          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <MultiLineChart 
-              startHour={startHour} 
-              endHour={endHour} 
-              title="Hourly Sales Trend" 
-              datasets={datasets || []} 
+          {/* <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}> */}
+            <MultiLineChart
+              startHour={startHour}
+              endHour={endHour}
+              title="Hourly Sales Trend"
+              datasets={datasets || []}
             />
-          </View>
+          {/* </View> */}
 
           {/* MONTHLY PIE CHART */}
-          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          {/* <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}> */}
             <PieChart title="Monthly Sales Distribution" data={monthlySales} />
-          </View>
+          {/* </View> */}
 
           {/* KIOSK CONTROLS */}
           <View style={styles.kioskRow}>
-             <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => Kiosk.lock()}
               style={[styles.kioskBtn, { backgroundColor: colors.danger + '20' }]}
-             >
-                <Ionicons name="lock-closed" size={20} color={colors.danger} />
-                <Text style={{ color: colors.danger, fontWeight: '700' }}>Lock Kiosk</Text>
-             </TouchableOpacity>
+            >
+              <Ionicons name="lock-closed" size={20} color={colors.danger} />
+              <Text style={{ color: colors.danger, fontWeight: '700' }}>Lock Kiosk</Text>
+            </TouchableOpacity>
 
-             <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => Kiosk.unlock()}
               style={[styles.kioskBtn, { backgroundColor: '#22c55e20' }]}
-             >
-                <Ionicons name="lock-open" size={20} color="#22c55e" />
-                <Text style={{ color: '#22c55e', fontWeight: '700' }}>Unlock Kiosk</Text>
-             </TouchableOpacity>
+            >
+              <Ionicons name="lock-open" size={20} color="#22c55e" />
+              <Text style={{ color: '#22c55e', fontWeight: '700' }}>Unlock Kiosk</Text>
+            </TouchableOpacity>
           </View>
         </View>
 

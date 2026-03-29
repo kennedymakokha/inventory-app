@@ -10,148 +10,100 @@ import {
     Platform,
     Keyboard,
     Pressable,
-    StyleSheet
+    StyleSheet,
+    ActivityIndicator
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome5';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Camera } from 'react-native-camera-kit';
+import { useSelector, useDispatch } from "react-redux";
+import { useFocusEffect } from '@react-navigation/native';
+
+// Services & Context
 import { getProductsByCategoryName } from '../../services/product.service';
 import { getDBConnection } from '../../services/db-service';
-import { ProductItem, DataSales } from '../../../models';
+import { finalizeSale } from '../../services/sales.service';
+import { useSearch } from '../../context/searchContext';
+import { useTheme } from '../../context/themeContext';
+import { useSettings } from '../../context/SettingsContext';
+import { addToCart, clearCart } from '../../features/cartSlice';
+import { RootState } from '../../../store';
+import { ProductItem } from '../../../models';
+
+// Components
 import CheckoutModal from './components/checkout';
 import Toast from '../../components/Toast';
-import { useSearch } from '../../context/searchContext';
 import PageHeader from '../../components/pageHeader';
 import SearchBar from '../../components/searchBar';
 
-import { finalizeSale } from '../../services/sales.service';
-
-import { useTheme } from '../../context/themeContext';
-import { useSettings } from '../../context/SettingsContext';
-import { useFocusEffect } from '@react-navigation/native';
-import { useSelector, useDispatch } from "react-redux";
-import { RootState } from '../../../store';
-import { addToCart, clearCart } from '../../features/cartSlice';
-
-
 const LIMIT = 30;
 
-const SalesScreen: React.FC = ({ route, navigation }: any) => {
-
-    const { items: cart } = useSelector((state: RootState) => state.cart);
+const SalesScreen = ({ route, navigation }: any) => {
     const dispatch = useDispatch();
     const { category } = route.params;
+    const { items: cart } = useSelector((state: RootState) => state.cart);
     const { user } = useSelector((state: any) => state.auth);
-    const { business } = user;
+    const { colors } = useTheme();
     const { isScanToCartEnabled } = useSettings();
     const { query } = useSearch();
-    const { colors } = useTheme();
 
     const [products, setProducts] = useState<ProductItem[]>([]);
     const [modalVisible, setModalVisible] = useState(false);
     const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [msg, setMsg] = useState<any>({ msg: "", state: "", small: false });
     const [page, setPage] = useState(0);
-    const [datasales, setdataSales] = useState<DataSales | null>(null);
-
-    // Local state for prices 
+    const [msg, setMsg] = useState<any>({ msg: "", state: "", small: false });
     const [sellingPrices, setSellingPrices] = useState<Record<string, string>>({});
 
-    /* ---------------- LOAD PRODUCTS ---------------- */
-    const loadData = async (pageNumber = 0, append = false) => {
-        setLoading(true);
+    /* ---------------- DATA LOADING ---------------- */
+    const loadData = useCallback(async (pageNumber = 0, append = false) => {
+        if (pageNumber === 0) setLoading(true);
         try {
             const db = await getDBConnection();
             const offset = pageNumber * LIMIT;
-            const fetchedProducts = await getProductsByCategoryName(db, category, LIMIT, offset);
-            const existingPrices: Record<string, string> = {};
-            fetchedProducts.forEach(p => {
-                const inCart = cart.find(c => c.id === p.id);
-                if (inCart) {
-                    existingPrices[p.id] = inCart.price.toString();
-                }
-            });
-            setSellingPrices(prev => ({ ...prev, ...existingPrices }));
-
-            if (append) setProducts(prev => [...prev, ...fetchedProducts]);
-            else setProducts(fetchedProducts);
+            const fetched = await getProductsByCategoryName(db, category, LIMIT, offset);
+            if (append) setProducts(prev => [...prev, ...fetched]);
+            else setProducts(fetched);
         } catch (error) {
-            console.log(error);
+            console.error(error);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
-    };
-
-    useEffect(() => {
-        setPage(0);
-        loadData(0);
     }, [category]);
 
-    const loadMore = () => {
-        const nextPage = page + 1;
-        setPage(nextPage);
-        loadData(nextPage, true);
-    };
+    useEffect(() => {
+        loadData(0);
+    }, [loadData]);
+
     useFocusEffect(
         useCallback(() => {
-            // Re-sync local price state with whatever is actually in the cart
-            const existingPrices: Record<string, string> = {};
-            cart.forEach((item: any) => {
-                existingPrices[item.id] = item.price.toString();
-            });
-            setSellingPrices(prev => ({ ...prev, ...existingPrices }));
+            const prices: Record<string, string> = {};
+            cart.forEach(item => { prices[item.id] = item.price.toString(); });
+            setSellingPrices(prev => ({ ...prev, ...prices }));
         }, [cart])
     );
-    /* ---------------- ADD TO CART ---------------- */
-    const handleAddToCart = (product: ProductItem, newQty: number) => {
+
+    /* ---------------- ACTIONS ---------------- */
+    const handleAddToCart = (product: ProductItem, newQty: number, manualPrice?: number) => {
         if (newQty > product.quantity) {
-            setMsg({ msg: "Quantity exceeds available stock!", state: "error" });
+            setMsg({ msg: "Insufficient stock!", state: "error", small: true });
             return;
         }
-
-        const customPrice = parseFloat(sellingPrices[product.id]) || product.price;
-        dispatch(addToCart({ product, quantity: newQty, price: customPrice }));
-
-        if (newQty > 0) {
-            setMsg({ msg: `${product.product_name} updated`, state: "success", small: true });
-        }
+        const price = manualPrice ?? (parseFloat(sellingPrices[product.id]) || product.price);
+        dispatch(addToCart({ product, quantity: newQty, price }));
     };
 
-    /* ---------------- BARCODE SCANNER ---------------- */
-    const handleBarcodeScanned = (event: any) => {
-        const code = event.nativeEvent.codeStringValue;
-        if (!code) return;
-
-        const foundProduct = products.find(p => p.barcode === code);
-        if (!foundProduct) {
-            setMsg({ msg: 'Product not in this category', state: 'error' });
-            return;
-        }
-
-        const cartItem = cart.find(c => c.id === foundProduct.id);
-        const currentQty = cartItem ? cartItem.quantity : 0;
-
-        if (isScanToCartEnabled) {
-            handleAddToCart(foundProduct, currentQty + 1);
-            setIsScannerOpen(false);
-        } else {
-            setMsg({ msg: `🔍 Found: ${foundProduct.product_name}`, state: 'success' });
-            setIsScannerOpen(false);
-        }
-    };
-
-    /* ---------------- POST SALE ---------------- */
-    const PostSale = async (receiptNo: any, method: string, phone?: string, paidAmount?: string, mpesaData?: any,
-        paidCash?: any,
-        paidMpesa?: any,
-        // 
-    ) => {
+    const PostSale = async (receiptNo: any, method: string, phone?: string, paidCash?: any, paidMpesa?: any, mpesaData?: any, customerPin?: string) => {
         try {
             const db = await getDBConnection();
-            await finalizeSale(db, cart, { receiptNo, mpesaAmount: paidMpesa, cashAmount: paidCash, method, phone, business_id: business._id, createdBy: user.user_id, mpesaData });
-            await loadData();
+            await finalizeSale(db, cart, { 
+                receiptNo, mpesaAmount: paidMpesa, cashAmount: paidCash, method, phone, customerPin,
+                business_id: user.business._id, createdBy: user.user_id, mpesaData 
+            });
+            await loadData(0);
             setModalVisible(false);
             setSellingPrices({});
-            clearCart();
+            dispatch(clearCart());
             setMsg({ msg: 'Sale Posted Successfully!', state: 'success' });
         } catch (error: any) {
             setMsg({ msg: error.message || 'Sale failed.', state: 'error' });
@@ -160,93 +112,62 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
 
     const total = useMemo(() => cart.reduce((sum, item) => sum + item.quantity * item.price, 0), [cart]);
 
-    /* ---------------- RENDER ITEM ---------------- */
+    /* ---------------- RENDER ---------------- */
     const renderItem = ({ item }: { item: ProductItem }) => {
-        // ALWAYS check global cart for the latest quantity
         const cartItem = cart.find(c => String(c.id) === String(item.id));
         const currentQty = cartItem ? cartItem.quantity : 0;
-        const stockColor = item.quantity > 5 ? colors.success : colors.danger;
+        const stockColor = item.quantity > 5 ? '#22c55e' : colors.danger;
+        const displayPrice = cartItem ? cartItem.price.toString() : (sellingPrices[item.id] || item.price.toString());
 
         return (
-            <Pressable onPress={Keyboard.dismiss}>
-                <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                    <View style={styles.cardHeader}>
+            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={styles.cardHeader}>
+                    <View style={{ flex: 1 }}>
                         <Text style={[styles.productName, { color: colors.text }]}>{item.product_name}</Text>
-                        <View style={[styles.stockBadge, { backgroundColor: stockColor }]}>
-                            <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>{item.quantity} IN STOCK</Text>
-                        </View>
+                        <Text style={{ color: colors.subText, fontSize: 11 }}>{category}</Text>
+                    </View>
+                    <View style={[styles.stockBadge, { backgroundColor: stockColor + '20' }]}>
+                        <Text style={{ color: stockColor, fontSize: 10, fontWeight: '800' }}>{item.quantity} IN STOCK</Text>
+                    </View>
+                </View>
+
+                <View style={styles.inputRow}>
+                    {/* Price Input */}
+                    <View style={[styles.priceBox, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                        <Text style={{ color: colors.subText, fontSize: 10, fontWeight: 'bold' }}>KSH</Text>
+                        <TextInput
+                            style={[styles.priceInput, { color: colors.text }]}
+                            keyboardType="numeric"
+                            value={displayPrice}
+                            onChangeText={text => {
+                                setSellingPrices(prev => ({ ...prev, [item.id]: text }));
+                                if (currentQty > 0) handleAddToCart(item, currentQty, parseFloat(text) || 0);
+                            }}
+                        />
                     </View>
 
-                    {item.barcode && <Text style={[styles.barcodeText, { color: colors.subText }]}>{item.barcode}</Text>}
-
-                    <View style={styles.inputRow}>
-                        {/* Quantity Controls */}
-                        <View style={[styles.qtyContainer, { backgroundColor: colors.inputBg }]}>
-                            <TouchableOpacity
-                                onPress={() => handleAddToCart(item, Math.max(0, currentQty - 1))}
-                                style={styles.qtyBtn}
-                            >
-                                <Icon name="minus" size={12} color={colors.text} />
-                            </TouchableOpacity>
-
-                            <TextInput
-                                style={[styles.qtyInput, { color: colors.text }]}
-                                keyboardType="numeric"
-                                value={currentQty.toString()}
-                                onChangeText={text => handleAddToCart(item, parseInt(text) || 0)}
-                            />
-
-                            <TouchableOpacity
-                                onPress={() => handleAddToCart(item, currentQty + 1)}
-                                style={styles.qtyBtn}
-                            >
-                                <Icon name="plus" size={12} color={colors.text} />
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* Price Override */}
-                        <View style={[styles.priceInputContainer, { backgroundColor: colors.inputBg }]}>
-                            <Text style={{ color: colors.subText, fontSize: 12 }}>Ksh </Text>
-                            <TextInput
-                                style={[styles.priceInput, { color: colors.text }]}
-                                keyboardType="numeric"
-                                // FIX: Look at Cart First, then Local State, then Database Price
-                                value={
-                                    cart.find(c => c.id === item.id)?.price.toString() ||
-                                    sellingPrices[item.id] ||
-                                    item.price.toString()
-                                }
-                                onChangeText={text => {
-                                    setSellingPrices(prev => ({ ...prev, [item.id]: text }));
-                                    // If it's already in the cart, update the cart price immediately
-                                    const currentQty = cart.find(c => c.id === item.id)?.quantity || 0;
-                                    if (currentQty > 0) {
-                                        addToCart(item, currentQty, parseFloat(text) || item.price);
-                                    }
-                                }}
-                            />
-                        </View>
-                    </View>
-
-                    <View style={styles.cardFooter}>
-                        <Text style={{ color: colors.success, fontWeight: "bold" }}>
-                            Unit: {item.price?.toFixed(2)}
-                        </Text>
-
-                        <TouchableOpacity
-                            onPress={() => handleAddToCart(item, currentQty + 1)}
-                            style={[styles.addBtn, { backgroundColor: colors.primaryDark }]}
-                        >
-                            <Text style={styles.addBtnText}>{currentQty > 0 ? "Add More" : "Add to Cart"}</Text>
-                            {currentQty > 0 && (
-                                <View style={styles.badge}>
-                                    <Text style={styles.badgeText}>{currentQty}</Text>
-                                </View>
-                            )}
+                    {/* Qty Controls */}
+                    <View style={[styles.qtyContainer, { backgroundColor: colors.primary + '15' }]}>
+                        <TouchableOpacity onPress={() => handleAddToCart(item, Math.max(0, currentQty - 1))} style={styles.qtyBtn}>
+                            <Ionicons name="remove" size={18} color={colors.primary} />
+                        </TouchableOpacity>
+                        <Text style={[styles.qtyText, { color: colors.text }]}>{currentQty}</Text>
+                        <TouchableOpacity onPress={() => handleAddToCart(item, currentQty + 1)} style={styles.qtyBtn}>
+                            <Ionicons name="add" size={18} color={colors.primary} />
                         </TouchableOpacity>
                     </View>
                 </View>
-            </Pressable>
+
+                <TouchableOpacity 
+                    onPress={() => handleAddToCart(item, currentQty + 1)}
+                    style={[styles.addBtn, { backgroundColor: currentQty > 0 ? colors.primary : colors.primary + '20' }]}
+                >
+                    <Text style={{ color: currentQty > 0 ? '#fff' : colors.primary, fontWeight: '800', fontSize: 13 }}>
+                        {currentQty > 0 ? 'UPDATE CART' : 'ADD TO CART'}
+                    </Text>
+                    {currentQty > 0 && <Ionicons name="checkmark-circle" size={16} color="#fff" style={{ marginLeft: 8 }} />}
+                </TouchableOpacity>
+            </View>
         );
     };
 
@@ -256,67 +177,51 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
     );
 
     return (
-        <KeyboardAvoidingView
-            style={{ flex: 1, backgroundColor: colors.background }}
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
-        >
-            <Modal visible={isScannerOpen} animationType="slide">
-                <View style={{ flex: 1 }}>
-                    <Camera
-                        style={{ flex: 1 }}
-                        scanBarcode={true}
-                        onReadCode={handleBarcodeScanned}
-                        showFrame={true}
-                        laserColor={colors.success}
-                    />
-                    <TouchableOpacity onPress={() => setIsScannerOpen(false)} style={styles.closeScanner}>
-                        <Icon name="times" size={24} color="white" />
-                    </TouchableOpacity>
-                </View>
-            </Modal>
-
-            <PageHeader component={() =>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
+            <PageHeader component={() => (
                 <View style={styles.headerContent}>
-                    <View style={{ width: '60%' }}>
-                        <SearchBar white placeholder="Search inventory..." />
+                    <View style={{ flex: 1, marginRight: 10 }}>
+                        <SearchBar white placeholder="Search products..." />
                     </View>
-                    <TouchableOpacity onPress={() => setIsScannerOpen(true)} style={styles.headerIconBtn}>
-                        <Icon name="barcode" size={20} color="white" />
+                    <TouchableOpacity onPress={() => setIsScannerOpen(true)} style={styles.scanBtn}>
+                        <Ionicons name="barcode-outline" size={22} color="white" />
                     </TouchableOpacity>
-                    <View style={styles.headerRevenue}>
-                        <Text style={styles.revenueLabel}>REVENUE</Text>
-                        <Text style={styles.revenueValue}>{datasales?.total_sales_revenue?.toFixed(0) || 0}/-</Text>
-                    </View>
                 </View>
-            } />
+            )} />
 
-            {msg.msg ? <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} small={msg.small} /> : null}
+            {/* FLOATING BACK BUTTON */}
+            <TouchableOpacity 
+                style={[styles.fabBack, { backgroundColor: colors.card, shadowColor: '#000' }]} 
+                onPress={() => navigation.goBack()}
+            >
+                <Ionicons name="arrow-back" size={24} color={colors.text} />
+            </TouchableOpacity>
+
+            {msg.msg ? <Toast setMsg={setMsg} {...msg} /> : null}
 
             <FlatList
                 data={filtered}
                 renderItem={renderItem}
-                contentContainerStyle={{ paddingBottom: cart.length > 0 ? 160 : 40, paddingTop: 10 }}
                 keyExtractor={item => item.id.toString()}
-                keyboardShouldPersistTaps="handled"
-                onEndReached={loadMore}
-                onEndReachedThreshold={0.5}
+                contentContainerStyle={styles.listPadding}
+                onEndReached={() => loadData(page + 1, true)}
+                ListFooterComponent={loading ? <ActivityIndicator color={colors.primary} style={{ margin: 20 }} /> : null}
             />
 
             {cart.length > 0 && (
-                <View style={[styles.checkoutBar, { backgroundColor: colors.elevated, borderColor: colors.border }]}>
-                    <View style={styles.checkoutInfo}>
-                        <Text style={[styles.totalLabel, { color: colors.subText }]}>TOTAL AMOUNT</Text>
+                <View style={[styles.checkoutPill, { backgroundColor: colors.card }]}>
+                    <View>
+                        <Text style={styles.totalLabel}>TOTAL AMOUNT</Text>
                         <Text style={[styles.totalValue, { color: colors.text }]}>Ksh {total.toLocaleString()}</Text>
                     </View>
-                    <TouchableOpacity
-                        onPress={() => setModalVisible(true)}
-                        style={styles.checkoutBtn}
-                    >
-                        <Text style={styles.checkoutBtnText}>CHECKOUT ({cart.length})</Text>
+                    <TouchableOpacity style={[styles.payBtn, { backgroundColor: colors.primary }]} onPress={() => setModalVisible(true)}>
+                        <Text style={styles.payText}>PAY ({cart.length})</Text>
+                        <Ionicons name="chevron-forward" size={18} color="white" />
                     </TouchableOpacity>
                 </View>
             )}
 
+            {/* Scanner Modal & Checkout Modal Logic */}
             <CheckoutModal
                 setMsg={setMsg}
                 msg={msg}
@@ -326,41 +231,94 @@ const SalesScreen: React.FC = ({ route, navigation }: any) => {
                 modalVisible={modalVisible}
                 setModalVisible={setModalVisible}
             />
-        </KeyboardAvoidingView>
+        </View>
     );
 };
 
-// ... Styles remain the same
-
 const styles = StyleSheet.create({
-    card: { marginHorizontal: 16, marginVertical: 8, padding: 16, borderRadius: 16, borderWidth: 1 },
-    cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
-    productName: { fontSize: 16, fontWeight: "bold", flex: 1 },
-    stockBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-    barcodeText: { fontSize: 11, marginBottom: 12, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' },
-    inputRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
-    qtyContainer: { flexDirection: "row", borderRadius: 12, alignItems: "center", padding: 2 },
-    qtyBtn: { width: 35, height: 35, justifyContent: "center", alignItems: "center" },
-    qtyInput: { textAlign: "center", fontWeight: "bold", width: 45, fontSize: 16 },
-    priceInputContainer: { flexDirection: "row", alignItems: "center", borderRadius: 12, paddingHorizontal: 10, height: 40 },
-    priceInput: { fontWeight: "bold", width: 70, fontSize: 14 },
-    cardFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-    addBtn: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, flexDirection: "row", alignItems: "center" },
-    addBtnText: { color: "white", fontWeight: "bold", fontSize: 13 },
-    badge: { backgroundColor: 'rgba(255,255,255,0.2)', marginLeft: 8, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 },
-    badgeText: { color: "white", fontWeight: "bold", fontSize: 11 },
-    checkoutBar: { position: 'absolute', bottom: 20, left: 16, right: 16, padding: 16, borderRadius: 20, borderWeight: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84 },
-    checkoutInfo: { flex: 1 },
-    totalLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1 },
-    totalValue: { fontSize: 20, fontWeight: '900' },
-    checkoutBtn: { backgroundColor: '#22c55e', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12 },
-    checkoutBtnText: { color: 'white', fontWeight: '900', fontSize: 14 },
-    headerContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 },
-    headerIconBtn: { backgroundColor: 'rgba(255,255,255,0.15)', p: 10, borderRadius: 12, padding: 10 },
-    headerRevenue: { alignItems: 'flex-end' },
-    revenueLabel: { color: 'white', fontSize: 10, opacity: 0.7, fontWeight: 'bold' },
-    revenueValue: { color: 'white', fontWeight: 'bold', fontSize: 16 },
-    closeScanner: { position: 'absolute', bottom: 50, alignSelf: 'center', backgroundColor: 'rgba(0,0,0,0.5)', padding: 20, borderRadius: 40 }
+    headerContent: { flexDirection: 'row', alignItems: 'center' },
+    scanBtn: { backgroundColor: 'rgba(255,255,255,0.2)', padding: 10, borderRadius: 12 },
+    fabBack: {
+        position: 'absolute',
+        top: Platform.OS === 'ios' ? 120 : 100,
+        left: 16,
+        zIndex: 10,
+        width: 45,
+        height: 45,
+        borderRadius: 22.5,
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 4,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+    },
+    listPadding: { padding: 16, paddingBottom: 150, paddingTop: 60 },
+    card: {
+        padding: 16,
+        borderRadius: 24,
+        marginBottom: 16,
+        borderWidth: 1,
+        elevation: 1,
+    },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
+    productName: { fontSize: 17, fontWeight: '800' },
+    stockBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+    inputRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+    priceBox: { 
+        width: '45%', 
+        height: 50, 
+        borderRadius: 14, 
+        borderWidth: 1, 
+        paddingHorizontal: 12, 
+        flexDirection: 'row', 
+        alignItems: 'center' 
+    },
+    priceInput: { flex: 1, fontWeight: '900', fontSize: 16, marginLeft: 5 },
+    qtyContainer: { 
+        width: '50%', 
+        height: 50, 
+        borderRadius: 14, 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+        paddingHorizontal: 4
+    },
+    qtyBtn: { width: 40, height: 40, backgroundColor: '#fff', borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+    qtyText: { fontWeight: '900', fontSize: 18 },
+    addBtn: { 
+        height: 48, 
+        borderRadius: 14, 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        justifyContent: 'center' 
+    },
+    checkoutPill: {
+        position: 'absolute',
+        bottom: 30,
+        left: 20,
+        right: 20,
+        padding: 16,
+        borderRadius: 28,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        elevation: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 5 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+    },
+    totalLabel: { fontSize: 10, fontWeight: 'bold', color: '#888', letterSpacing: 1 },
+    totalValue: { fontSize: 22, fontWeight: '900' },
+    payBtn: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        paddingHorizontal: 20, 
+        paddingVertical: 12, 
+        borderRadius: 18 
+    },
+    payText: { color: '#fff', fontWeight: '900', marginRight: 8 }
 });
 
 export default SalesScreen;

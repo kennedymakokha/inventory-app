@@ -25,6 +25,7 @@ export const createSalesTable = async () => {
           payment_method TEXT,
           updatedAt TEXT,
           created_at TEXT,
+          customerPin TEXT,
           createdBy TEXT,
           synced INTEGER DEFAULT 0
       );`
@@ -330,6 +331,7 @@ export const finalizeSale = async (
     business_id?: string;
     createdBy: string;
     mpesaData?: any;
+    customerPin?: string;
   }
 ): Promise<void> => {
   if (!cartItems || cartItems.length === 0) {
@@ -347,9 +349,9 @@ export const finalizeSale = async (
         // 1. INSERT SALE
         tx.executeSql(
           `INSERT INTO Sale 
-          (sale_id, total, createdBy, receipt_number, payment_method, phone, synced, created_at, updatedAt) 
-          VALUES (?,?,?,?,?,?,?,?,?)`,
-          [saleId, total, data.createdBy, data.receiptNo, data.method, data.phone ?? null, 0, now, now],
+          (sale_id, total, createdBy, customerPin, receipt_number, payment_method, phone, synced, created_at, updatedAt) 
+          VALUES (?,?,?,?,?,?,?,?,?,?)`,
+          [saleId, total, data.createdBy, data.customerPin, data.receiptNo, data.method, data.phone ?? null, 0, now, now],
           (_, result) => {
             if (result.rowsAffected === 0) throw new Error("Sale insert failed");
           },

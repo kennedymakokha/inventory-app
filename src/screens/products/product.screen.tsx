@@ -32,6 +32,8 @@ import Toast from '../../components/Toast';
 import SwipeableCard from '../../components/SwipeableCard';
 import { useTheme } from '../../context/themeContext';
 import { InputContainer } from '../../components/Input';
+import RestockModal from './components/restockModal';
+import getInitials from '../../utils/initials';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 40) / 2; // Adjusted for better spacing
@@ -73,6 +75,7 @@ const ProductScreen = () => {
     const [offset, setOffset] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [expiryDate, setExpiryDate] = useState<Date | null>(null);
     const PAGE_SIZE = 20;
 
     const loadProducts = async (isRefresh = false) => {
@@ -151,10 +154,9 @@ const ProductScreen = () => {
             );
 
             await db.executeSql(
-                `INSERT INTO Inventory_log (inventory_log_id, product_id, reference_type, quantity, business, note, createdBy, synced, createdAt) VALUES (?,?,?,?,?,?,?,?,?)`,
-                [uuidv4(), selectedProduct.product_id, "RESTOCK", qty, business._id, "Manual restock", createdBy, 0, now]
+                `INSERT INTO Inventory_log (inventory_log_id, product_id, reference_type, quantity, business, note, createdBy, synced, createdAt,batchNumber,expiryDate) VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+                [uuidv4(), selectedProduct.product_id, "RESTOCK", qty, business._id, "Manual restock", createdBy, 0, now, selectedProduct ? (selectedProduct.product_name ? getInitials(selectedProduct.product_name) + '-' + Date.now() : "GENERAL-" + Date.now()) : "", expiryDate ? expiryDate.toISOString() : null]
             );
-
             LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             setProducts(prev => prev.map(p => p.product_id === selectedProduct.product_id ? { ...p, quantity: newQty } : p));
             setRestockModalVisible(false);
@@ -282,36 +284,22 @@ const ProductScreen = () => {
 
             {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
 
-            {/* RESTOCK MODAL */}
-            <Modal visible={restockModalVisible} transparent animationType="fade">
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalBox, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                        <Text style={[styles.modalTitle, { color: colors.text }]}>Restock Inventory</Text>
-                        <Text style={{ color: colors.subText, marginBottom: 15 }}>{selectedProduct?.product_name}</Text>
 
-                        <InputContainer
-                            label="New Stock Amount"
-                            placeholder="Enter quantity"
-                            value={restockQty}
-                            keyboardType="numeric"
-                            onChangeText={setRestockQty}
-                        />
 
-                        <View style={styles.modalButtons}>
-                            <TouchableOpacity onPress={() => setRestockModalVisible(false)} style={{ flex: 1, padding: 12 }}>
-                                <Text style={{ color: colors.subText, textAlign: 'center', fontWeight: '700' }}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                onPress={handleRestock}
-                                style={[styles.confirmBtn, { backgroundColor: colors.primary, flex: 2 }]}
-                            >
-                                <Text style={{ color: '#fff', fontWeight: '700' }}>Update Stock</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
+            <RestockModal
+                modalVisible={restockModalVisible}
+                setModalVisible={setRestockModalVisible}
+                selectedProduct={selectedProduct}
+                restockQty={restockQty}
+                setRestockQty={setRestockQty}
+                handleRestock={handleRestock}
+                isDarkMode={isDarkMode}
+                batchNumber={selectedProduct ? (selectedProduct.product_name ? getInitials(selectedProduct.product_name) + '-' + Date.now() : "GENERAL-" + Date.now()) : ""}
 
+                expiryDate={expiryDate}
+                setExpiryDate={setExpiryDate}
+
+            />
             <AddProductModal
                 modalVisible={modalVisible}
                 setModalVisible={setModalVisible}

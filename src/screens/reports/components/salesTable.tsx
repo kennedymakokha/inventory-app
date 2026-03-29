@@ -6,6 +6,7 @@ import {
   ScrollView,
   ActivityIndicator,
   TouchableOpacity,
+  StyleSheet,
 } from "react-native";
 import { useTheme } from "../../../context/themeContext";
 
@@ -13,20 +14,21 @@ type Header = {
   key: string;
   label: string;
   width?: number;
+  align?: "left" | "center" | "right"; // Added alignment
 };
 
 interface Props {
   headers: Header[];
   data: Record<string, any>[];
   onEndReached?: () => void;
-  onTablePressed?: () => void;
+  onTablePressed?: (item: any) => void; // Pass item back
   loading?: boolean;
   horizontalScroll?: boolean;
-  rowKey?: (item: Record<string, any>) => string;
+  rowKey?: (item: Record<string, any>, index: number) => string;
   emptyComponent?: React.ReactNode;
 }
 
-const DEFAULT_COLUMN_WIDTH = 150;
+const DEFAULT_COLUMN_WIDTH = 120;
 
 const SalesReportTable: React.FC<Props> = ({
   headers,
@@ -38,7 +40,7 @@ const SalesReportTable: React.FC<Props> = ({
   rowKey,
   emptyComponent,
 }) => {
-  const { colors, isDarkMode } = useTheme();
+  const { colors } = useTheme();
 
   const tableWidth = headers.reduce(
     (sum, h) => sum + (h.width || DEFAULT_COLUMN_WIDTH),
@@ -50,7 +52,9 @@ const SalesReportTable: React.FC<Props> = ({
     <View
       style={{
         flexDirection: "row",
-        backgroundColor: colors.elevated,
+        backgroundColor: colors.background, // Matches page bg
+        borderBottomWidth: 2,
+        borderBottomColor: colors.primary + "40", // Subtle primary tint
       }}
     >
       {headers.map((h) => (
@@ -58,16 +62,18 @@ const SalesReportTable: React.FC<Props> = ({
           key={h.key}
           style={{
             width: h.width || DEFAULT_COLUMN_WIDTH,
-            paddingVertical: 12,
-            paddingHorizontal: 16,
-            borderWidth: 1,
-            borderColor: colors.border,
+            paddingVertical: 14,
+            paddingHorizontal: 12,
+            alignItems: h.align === "right" ? "flex-end" : h.align === "center" ? "center" : "flex-start",
           }}
         >
           <Text
             style={{
-              color: colors.text,
-              fontWeight: "bold",
+              color: colors.subText,
+              fontSize: 11,
+              fontWeight: "800",
+              textTransform: "uppercase",
+              letterSpacing: 0.5,
             }}
           >
             {h.label}
@@ -79,15 +85,15 @@ const SalesReportTable: React.FC<Props> = ({
 
   // --- Row ---
   const renderRow = ({ item, index }: any) => {
-    const rowBg = index % 2 === 0
-      ? colors.card
-      : colors.elevated;
-
     return (
-      <TouchableOpacity activeOpacity={1} onPress={onTablePressed}
+      <TouchableOpacity 
+        activeOpacity={0.7} 
+        onPress={() => onTablePressed?.(item)}
         style={{
           flexDirection: "row",
-          backgroundColor: rowBg,
+          backgroundColor: colors.background,
+          borderBottomWidth: 0.5,
+          borderBottomColor: colors.border + "50",
         }}
       >
         {headers.map((h) => (
@@ -95,19 +101,22 @@ const SalesReportTable: React.FC<Props> = ({
             key={h.key}
             style={{
               width: h.width || DEFAULT_COLUMN_WIDTH,
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-              borderWidth: 1,
-              borderColor: colors.border,
+              paddingVertical: 16,
+              paddingHorizontal: 12,
+              justifyContent: "center",
+              alignItems: h.align === "right" ? "flex-end" : h.align === "center" ? "center" : "flex-start",
             }}
           >
             <Text
+              numberOfLines={1}
               style={{
                 color: colors.text,
-                flexShrink: 1,
+                fontSize: 14,
+                fontWeight: h.key === "quantity" || h.key === "amount" ? "700" : "500",
+                fontVariant: ['tabular-nums'], // Keeps numbers aligned
               }}
             >
-              {item[h.key] ?? ""}
+              {item[h.key] ?? "-"}
             </Text>
           </View>
         ))}
@@ -115,36 +124,26 @@ const SalesReportTable: React.FC<Props> = ({
     );
   };
 
-  // --- Footer Loader ---
   const FooterLoader = () =>
     loading ? (
-      <View style={{ padding: 20 }}>
+      <View style={{ padding: 30 }}>
         <ActivityIndicator size="small" color={colors.primary} />
       </View>
     ) : null;
 
-  // --- Key Extractor ---
   const getKey = (item: Record<string, any>, index: number) => {
-    if (rowKey) return rowKey(item);
-    if (item.id != null) return String(item.id);
-    return `row-${index}`;
+    if (rowKey) return rowKey(item, index);
+    return item.id ? String(item.id) : `row-${index}`;
   };
 
-  // --- Empty ---
-  const Empty = () =>
-    emptyComponent ?? (
-      <Text
-        style={{
-          color: colors.subText,
-          textAlign: "center",
-          marginTop: 20,
-        }}
-      >
-        No data available
-      </Text>
-    );
+  const Empty = () => (
+    <View style={{ padding: 40, alignItems: 'center' }}>
+      {emptyComponent ?? (
+        <Text style={{ color: colors.subText, fontWeight: '600' }}>No history records</Text>
+      )}
+    </View>
+  );
 
-  // --- Render ---
   const TableContent = (
     <FlatList
       data={data}
@@ -156,11 +155,20 @@ const SalesReportTable: React.FC<Props> = ({
       onEndReachedThreshold={0.5}
       ListFooterComponent={<FooterLoader />}
       ListEmptyComponent={<Empty />}
+      showsVerticalScrollIndicator={false}
+      // Optimizations
+      removeClippedSubviews={true}
+      initialNumToRender={10}
+      maxToRenderPerBatch={10}
     />
   );
 
   return horizontalScroll ? (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+    <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        bounces={false}
+    >
       <View style={{ width: tableWidth }}>{TableContent}</View>
     </ScrollView>
   ) : (

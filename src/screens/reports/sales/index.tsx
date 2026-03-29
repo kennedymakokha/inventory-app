@@ -1,19 +1,21 @@
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Platform } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import SalesReportTable from '../components/salesTable';
-import PageHeader from '../../../components/pageHeader';
 import { getProductSalesReport } from '../../../services/analytics.service';
 import { adminFilter, salesFilter } from '../../../../utils/getsalesdata';
 import PieChart from '../../dashbordItems/PieChart';
 import RadialFab from '../../../components/multiFab';
 import { useTheme } from '../../../context/themeContext';
-
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useNavigation } from '@react-navigation/native';
+import { v4 as uuidv4 } from "uuid";
 const PAGE_SIZE = 10;
 
 const SalesReport = () => {
   const { user } = useSelector((state: any) => state.auth);
   const { colors } = useTheme();
+  const navigation = useNavigation();
 
   const [sales, setSales] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -23,22 +25,13 @@ const SalesReport = () => {
   const [hasMore, setHasMore] = useState(true);
   const [showPie, setShowPie] = useState(false);
 
-  const filterData =
-    user?.role === 'superAdmin' || user?.role === 'admin'
-      ? adminFilter
-      : salesFilter;
+  const filterData = user?.role === 'superAdmin' || user?.role === 'admin' ? adminFilter : salesFilter;
 
   const fetchSales = async (pageNumber = 1, append = false) => {
     try {
       pageNumber === 1 ? setLoading(true) : setLoadingMore(true);
-
       const selectedFilter = filterData.find((f) => f.title === filter);
-      const filterId = selectedFilter ? selectedFilter.id : 0;
-
-
-      const report = await getProductSalesReport( undefined, selectedFilter as any, undefined, undefined, undefined, pageNumber,  PAGE_SIZE);
-
-   
+      const report = await getProductSalesReport(undefined, selectedFilter as any, undefined, undefined, undefined, pageNumber, PAGE_SIZE);
 
       setSales(prev => (append ? [...prev, ...report] : report));
       setHasMore(report.length === PAGE_SIZE);
@@ -57,7 +50,6 @@ const SalesReport = () => {
 
   const loadMore = () => {
     if (!hasMore || loadingMore) return;
-
     const nextPage = page + 1;
     setPage(nextPage);
     fetchSales(nextPage, true);
@@ -70,135 +62,180 @@ const SalesReport = () => {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      
+      {/* 1. ABSOLUTE FLOATING BACK BUTTON */}
+      <TouchableOpacity 
+          onPress={() => navigation.goBack()}
+          style={[styles.floatingBackBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+      >
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
+      </TouchableOpacity>
 
-      {/* FILTER HEADER */}
-      <PageHeader
-        component={() => (
-          <View
-            style={{
-              flexDirection: 'row',
-              flexWrap: 'wrap',
-              justifyContent: 'space-around',
-              paddingVertical: 12,
-            }}
-          >
-            {filterData.map((tab: any) => {
-              const isActive = filter === tab.title;
+      {/* 2. ABSOLUTE FLOATING TITLE */}
+      <View pointerEvents="none" style={styles.absoluteHeader}>
+          <Text style={[styles.mainTitle, { color: colors.text }]}>Analytics</Text>
+          <View style={[styles.miniIndicator, { backgroundColor: colors.primary }]} />
+      </View>
 
-              return (
-                <TouchableOpacity
-                  key={tab.id}
-                  onPress={() => setFilter(tab.title)}
-                  style={{
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                    borderRadius: 8,
-                    margin: 4,
-                    borderWidth: isActive ? 1 : 0,
-                    borderColor: colors.border,
-                    backgroundColor: isActive
-                      ? colors.elevated
-                      : colors.card,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontWeight: '600',
-                      color: isActive ? colors.text : colors.subText,
-                      textTransform: 'capitalize',
-                    }}
-                  >
-                    {tab.title}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        )}
-      />
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        
+        {/* 3. FLOATING FILTER TABS (Inside Scroll but at top) */}
+        <View style={styles.filterWrapper}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+                {filterData.map((tab: any) => {
+                const isActive = filter === tab.title;
+                return (
+                    <TouchableOpacity
+                    key={tab.id}
+                    onPress={() => setFilter(tab.title)}
+                    style={[
+                        styles.filterTab,
+                        { 
+                            backgroundColor: isActive ? colors.primary : colors.card,
+                            borderColor: isActive ? colors.primary : colors.border
+                        }
+                    ]}
+                    >
+                    <Text style={[styles.filterText, { color: isActive ? '#fff' : colors.subText }]}>
+                        {tab.title}
+                    </Text>
+                    </TouchableOpacity>
+                );
+                })}
+            </ScrollView>
+        </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
         {showPie ? (
           pieData.length ? (
-            <PieChart
-              title={`${filter}jj Sales Report`}
-              data={pieData}
-            />
+            <View style={styles.chartContainer}>
+                 <PieChart title={`${filter} Sales`} data={pieData} />
+            </View>
           ) : (
-            <Text
-              style={{
-                textAlign: 'center',
-                marginTop: 40,
-                color: colors.subText,
-              }}
-            >
-              No data for chart
-            </Text>
+            <View style={styles.emptyState}>
+                <Ionicons name="bar-chart-outline" size={40} color={colors.border} />
+                <Text style={{ color: colors.subText, marginTop: 10 }}>No data for chart</Text>
+            </View>
           )
         ) : (
-          <>
-            {/* HEADER */}
-            <View
-              style={{
-                paddingHorizontal: 20,
-                marginVertical: 8,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: 'bold',
-                  textTransform: 'uppercase',
-                  textAlign: "center",
-                  color: colors.primary,
-                }}
-              >
-                {filter} Sales Report
-              </Text>
+          <View style={styles.tableWrapper}>
+            <View style={styles.tableHeaderRow}>
+                <Text style={[styles.tableLabel, { color: colors.primary }]}>{filter} Sales Report</Text>
             </View>
 
-            {/* TABLE */}
             <SalesReportTable
               headers={[
-                { key: 'product_name', label: 'Name', width: 180 },
-                { key: 'quantity_sold', label: 'Quantity' },
-                { key: 'total_sales', label: 'Sales' },
+                { key: 'product_name', label: 'Product Name', width: 180 },
+                { key: 'quantity_sold', label: 'Qty', width: 80, align: 'right' },
+                { key: 'total_sales', label: 'Revenue', width: 120, align: 'right' },
               ]}
               data={sales}
               onEndReached={loadMore}
               loading={loading || loadingMore}
-              rowKey={(item) => `${item.product_id}`}
+              rowKey={(item) => `${item.product_id}${item.product_name}${uuidv4()}`} // Unique key for each row
             />
-          </>
+          </View>
         )}
       </ScrollView>
 
-      {/* FAB */}
+      {/* 4. RADIAL FAB */}
       <RadialFab
         mainColor={colors.primary}
-        mainIcon={showPie ? 'list' : 'menu'}
+        mainIcon={showPie ? 'list' : 'analytics'}
         radius={120}
         angle={90}
         mainAction={() => setShowPie(!showPie)}
-        actions={
-          showPie
-            ? []
-            : [
-              {
-                icon: 'pie-chart-outline',
-                label: 'Pie Chart',
-                onPress: () => setShowPie(true),
-              },
-              {
-                icon: 'cloud-download-outline',
-                label: 'Download',
-                onPress: () => console.log(true),
-              },
+        actions={showPie ? [] : [
+              { icon: 'pie-chart-outline', label: 'Chart', onPress: () => setShowPie(true) },
+              { icon: 'cloud-download-outline', label: 'Export', onPress: () => console.log('Exporting...') },
             ]
         }
       />
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+    floatingBackBtn: {
+        position: 'absolute',
+        top: Platform.OS === 'ios' ? 50 : 25,
+        left: 20,
+        zIndex: 99,
+        width: 42,
+        height: 42,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+    },
+    absoluteHeader: {
+        position: 'absolute',
+        top: Platform.OS === 'ios' ? 50 : 25,
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+        zIndex: 90,
+    },
+    mainTitle: {
+        fontSize: 16,
+        fontWeight: '900',
+        textTransform: 'uppercase',
+        letterSpacing: 2,
+    },
+    miniIndicator: {
+        width: 20,
+        height: 3,
+        borderRadius: 2,
+        marginTop: 4
+    },
+    scrollContent: {
+        paddingTop: 110, // Moves content below the floating title
+        paddingBottom: 120
+    },
+    filterWrapper: {
+        marginBottom: 20,
+    },
+    filterScroll: {
+        paddingHorizontal: 16,
+    },
+    filterTab: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        marginRight: 8,
+        borderWidth: 1,
+    },
+    filterText: {
+        fontSize: 12,
+        fontWeight: '700',
+        textTransform: 'capitalize'
+    },
+    chartContainer: {
+        paddingHorizontal: 16,
+    },
+    tableWrapper: {
+        flex: 1,
+    },
+    tableHeaderRow: {
+        paddingHorizontal: 20,
+        marginBottom: 10,
+    },
+    tableLabel: {
+        fontSize: 12,
+        fontWeight: '900',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+        textAlign: 'center'
+    },
+    emptyState: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 60,
+    }
+});
 
 export default SalesReport;

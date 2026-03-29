@@ -108,10 +108,7 @@ const UserScreen = ({ route }: any) => {
 
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
-            <PageHeader 
-                title={user.name} 
-                subtitle={user.role || "Staff Member"} 
-            />
+           
 
             {/* MODERN FILTER BAR */}
             <View style={{ backgroundColor: colors.card, borderBottomWidth: 1, borderColor: colors.border }}>
@@ -151,13 +148,13 @@ const UserScreen = ({ route }: any) => {
                     <StartCard {...stats} />
                     
                     {/* CHART SECTION */}
-                    <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    {/* <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border }]}> */}
                         <DataGraph 
                             pressed={() => setShowbyCategory(!showbyCategory)} 
                             title={`Top ${showbyCategory ? "Categories" : "Products"}`} 
                             data={showbyCategory ? topCategoryProducts : topProducts} 
                         />
-                    </View>
+                    {/* </View> */}
 
                     {/* SALES TABLE */}
                     <View style={styles.sectionHeader}>

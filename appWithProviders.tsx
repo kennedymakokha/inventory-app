@@ -21,6 +21,7 @@ import { createInventorylogTable } from './src/services/inventory.service';
 
 // ✅ NEW
 import { useAppStatus } from './src/hooks/useAppStatus';
+import DatabaseLoader from './dbeady';
 
 const { RNCustomGeolocation } = NativeModules;
 const geoEventEmitter = new NativeEventEmitter(RNCustomGeolocation);
@@ -29,7 +30,7 @@ const AppWithProviders = () => {
     const { token } = useAuthContext();
     const { business } = useBusiness();
     const { user } = useSelector((state: any) => state.auth);
-    const { colors,  } = useTheme();
+    const { colors, } = useTheme();
     const { Kiosk } = NativeModules;
     const [dbReady, setDbReady] = React.useState(false);
 
@@ -169,12 +170,7 @@ const AppWithProviders = () => {
     if (!token) return <AuthStack />;
 
     if (!dbReady) {
-        return (
-            <View style={styles.center}>
-                <ActivityIndicator size="large" color="#ffffff" />
-                <Text style={styles.loadingText}>Initializing Database...</Text>
-            </View>
-        );
+        { <DatabaseLoader /> }
     }
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
