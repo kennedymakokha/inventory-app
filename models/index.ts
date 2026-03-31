@@ -41,13 +41,40 @@ export type CategoryItem = {
     id?: string | any
     category_name: string;
     business_id: string
-
+    expiryDate?: any
     category_id: string;
     createdBy?: string | any,
     description: string,
     updatedAt?: string
     synced?: boolean
 };
+
+export type NotificationType =
+    | 'system-update'
+    | 'agent-message'
+    | 'admin-warning'
+    | 'admin-message'
+    | 'congratulatory';
+
+
+
+export type NotificationItem = {
+    _id?: string;
+    notification_id?: string | any
+    id?: string | any
+    title: string;
+    user_id: string;
+    business_id: string
+    description: string;
+    updatedAt?: string
+    createdBy?: string | any,
+    synced?: boolean,
+    type: NotificationType;
+    createdAt?: string;
+    unread: boolean|any;
+
+};
+
 export type UserItem = {
     name: string;
     business_id: string;

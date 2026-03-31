@@ -168,7 +168,7 @@ const Dashboard = () => {
         <View style={styles.contentPadding}>
 
           {/* TOP PERFORMERS CHART */}
-          <View style={[styles.card, {  borderColor: colors.border }]}>
+          <View style={[styles.card, {  backgroundColor: colors.card,  borderColor: colors.border }]}>
             <DataGraph
               pressed={() => setShowbyCategory(!showbyCategory)}
               title={`Top ${showbyCategory ? "Categories" : "Products"}`}

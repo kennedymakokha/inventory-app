@@ -19,6 +19,17 @@ import { SocketProvider } from './src/context/socketContext';
 import AppWithProviders from './appWithProviders';
 import { NavigationContainer } from '@react-navigation/native';
 import './geofenceTask';
+import messaging from '@react-native-firebase/messaging';
+
+// ✅ Background handler
+messaging().setBackgroundMessageHandler(async remoteMessage => {
+    console.log('Background FCM message:', remoteMessage);
+    // Only access safe fields
+    if (remoteMessage?.notification?.body) {
+        console.log('Notification body:', remoteMessage.notification.body);
+    }
+}
+)
 const Root = () => (
     <Provider store={store}>
         <PersistGate
@@ -28,21 +39,21 @@ const Root = () => (
             <SafeAreaProvider>
                 <AuthProvider>
                     <ThemeProvider>
-                            <BusinessProvider>
-                                <SocketProvider>
-                                    <UserProvider>
-                                        <SettingsProvider>
-                                            <MenuProvider>
-                                                <NavigationContainer>
-                                                    <SearchProvider>
-                                                        <AppWithProviders />
-                                                    </SearchProvider>
-                                                </NavigationContainer>
-                                            </MenuProvider>
-                                        </SettingsProvider>
-                                    </UserProvider>
-                                </SocketProvider>
-                            </BusinessProvider>
+                        <BusinessProvider>
+                            <SocketProvider>
+                                <UserProvider>
+                                    <SettingsProvider>
+                                        <MenuProvider>
+                                            <NavigationContainer>
+                                                <SearchProvider>
+                                                    <AppWithProviders />
+                                                </SearchProvider>
+                                            </NavigationContainer>
+                                        </MenuProvider>
+                                    </SettingsProvider>
+                                </UserProvider>
+                            </SocketProvider>
+                        </BusinessProvider>
                     </ThemeProvider>
                 </AuthProvider>
             </SafeAreaProvider>

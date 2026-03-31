@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">MtaaPOS</string>
+    <string name="app_name">SmartShop</string>
+    <string name="default_notification_channel_id">default-channel</string>
+     <color name="colorAccent">#FF6200EE</color>
 </resources>

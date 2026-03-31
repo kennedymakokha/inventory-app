@@ -32,6 +32,9 @@ import {
     getUserClockByDay
 } from '../../services/analytics.service';
 import RadialFab from '../../components/multiFab';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { UsersStackParamList } from '../../../models/navigationTypes';
 
 const filters = [
     { title: "Today", value: "today", icon: "today-outline" },
@@ -42,6 +45,7 @@ const filters = [
 
 const UserScreen = ({ route }: any) => {
     const { user } = route.params;
+       console.log("UE1o1",user)
     const { colors, isDarkMode } = useTheme();
 
     // States
@@ -49,6 +53,7 @@ const UserScreen = ({ route }: any) => {
     const [customDate, setCustomDate] = useState<string | undefined>();
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showbyCategory, setShowbyCategory] = useState(false);
+    const navigation = useNavigation<NativeStackNavigationProp<UsersStackParamList, "User_Dashboard">>();
 
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
@@ -67,7 +72,7 @@ const UserScreen = ({ route }: any) => {
         const id = user.user_id || user._id;
         setLoading(true);
         try {
-            const [clocks, totalStats, products, categories, reportData] = await Promise.all([
+            const [clocks, totalStats, products, categories, reportData]: any = await Promise.all([
                 getUserClockByDay(id, customDate),
                 getDetailedUserStats(id, selectedFilter as any, customDate),
                 getTopProducts(id, selectedFilter as any, customDate),
@@ -239,6 +244,10 @@ const UserScreen = ({ route }: any) => {
                     {
                         icon: 'calendar-outline',
                         onPress: () => setShowDatePicker(true)
+                    },
+                    {
+                        icon: 'message-outline',
+                        onPress: () => navigation.navigate('User_Notifications', { user:user })
                     },
                 ]}
             />

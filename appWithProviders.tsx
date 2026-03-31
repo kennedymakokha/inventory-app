@@ -19,9 +19,11 @@ import { createCategoryTable } from './src/services/category.service';
 import { createRefundItemsTable, createRefundsTable, createSalesItemTable, createSalesTable } from './src/services/sales.service';
 import { createInventorylogTable } from './src/services/inventory.service';
 
-// ✅ NEW
 import { useAppStatus } from './src/hooks/useAppStatus';
 import DatabaseLoader from './dbeady';
+import messaging from '@react-native-firebase/messaging';
+import { createNotificationTable, saveNotification } from './src/services/Notification.service';
+
 
 const { RNCustomGeolocation } = NativeModules;
 const geoEventEmitter = new NativeEventEmitter(RNCustomGeolocation);
@@ -139,8 +141,27 @@ const AppWithProviders = () => {
 
     /* ---------------- DB ---------------- */
     useEffect(() => {
+        const unsubscribe = messaging().onMessage(async (remoteMessage:any) => {
+            // Safely show only the notification body or title
+            await saveNotification({
+                title: remoteMessage.notification?.title || "New Notification",
+                description: remoteMessage.notification?.body || "",
+                business_id: business?._id || "",
+                type: "congratulatory",
+                unread: true,
+                user_id: user?.user_id,
+            });
+
+            console.log('Foreground message:', remoteMessage.notification);
+        });
+
+        return unsubscribe;
+    }, []);
+
+    useEffect(() => {
         const setupDB = async () => {
             if (!token) {
+
                 setDbReady(false);
                 return;
             }
@@ -157,6 +178,7 @@ const AppWithProviders = () => {
                 await createInventorylogTable();
                 await createCashRegisterTable();
                 await createCLockTable();
+                await createNotificationTable()
                 setDbReady(true);
             } catch (err) {
                 console.error("CRITICAL DB INIT FAILURE:", err);
@@ -172,6 +194,8 @@ const AppWithProviders = () => {
     if (!dbReady) {
         { <DatabaseLoader /> }
     }
+
+
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
             <StatusBar animated backgroundColor={colors.primary} />

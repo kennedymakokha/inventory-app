@@ -23,11 +23,17 @@ export type InventoryStackParamList = {
   inventory_Details: { product: { product_name: string;[key: string]: any } };
 };
 
+export type NotificationsStackParamList = {
+  Notifications_Dashboard: undefined;
+  Notifications_Details: { notification: { title: string; body: string } };
+};
+
 export type CategoriesStackParamList = {
   categories_Dashboard: undefined;
 };
 export type UsersStackParamList = {
   Users_Dashboard: undefined;
+  User_Notifications: { user: any };
   User_Dashboard: { user: any }; // ✅ match your item type
 };
 export type SalesStackParamList = {

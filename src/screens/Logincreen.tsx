@@ -22,8 +22,10 @@ import { useBusiness } from '../context/BusinessContext';
 import { setCredentials } from '../features/auth/authSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User } from '../../models';
+
 import { useSettings } from '../context/SettingsContext';
 import { Theme } from '../utils/theme';
+
 const COLORS = {
     primary: "#2563EB",
     secondary: "#0F172A",
@@ -77,7 +79,11 @@ const LoginScreen = ({ navigation }: any) => {
                 dispatch(setCredentials({ ...data }));
                 await AsyncStorage.setItem("accessToken", data.token);
                 await AsyncStorage.setItem("userId", data.user._id);
-
+                const fcmToken = await AsyncStorage.getItem('fcmToken');
+                console.log(fcmToken, "FCM TOKEN ON LOGIN");
+                if (fcmToken) {
+                    await AsyncStorage.setItem('fcmToken', fcmToken);
+                }
                 //  Update context with logged-in user
 
                 if (data.exp) {
@@ -117,13 +123,13 @@ const LoginScreen = ({ navigation }: any) => {
         >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <ScrollView
-                
+
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
                 >
                     {/* TOP BRANDING */}
                     <View style={styles.header}>
-                        <View  className='bg-slate-100 rounded-full' style={styles.logoCircle}>
+                        <View className='bg-slate-100 rounded-full' style={styles.logoCircle}>
                             <Image
                                 style={styles.logo}
                                 source={require('./../assets/logo.png')}
@@ -213,7 +219,7 @@ const styles = StyleSheet.create({
         width: 210,
         height: 210,
         // borderRadius: 5,
-        
+
         justifyContent: 'center',
         alignItems: 'center',
         elevation: 5,

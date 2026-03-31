@@ -1,6 +1,8 @@
 package com.smartshop
 
-// 1. ADD THIS IMPORT (The Package, not just the Module)
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.os.Build
 import com.smartshop.customgeo.CustomGeoPackage 
 import com.smartshop.kiosk.KioskPackage
 import android.app.Application
@@ -14,6 +16,7 @@ import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
 import com.facebook.react.defaults.DefaultReactNativeHost
 import com.facebook.react.soloader.OpenSourceMergedSoMapping
 import com.facebook.soloader.SoLoader
+
 
 class MainApplication : Application(), ReactApplication {
 
@@ -42,6 +45,15 @@ class MainApplication : Application(), ReactApplication {
     SoLoader.init(this, OpenSourceMergedSoMapping)
     if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
       load()
+    }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      val channel = NotificationChannel(
+        "default_notification_channel_id", // must match your strings.xml and manifest meta-data
+        "Default Channel",
+        NotificationManager.IMPORTANCE_DEFAULT
+      )
+      val manager = getSystemService(NotificationManager::class.java)
+      manager?.createNotificationChannel(channel)
     }
   }
 }

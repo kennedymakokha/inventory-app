@@ -1,5 +1,5 @@
 import 'react-native-get-random-values';
-import React, {  } from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   StyleSheet
@@ -11,8 +11,9 @@ import { NavigationContainer } from '@react-navigation/native';
 import { MenuProvider } from 'react-native-popup-menu';
 import { SearchProvider } from './src/context/searchContext';
 import AppWithProviders from './appWithProviders';
+import { PermissionsAndroid, Platform, Alert } from 'react-native';
+import messaging from '@react-native-firebase/messaging';
 
-// "RNCustomGeolocation" matches getName() in your Java file
 const { RNCustomGeolocation } = NativeModules;
 const geoEventEmitter = new NativeEventEmitter(RNCustomGeolocation);
 /* -------------------------------- */
@@ -39,10 +40,85 @@ const watchPosition = (callback: any) => {
 };
 
 
-/* -------------------------------- */
+
+export const requestNotificationPermission = async () => {
+  if (Platform.OS === 'android' && Platform.Version >= 33) {
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
+      );
+
+      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+        console.log('Notification permission granted');
+      } else if (granted === PermissionsAndroid.RESULTS.DENIED) {
+        console.log('Notification permission denied');
+      } else if (granted === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+        Alert.alert(
+          'Notifications Disabled',
+          'Please enable notifications in system settings to receive sales alerts.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (err) {
+      console.warn(err);
+    }
+  }
+};
+
+
+
+
 /* Root App */
 /* -------------------------------- */
 function App(): React.JSX.Element {
+  useEffect(() => {
+    const checkPermission = async () => {
+      if (Platform.OS === 'android' && Platform.Version >= 33) {
+        const hasPermission = await PermissionsAndroid.check(
+          PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
+        );
+
+        if (!hasPermission) {
+          Alert.alert(
+            "Stay Updated",
+            "Would you like to receive notifications for new sales and stock alerts?",
+            [
+              { text: "No thanks", style: "cancel" },
+              { text: "OK", onPress: () => requestNotificationPermission() }
+            ]
+          );
+        }
+      }
+    };
+
+    checkPermission();
+  }, []);
+
+
+  useEffect(() => {
+    const checkPermission = async () => {
+      if (Platform.OS === 'android' && Platform.Version >= 33) {
+        const hasPermission = await PermissionsAndroid.check(
+          PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
+        );
+
+        if (!hasPermission) {
+          Alert.alert(
+            "Stay Updated",
+            "Would you like to receive notifications for new sales and stock alerts?",
+            [
+              { text: "No thanks", style: "cancel" },
+              { text: "OK", onPress: () => requestNotificationPermission() }
+            ]
+          );
+        }
+      }
+    };
+
+    checkPermission();
+  }, []);
+
+
   return (
     <View style={styles.container}>
       <SafeAreaProvider>
@@ -57,7 +133,6 @@ function App(): React.JSX.Element {
     </View>
   );
 }
-
 export default App;
 
 /* -------------------------------- */
