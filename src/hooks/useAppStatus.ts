@@ -5,13 +5,13 @@ import { useTheme } from "../context/themeContext";
 
 export const useAppStatus = ({ user, business }: any) => {
     const { applyThemeDirectly } = useTheme();
-
     const [isWithinZones, setIsWithinZones] = useState(true);
     const [shouldLock, setShouldLock] = useState(false);
 
     /* ---------------- CORE ENGINE ---------------- */
-    const evaluateStatus = async (zoneOverride?: boolean) => {
+    const evaluateStatus = async (zoneOverride?: boolean, forceLockOverride?: boolean) => {
         try {
+            const storedForceLock = await AsyncStorage.getItem("forceLocked");
             if (!user || user.role?.toLowerCase() !== "sales") return;
 
             /* ---------- ZONE ---------- */
@@ -19,7 +19,10 @@ export const useAppStatus = ({ user, business }: any) => {
                 typeof zoneOverride === "boolean"
                     ? zoneOverride
                     : isWithinZones;
-
+            const forceState =
+                typeof forceLockOverride === "boolean"
+                    ? forceLockOverride
+                    : storedForceLock === "true";
             const isOutOfZone = !zoneState;
 
             /* ---------- TIME ---------- */
@@ -36,15 +39,15 @@ export const useAppStatus = ({ user, business }: any) => {
                     isOutOfHours = currentHour >= end && currentHour < start;
                 }
             }
-            console.log("STATUS", isOutOfHours, start, end)
-            /* ---------- FINAL STATE ---------- */
-            const shouldBeInactive = isOutOfHours;
 
-            console.log("📊 STATUS CHECK:", {
-                isOutOfZone,
-                isOutOfHours,
-                shouldBeInactive,
-            });
+            /* ---------- FINAL STATE ---------- */
+            const shouldBeInactive = isOutOfHours || forceState ;
+
+            // console.log("📊 STATUS CHECK:", {
+            //     isOutOfZone,
+            //     isOutOfHours,
+            //     shouldBeInactive,
+            // });
 
             /* ---------- COLORS ---------- */
             const activePrimary = business?.primary_color || "#3c58a8";
@@ -56,7 +59,7 @@ export const useAppStatus = ({ user, business }: any) => {
             const primary = shouldBeInactive ? inactivePrimary : activePrimary;
             const secondary = shouldBeInactive ? inactiveSecondary : activeSecondary;
 
-            console.log(primary, secondary)
+            // console.log(primary, secondary)
 
             // 🔥 APPLY THEME INSTANTLY
             applyThemeDirectly(primary, secondary);
@@ -71,13 +74,13 @@ export const useAppStatus = ({ user, business }: any) => {
             const lastState = await AsyncStorage.getItem("lastActiveState");
 
             if (shouldBeInactive && lastState !== "inactive") {
-                console.log("⏱ CLOCK OUT");
+                // console.log("⏱ CLOCK OUT");
                 await clockOut(user?._id);
                 await AsyncStorage.setItem("lastActiveState", "inactive");
             }
 
             if (!shouldBeInactive && lastState !== "active") {
-                console.log("⏱ CLOCK IN");
+                // console.log("⏱ CLOCK IN");
                 await clockIn({
                     user_id: `${user?._id}`,
                     business_id: `${business?._id}`,

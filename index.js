@@ -20,13 +20,22 @@ import AppWithProviders from './appWithProviders';
 import { NavigationContainer } from '@react-navigation/native';
 import './geofenceTask';
 import messaging from '@react-native-firebase/messaging';
-
+import { saveNotification } from './src/services/Notification.service';
+import { ConnectivityProvider } from './src/context/ConnectivityContext';
 // ✅ Background handler
 messaging().setBackgroundMessageHandler(async remoteMessage => {
     console.log('Background FCM message:', remoteMessage);
     // Only access safe fields
     if (remoteMessage?.notification?.body) {
-        console.log('Notification body:', remoteMessage.notification.body);
+        const t = await saveNotification({
+            title: remoteMessage.notification?.title || "New Notification",
+            description: remoteMessage.notification?.body || "",
+            business_id: remoteMessage.data?.businessId || "",
+            type: remoteMessage.data?.type || "general",
+            unread: true,
+            user_id: remoteMessage.data?.userId || "",
+        });
+       
     }
 }
 )
@@ -37,6 +46,7 @@ const Root = () => (
             loading={null} // or your loading spinner
         >
             <SafeAreaProvider>
+                
                 <AuthProvider>
                     <ThemeProvider>
                         <BusinessProvider>
@@ -46,7 +56,9 @@ const Root = () => (
                                         <MenuProvider>
                                             <NavigationContainer>
                                                 <SearchProvider>
+                                                     <ConnectivityProvider>
                                                     <AppWithProviders />
+                                                    </ConnectivityProvider>
                                                 </SearchProvider>
                                             </NavigationContainer>
                                         </MenuProvider>

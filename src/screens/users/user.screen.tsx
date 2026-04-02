@@ -21,7 +21,7 @@ import PageHeader from '../../components/pageHeader';
 import StartCard from '../../components/startCard';
 import DataGraph from '../dashbordItems/DataGraph';
 import SalesReportTable from '../reports/components/salesTable';
-
+import NetInfo from "@react-native-community/netinfo";
 import { useTheme } from '../../context/themeContext';
 import { FormatDate } from '../../../utils/formatDate';
 import {
@@ -35,6 +35,7 @@ import RadialFab from '../../components/multiFab';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { UsersStackParamList } from '../../../models/navigationTypes';
+import { useConnectivity } from '../../context/ConnectivityContext';
 
 const filters = [
     { title: "Today", value: "today", icon: "today-outline" },
@@ -45,7 +46,7 @@ const filters = [
 
 const UserScreen = ({ route }: any) => {
     const { user } = route.params;
-       console.log("UE1o1",user)
+    console.log("UE1o1", user)
     const { colors, isDarkMode } = useTheme();
 
     // States
@@ -67,7 +68,7 @@ const UserScreen = ({ route }: any) => {
     const [isLocked, setIsLocked] = useState(user.status === 'locked');
     const [showLockModal, setShowLockModal] = useState(false);
     const [lockReason, setLockReason] = useState("");
-
+    const { isOnline } = useConnectivity();
     const fetchAnalytics = useCallback(async () => {
         const id = user.user_id || user._id;
         setLoading(true);
@@ -231,9 +232,10 @@ const UserScreen = ({ route }: any) => {
                 </View>
                 <View style={{ height: 40 }} />
             </ScrollView>
+           {isOnline && (
             <RadialFab
                 mainColor={isLocked ? colors.danger : colors.primary}
-                mainIcon="settings-outline"
+                mainIcon="ellipsis-vertical-outline"
                 actions={[
                     {
                         icon: isLocked ? 'lock-open-outline' : 'lock-closed-outline',
@@ -241,16 +243,13 @@ const UserScreen = ({ route }: any) => {
                         color: isLocked ? colors.success : colors.danger,
                         onPress: handleToggleLock
                     },
+
                     {
-                        icon: 'calendar-outline',
-                        onPress: () => setShowDatePicker(true)
-                    },
-                    {
-                        icon: 'message-outline',
-                        onPress: () => navigation.navigate('User_Notifications', { user:user })
+                        icon: 'chatbubbles-outline',
+                        onPress: () => navigation.navigate('User_Notifications', { user: user })
                     },
                 ]}
-            />
+            />)}
             {showDatePicker && (
                 <DateTimePicker
                     value={customDate ? new Date(customDate) : new Date()}

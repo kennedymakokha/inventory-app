@@ -12,7 +12,7 @@ import { MenuProvider } from 'react-native-popup-menu';
 import { SearchProvider } from './src/context/searchContext';
 import AppWithProviders from './appWithProviders';
 import { PermissionsAndroid, Platform, Alert } from 'react-native';
-import messaging from '@react-native-firebase/messaging';
+
 
 const { RNCustomGeolocation } = NativeModules;
 const geoEventEmitter = new NativeEventEmitter(RNCustomGeolocation);

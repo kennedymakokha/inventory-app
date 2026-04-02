@@ -44,7 +44,7 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => 
 
   const menuItem = (label: string, icon: string, screen: string, role?: string) => {
     const isActive = navigation.getState().routes[navigation.getState().index].name === screen;
-    
+
     if (user?.role === "admin" || user?.role === role) {
       return (
         <TouchableOpacity
@@ -54,10 +54,10 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => 
           ]}
           onPress={() => navigation.navigate("Home", { screen })}
         >
-          <Icon 
-            name={icon} 
-            size={22} 
-            color={isActive ? colors.primary : colors.text} 
+          <Icon
+            name={icon}
+            size={22}
+            color={isActive ? colors.primary : colors.text}
             style={{ opacity: isActive ? 1 : 0.7 }}
           />
           <Text
@@ -81,13 +81,13 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => 
       <View style={styles.headerContainer}>
         <View style={[styles.headerBg, { backgroundColor: colors.primary }]} />
         <View style={styles.headerOverlay} />
-        
+
         {/* Floating Cash Badge */}
         <View style={[styles.glassBadge, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.9)' }]}>
-            <Text style={styles.badgeLabel}>CASH ON HAND</Text>
-            <Text style={[styles.badgeValue, { color: isDarkMode ? '#fff' : colors.primary }]}>
-                {formatNumber(expected)}
-            </Text>
+          <Text style={styles.badgeLabel}>CASH ON HAND</Text>
+          <Text style={[styles.badgeValue, { color: isDarkMode ? '#fff' : colors.primary }]}>
+            {formatNumber(expected)}
+          </Text>
         </View>
 
         <View style={styles.profileSection}>
@@ -108,24 +108,24 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => 
       <View style={styles.menuContainer}>
         <Text style={styles.sectionLabel}>Main Navigation</Text>
         {menuItem("Dashboard", "grid-outline", "dashboard", "sales")}
-      
+
         {menuItem("Business", "briefcase-outline", "business", "admin")}
         {!isInactive && menuItem("Sales", "cart-outline", "sales", "sales")}
         {menuItem("Reports", "bar-chart-outline", "salesreport", "sales")}
-         {menuItem("Profile", "person-outline", "profile", "sales")}
+        {menuItem("Profile", "person-outline", "profile", "sales")}
         {menuItem("Settings", "settings-outline", "settings", "sales")}
       </View>
 
       {/* --- FOOTER / LOGOUT --- */}
       <View style={styles.footer}>
         <TouchableOpacity
-          onPress={handleLogout}
+          onPress={isInactive ? handleLogout : undefined}
           style={[styles.logoutBtn, { backgroundColor: colors.primary }]}
         >
           <Icon name="log-out-outline" size={20} color="#fff" />
           <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>
-        
+
         <View style={styles.powerByContainer}>
           <Text style={[styles.powerText, { color: colors.subText }]}>Powered by</Text>
           <Text style={[styles.brandText, { color: colors.primary }]}>

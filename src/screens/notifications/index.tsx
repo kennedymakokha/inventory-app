@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity,
-  Switch, Modal, TextInput, ScrollView, Platform
+  Switch, Modal, TextInput, ScrollView, Platform,
+  Alert
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../context/themeContext';
@@ -9,12 +10,13 @@ import { NotificationItem, NotificationType } from '../../../models';
 import { getNotificationsById, ReadNotification, saveNotification } from '../../services/Notification.service';
 import RadialFab from '../../components/multiFab';
 import { useNavigation } from '@react-navigation/native';
+import { usePostNotificationMutation } from '../../services/notificationsApi';
 
 const NotificationsScreen = ({ route }: any) => {
   const { user } = route.params;
   const { colors, isDarkMode } = useTheme();
   const navigation = useNavigation();
-
+  const [postNofication, { isLoading }] = usePostNotificationMutation({});
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [activeFilter, setActiveFilter] = useState<NotificationType | 'all'>('all');
   const [createModalVisible, setCreateModalVisible] = useState(false);
@@ -50,7 +52,9 @@ const NotificationsScreen = ({ route }: any) => {
 
   const fetchNotifications = useCallback(async () => {
     try {
+
       const data = await getNotificationsById(user?.user_id || user?._id);
+
       setNotifications(data.notifications || []);
     } catch (error) {
       console.error(error);
@@ -60,14 +64,16 @@ const NotificationsScreen = ({ route }: any) => {
   useEffect(() => { fetchNotifications() }, [fetchNotifications]);
 
   const handleSaveNotification = async () => {
-    if (!newNoti.title || !newNoti.description) return;
+    if (!newNoti.title || !newNoti.description) return Alert.alert("Please fill in all fields");
     const payload = {
       ...newNoti,
       user_id: user.user_id || user._id,
       unread: true,
     };
-    // await saveNotification(payload); // Implement your service call
-    setNotifications([{ ...payload, id: Date.now().toString(), createdAt: 'Just now' } as any, ...notifications]);
+    await postNofication(payload).unwrap();
+    // const data = await getNotificationsById(user?.user_id || user?._id);
+    // setNotifications(data.notifications || []);
+    // Implement your service call
     setCreateModalVisible(false);
     setNewNoti({ title: '', description: '', type: 'system-update' });
   };

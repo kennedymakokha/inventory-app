@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -25,6 +25,9 @@ import { User } from '../../models';
 
 import { useSettings } from '../context/SettingsContext';
 import { Theme } from '../utils/theme';
+import { getMessaging } from '@react-native-firebase/messaging';
+import { getToken } from '@react-native-firebase/messaging';
+import Toast from '../components/Toast';
 
 const COLORS = {
     primary: "#2563EB",
@@ -40,7 +43,7 @@ const COLORS = {
 const LoginScreen = ({ navigation }: any) => {
     const { isDarkMode } = useSettings();
     const theme = isDarkMode ? Theme.dark : Theme.light;
-    const [item, setItem] = useState({ phone_number: "", password: '' });
+    const [item, setItem] = useState({ phone_number: "", password: '', FcmToken: "" });
     const [msg, setMsg] = useState({ msg: "", state: "" });
     const [loginUser, { error, isLoading: loading }] = useLoginMutation();
     const dispatch = useDispatch()
@@ -59,7 +62,17 @@ const LoginScreen = ({ navigation }: any) => {
         }));
     };
 
+    useEffect(() => {
+        async function getFcmToken() {
+            const messagingInstance = getMessaging();
+            const token = await getToken(messagingInstance);
+            setItem((prev) => ({ ...prev, FcmToken: token }));
 
+        }
+
+        getFcmToken();
+
+    }, []);
     const handleLogin = async (e?: any) => {
         try {
 
@@ -79,11 +92,7 @@ const LoginScreen = ({ navigation }: any) => {
                 dispatch(setCredentials({ ...data }));
                 await AsyncStorage.setItem("accessToken", data.token);
                 await AsyncStorage.setItem("userId", data.user._id);
-                const fcmToken = await AsyncStorage.getItem('fcmToken');
-                console.log(fcmToken, "FCM TOKEN ON LOGIN");
-                if (fcmToken) {
-                    await AsyncStorage.setItem('fcmToken', fcmToken);
-                }
+
                 //  Update context with logged-in user
 
                 if (data.exp) {
@@ -109,9 +118,9 @@ const LoginScreen = ({ navigation }: any) => {
                 setMsg({ msg: "Login successful! Redirecting...", state: "error" });
             }
         } catch (error: any) {
-
+            console.log(error.data.message || error.message);
             setMsg({
-                msg: error.message || error.data || "Error occurred, try again ",
+                msg: error.message || error.data || error.data.message || "Error occurred, try again ",
                 state: "error",
             });
         }
@@ -139,7 +148,7 @@ const LoginScreen = ({ navigation }: any) => {
                         <Text style={[styles.brandTitle, { color: theme.text }]}>POS System</Text>
                         <Text style={[styles.brandSubtitle, { color: theme.subText }]}>Enter credentials to access terminal</Text>
                     </View>
-
+                    {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
                     {/* LOGIN FORM */}
                     <View style={[styles.formCard, { backgroundColor: theme.card }]}>
 

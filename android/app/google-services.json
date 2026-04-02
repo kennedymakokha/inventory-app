@@ -1,13 +1,14 @@
 {
   "project_info": {
-    "project_number": "182315326234",
-    "project_id": "kakituapp",
-    "storage_bucket": "kakituapp.firebasestorage.app"
+    "project_number": "839093893258",
+    "firebase_url": "https://realestate1-7b96b.firebaseio.com",
+    "project_id": "realestate1-7b96b",
+    "storage_bucket": "realestate1-7b96b.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:182315326234:android:fd72f3797bad94a7d92aa3",
+        "mobilesdk_app_id": "1:839093893258:android:d6cf817649efba2b3cd573",
         "android_client_info": {
           "package_name": "com.smartshop"
         }
@@ -15,7 +16,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyA_4w5IdN3MJN3rFvBx-TDwHHpkTauECHk"
+          "current_key": "AIzaSyBV3WA-HDChxxH23C6fqZcPt0gdPkT8ZIs"
         }
       ],
       "services": {

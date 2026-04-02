@@ -161,23 +161,36 @@ export const getNotificationsById = async (
 /* -------------------------- */
 
 export const saveNotification = async (
-
   item: NotificationItem,
-
 ): Promise<NotificationItem[]> => {
   const db = await getDBConnection();
-  const futureDate = new Date();
-  futureDate.setDate(futureDate.getDate() + 1000);
 
   const trimmedName = item.title.trim();
   const createdBy = await AsyncStorage.getItem("userId");
   const now = new Date().toISOString();
 
   const notification_id = uuidv4();
+  let synced = 1;
 
+  // 🔍 Check for existing similar notification
+  const checkQuery = `
+    SELECT * FROM Notification
+    WHERE title = ? AND description = ? AND user_id = ?
+    LIMIT 1
+  `;
 
-  let synced = 0;
+  const [result] = await db.executeSql(checkQuery, [
+    trimmedName,
+    item.description || "",
+    item.user_id || "",
+  ]);
 
+  if (result.rows.length > 0) {
+    // 🚫 Already exists → do not insert
+    return await getNotifications();
+  }
+
+  // ✅ Insert only if not exists
   const insertQuery = `
     INSERT INTO Notification
     (
@@ -192,7 +205,7 @@ export const saveNotification = async (
       createdAt,
       updatedAt
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?,?,?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   await db.executeSql(insertQuery, [

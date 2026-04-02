@@ -23,7 +23,7 @@ const PieChart: React.FC<PieChartProps> = ({ data = [], title }) => {
     const { colors, isDarkMode } = useTheme();
     const { user } = useSelector((state: any) => state.auth);
 
-    const palette = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+    const palette = [colors.primary, '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
     if (!data || data.length === 0) {
         return (

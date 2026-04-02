@@ -30,6 +30,7 @@ export const createUserTable = async () => {
           business_id TEXT,
           createdBy TEXT,
           phone_number TEXT,
+          FcmToken TEXT,
           role TEXT,
           synced INTEGER DEFAULT 0,
           email TEXT,

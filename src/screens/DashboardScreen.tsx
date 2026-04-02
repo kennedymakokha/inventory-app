@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -40,7 +40,7 @@ import {
 const Dashboard = () => {
   const { user } = useSelector((state: any) => state.auth);
   const { colors, isDarkMode, applyThemeDirectly, refreshTheme } = useTheme();
-  const { socket } = useSocket();
+
   const { business, updateBusiness } = useBusiness();
   const { Kiosk } = NativeModules;
 
@@ -54,9 +54,10 @@ const Dashboard = () => {
   const [monthlySales, setMonthlySales] = useState<any[]>([]);
   const [datasets, setDatasets] = useState<any[]>([]);
   const [showDatePicker, setShowDatePicker] = useState(false);
-
+  
   const { evaluateStatus } = useAppStatus({ user, business, refreshTheme });
-
+  ;
+  const evaluateStatusRef = useRef(evaluateStatus);
   // Hourly range logic
   const [startHour, endHour] = useMemo(() => {
     if (business?.working_hrs) {
@@ -102,41 +103,16 @@ const Dashboard = () => {
       setRefreshing(false);
     }
   }, [user, fetchAnalytics]);
+  const loadDataRef = useRef(loadData)
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  // Socket Logic
-  useEffect(() => {
-    if (!socket) return;
-    socket.emit("registerDevice", user._id);
-
-    socket.on("business:update", async (data: any) => {
-      await updateBusiness(data);
-      if (data.primary_color || data.secondary_color) {
-        applyThemeDirectly(data.primary_color || "#3c58a8", data.secondary_color || "#ffffff");
-      }
-      await evaluateStatus();
-    });
-
-    socket.on("force:lock", async () => {
-      await AsyncStorage.setItem("inactive", "true");
-      await evaluateStatus();
-    });
-
-    socket.on("sales:new", loadData);
-
-    return () => {
-      socket.off("business:update");
-      socket.off("force:lock");
-      socket.off("sales:new");
-    };
-  }, [socket, updateBusiness, evaluateStatus, loadData, applyThemeDirectly]);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      
+
 
       <ScrollView
         style={{ flex: 1 }}
@@ -168,7 +144,7 @@ const Dashboard = () => {
         <View style={styles.contentPadding}>
 
           {/* TOP PERFORMERS CHART */}
-          <View style={[styles.card, {  backgroundColor: colors.card,  borderColor: colors.border }]}>
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <DataGraph
               pressed={() => setShowbyCategory(!showbyCategory)}
               title={`Top ${showbyCategory ? "Categories" : "Products"}`}
@@ -192,7 +168,7 @@ const Dashboard = () => {
           </View>
 
           {/* KIOSK CONTROLS */}
-          {/* <View style={styles.kioskRow}>
+          <View style={styles.kioskRow}>
             <TouchableOpacity
               onPress={() => Kiosk.lock()}
               style={[styles.kioskBtn, { backgroundColor: colors.danger + '20' }]}
@@ -208,7 +184,7 @@ const Dashboard = () => {
               <Ionicons name="lock-open" size={20} color="#22c55e" />
               <Text style={{ color: '#22c55e', fontWeight: '700' }}>Unlock Kiosk</Text>
             </TouchableOpacity>
-          </View> */}
+          </View>
         </View>
 
         <View style={{ height: 100 }} />
@@ -280,7 +256,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     ...Platform.select({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8 },
-      android: { }
+      android: {}
     })
   },
   kioskRow: {

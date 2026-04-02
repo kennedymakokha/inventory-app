@@ -66,7 +66,7 @@ export const globalSync = async (
   }
 
 };
-// export const globalSync = async (
+
 //   tables: SyncTableConfig[],
 //   onProgress?: (progress: number) => void
 // ) => {

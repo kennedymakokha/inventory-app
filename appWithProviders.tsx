@@ -23,6 +23,8 @@ import { useAppStatus } from './src/hooks/useAppStatus';
 import DatabaseLoader from './dbeady';
 import messaging from '@react-native-firebase/messaging';
 import { createNotificationTable, saveNotification } from './src/services/Notification.service';
+import { useSocket } from './src/context/socketContext';
+
 
 
 const { RNCustomGeolocation } = NativeModules;
@@ -30,12 +32,12 @@ const geoEventEmitter = new NativeEventEmitter(RNCustomGeolocation);
 
 const AppWithProviders = () => {
     const { token } = useAuthContext();
-    const { business } = useBusiness();
     const { user } = useSelector((state: any) => state.auth);
-    const { colors, } = useTheme();
     const { Kiosk } = NativeModules;
     const [dbReady, setDbReady] = React.useState(false);
-
+    const { colors, isDarkMode, applyThemeDirectly, refreshTheme } = useTheme();
+    const { socket } = useSocket();
+    const { business, updateBusiness } = useBusiness();
     // ✅ GLOBAL STATUS ENGINE
     const {
         isWithinZones,
@@ -57,8 +59,9 @@ const AppWithProviders = () => {
     useEffect(() => {
         if (user?.role === 'sales') {
             startProfessionalTracking();
+            console.log("tracking")
         }
-        console.log("tracking")
+
         return () => RNCustomGeolocation.stopBackgroundService();
     }, [user]);
 
@@ -68,6 +71,12 @@ const AppWithProviders = () => {
             const inside = data.isInside;
             setIsWithinZones(inside);
             await AsyncStorage.setItem("lastZoneState", inside ? "true" : "false");
+            if (user.company_gadget === false && !inside) {
+                Kiosk.lock();
+            } else {
+                Kiosk.unlock();
+            }
+
             await evaluateStatus(inside); // 🔥 REQUIRED
         };
 
@@ -87,6 +96,7 @@ const AppWithProviders = () => {
 
         return () => subscription.remove();
     }, [business]);
+
     useEffect(() => {
         const restore = async () => {
             const savedZone = await AsyncStorage.getItem("lastZoneState");
@@ -123,45 +133,50 @@ const AppWithProviders = () => {
     }, [isWithinZones, user, business]);
 
     /* ---------------- KIOSK LOCK ---------------- */
+    // useEffect(() => {
+    //     const timeout = setTimeout(() => {
+    //         try {
+    //             if (shouldLock) {
+    //                 Kiosk.lock();
+    //             } else {
+    //                 Kiosk.unlock();
+    //             }
+    //         } catch (e) {
+    //             console.error("Kiosk error:", e);
+    //         }
+    //     }, 300);
+
+    //     return () => clearTimeout(timeout);
+    // }, [shouldLock]);
+
+
     useEffect(() => {
-        const timeout = setTimeout(() => {
+        if (!dbReady) return; // don't subscribe until DB is ready
+
+        const unsubscribe = messaging().onMessage(async (remoteMessage: any) => {
             try {
-                if (shouldLock) {
-                    Kiosk.lock();
-                } else {
-                    Kiosk.unlock();
-                }
-            } catch (e) {
-                console.error("Kiosk error:", e);
+                const t = await saveNotification({
+                    title: remoteMessage.notification?.title || "New Notification",
+                    description: remoteMessage.notification?.body || "",
+                    business_id: remoteMessage.data?.businessId || "",
+                    type: remoteMessage.data?.type || "general",
+                    unread: true,
+                    user_id: remoteMessage.data?.userId || "",
+                });
+
+                return unsubscribe;
+            } catch (error) {
+                console.log(error)
             }
-        }, 300);
-
-        return () => clearTimeout(timeout);
-    }, [shouldLock]);
-
-    /* ---------------- DB ---------------- */
-    useEffect(() => {
-        const unsubscribe = messaging().onMessage(async (remoteMessage:any) => {
-            // Safely show only the notification body or title
-            await saveNotification({
-                title: remoteMessage.notification?.title || "New Notification",
-                description: remoteMessage.notification?.body || "",
-                business_id: business?._id || "",
-                type: "congratulatory",
-                unread: true,
-                user_id: user?.user_id,
-            });
-
-            console.log('Foreground message:', remoteMessage.notification);
         });
 
-        return unsubscribe;
-    }, []);
+
+    }, [dbReady, business, user]);
+
 
     useEffect(() => {
         const setupDB = async () => {
             if (!token) {
-
                 setDbReady(false);
                 return;
             }

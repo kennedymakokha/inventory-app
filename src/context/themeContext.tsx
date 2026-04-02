@@ -119,7 +119,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
       ["secondary_color", secondary]
     ]);
 
-    console.log("⚡ Theme applied instantly:", primary);
+    // console.log("⚡ Theme applied instantly:", primary);
   };
 
   /* ---------------- HANDLE DARK MODE ---------------- */
