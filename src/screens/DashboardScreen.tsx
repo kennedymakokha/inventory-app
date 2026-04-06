@@ -54,7 +54,7 @@ const Dashboard = () => {
   const [monthlySales, setMonthlySales] = useState<any[]>([]);
   const [datasets, setDatasets] = useState<any[]>([]);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  
+
   const { evaluateStatus } = useAppStatus({ user, business, refreshTheme });
   ;
   const evaluateStatusRef = useRef(evaluateStatus);

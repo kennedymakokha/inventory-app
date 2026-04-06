@@ -35,6 +35,7 @@ import CheckoutModal from './components/checkout';
 import Toast from '../../components/Toast';
 import PageHeader from '../../components/pageHeader';
 import SearchBar from '../../components/searchBar';
+import DeliveryDetailsModal, { DeliveryDetails } from './components/deliveryModal';
 
 const LIMIT = 30;
 
@@ -96,9 +97,9 @@ const SalesScreen = ({ route, navigation }: any) => {
     const PostSale = async (receiptNo: any, method: string, phone?: string, paidCash?: any, paidMpesa?: any, mpesaData?: any, customerPin?: string) => {
         try {
             const db = await getDBConnection();
-            await finalizeSale(db, cart, { 
+            await finalizeSale(db, cart, {
                 receiptNo, mpesaAmount: paidMpesa, cashAmount: paidCash, method, phone, customerPin,
-                business_id: user.business._id, createdBy: user.user_id, mpesaData 
+                business_id: user.business._id, createdBy: user.user_id, mpesaData
             });
             await loadData(0);
             setModalVisible(false);
@@ -158,7 +159,7 @@ const SalesScreen = ({ route, navigation }: any) => {
                     </View>
                 </View>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                     onPress={() => handleAddToCart(item, currentQty + 1)}
                     style={[styles.addBtn, { backgroundColor: currentQty > 0 ? colors.primary : colors.primary + '20' }]}
                 >
@@ -179,7 +180,13 @@ const SalesScreen = ({ route, navigation }: any) => {
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
             <PageHeader component={() => (
-                <View style={styles.headerContent}>
+                <View style={[styles.headerContent, { backgroundColor: colors.card, padding: 10,  }]}>
+                    <TouchableOpacity
+                        style={[ { paddingHorizontal:10, backgroundColor: colors.card, shadowColor: '#000' }]}
+                        onPress={() => navigation.goBack()}
+                    >
+                        <Ionicons name="arrow-back" size={24} color={colors.text} />
+                    </TouchableOpacity>
                     <View style={{ flex: 1, marginRight: 10 }}>
                         <SearchBar white placeholder="Search products..." />
                     </View>
@@ -190,12 +197,7 @@ const SalesScreen = ({ route, navigation }: any) => {
             )} />
 
             {/* FLOATING BACK BUTTON */}
-            <TouchableOpacity 
-                style={[styles.fabBack, { backgroundColor: colors.card, shadowColor: '#000' }]} 
-                onPress={() => navigation.goBack()}
-            >
-                <Ionicons name="arrow-back" size={24} color={colors.text} />
-            </TouchableOpacity>
+
 
             {msg.msg ? <Toast setMsg={setMsg} {...msg} /> : null}
 
@@ -231,6 +233,7 @@ const SalesScreen = ({ route, navigation }: any) => {
                 modalVisible={modalVisible}
                 setModalVisible={setModalVisible}
             />
+           
         </View>
     );
 };
@@ -265,33 +268,33 @@ const styles = StyleSheet.create({
     productName: { fontSize: 17, fontWeight: '800' },
     stockBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
     inputRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-    priceBox: { 
-        width: '45%', 
-        height: 50, 
-        borderRadius: 14, 
-        borderWidth: 1, 
-        paddingHorizontal: 12, 
-        flexDirection: 'row', 
-        alignItems: 'center' 
+    priceBox: {
+        width: '45%',
+        height: 50,
+        borderRadius: 14,
+        borderWidth: 1,
+        paddingHorizontal: 12,
+        flexDirection: 'row',
+        alignItems: 'center'
     },
     priceInput: { flex: 1, fontWeight: '900', fontSize: 16, marginLeft: 5 },
-    qtyContainer: { 
-        width: '50%', 
-        height: 50, 
-        borderRadius: 14, 
-        flexDirection: 'row', 
-        alignItems: 'center', 
+    qtyContainer: {
+        width: '50%',
+        height: 50,
+        borderRadius: 14,
+        flexDirection: 'row',
+        alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 4
     },
     qtyBtn: { width: 40, height: 40, backgroundColor: '#fff', borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
     qtyText: { fontWeight: '900', fontSize: 18 },
-    addBtn: { 
-        height: 48, 
-        borderRadius: 14, 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        justifyContent: 'center' 
+    addBtn: {
+        height: 48,
+        borderRadius: 14,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center'
     },
     checkoutPill: {
         position: 'absolute',
@@ -311,12 +314,12 @@ const styles = StyleSheet.create({
     },
     totalLabel: { fontSize: 10, fontWeight: 'bold', color: '#888', letterSpacing: 1 },
     totalValue: { fontSize: 22, fontWeight: '900' },
-    payBtn: { 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        paddingHorizontal: 20, 
-        paddingVertical: 12, 
-        borderRadius: 18 
+    payBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderRadius: 18
     },
     payText: { color: '#fff', fontWeight: '900', marginRight: 8 }
 });

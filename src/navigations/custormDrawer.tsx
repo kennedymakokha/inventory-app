@@ -119,7 +119,7 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => 
       {/* --- FOOTER / LOGOUT --- */}
       <View style={styles.footer}>
         <TouchableOpacity
-          onPress={isInactive ? handleLogout : undefined}
+          onPress={isInactive ? undefined : handleLogout}
           style={[styles.logoutBtn, { backgroundColor: colors.primary }]}
         >
           <Icon name="log-out-outline" size={20} color="#fff" />

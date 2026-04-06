@@ -145,20 +145,32 @@ const MultiLineChart: React.FC<LineGraphProps> = ({
 
   const buildSmoothPath = (points: any[]) => {
     if (!points.length) return "";
-    if (points.some(p => isNaN(p.x) || isNaN(p.y))) return "";
 
-    let d = `M ${points[0].x} ${points[0].y}`;
-    for (let i = 0; i < points.length - 1; i++) {
-      const xMid = (points[i].x + points[i + 1].x) / 2;
-      const yMid = (points[i].y + points[i + 1].y) / 2;
-      const cpX1 = (xMid + points[i].x) / 2;
-      const cpX2 = (xMid + points[i + 1].x) / 2;
-      d += ` Q ${cpX1} ${points[i].y}, ${xMid} ${yMid}`;
-      d += ` Q ${cpX2} ${points[i + 1].y}, ${points[i + 1].x} ${points[i + 1].y}`;
+    // 🚨 filter invalid points
+    const validPoints = points.filter(
+      p => !isNaN(p.x) && !isNaN(p.y)
+    );
+
+    if (validPoints.length < 2) return "";
+
+    let d = `M ${validPoints[0].x} ${validPoints[0].y}`;
+
+    for (let i = 0; i < validPoints.length - 1; i++) {
+      const p1 = validPoints[i];
+      const p2 = validPoints[i + 1];
+
+      const xMid = (p1.x + p2.x) / 2;
+      const yMid = (p1.y + p2.y) / 2;
+
+      const cpX1 = (xMid + p1.x) / 2;
+      const cpX2 = (xMid + p2.x) / 2;
+
+      d += ` Q ${cpX1} ${p1.y}, ${xMid} ${yMid}`;
+      d += ` Q ${cpX2} ${p2.y}, ${p2.x} ${p2.y}`;
     }
+
     return d;
   };
-
   const buildAreaPath = (linePath: string, lastPoint: any, firstPoint: any) => {
     return `${linePath} L ${lastPoint.x} ${height - padding} L ${firstPoint.x} ${height - padding} Z`;
   };
@@ -179,7 +191,7 @@ const MultiLineChart: React.FC<LineGraphProps> = ({
       }}
     >
       <View className="flex flex-row w-full justify-between items-center mb-4">
-        <View className="flex items-center flex-row  justify-center w-[90%]">
+        <View className="flex items-center flex-row  justify-center w-[80%]">
           <Text
             style={{
               color: colors.primary,
@@ -199,7 +211,7 @@ const MultiLineChart: React.FC<LineGraphProps> = ({
           } else {
             setShowLegend(true);
           }
-        }} activeOpacity={0.9} className="flex float-end w-[2%] size-4 border">
+        }} activeOpacity={0.9} className="flex float-end w-[10%] h-10 items-center justify-center size-4 ">
           <Icon
             style={{ color: colors.primary }}
             name="information-circle-outline"
@@ -273,10 +285,10 @@ const MultiLineChart: React.FC<LineGraphProps> = ({
         {datasets.map((dataset, dsIndex) => {
           const points = labels.map((hour, index) => {
             const dataPoint = dataset.data.find(d => d.key === hour);
-            const value = dataPoint ? dataPoint.value : 0;
+            const value = Number(dataPoint?.value ?? 0);
 
             const x = padding + index * stepX;
-            const y = scaleY(value);
+            const y = isNaN(value) ? height - padding : scaleY(value);
 
             return { x, y, value, key: hour };
           });

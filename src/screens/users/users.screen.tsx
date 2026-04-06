@@ -16,7 +16,7 @@ import { UsersStackParamList } from '../../../models/navigationTypes';
 import { useTheme } from '../../context/themeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
-const isFabric = (global as any).nativeFabricUIManager != null;
+const isFabric = (globalThis as any).nativeFabricUIManager != null;
 if (Platform.OS === 'android' && !isFabric && UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
 }
@@ -25,17 +25,13 @@ const UsersScreen = () => {
     const { colors, isDarkMode } = useTheme();
     const { query } = useSearch();
     const navigation = useNavigation<NativeStackNavigationProp<UsersStackParamList, "Users_Dashboard">>();
-    
     const swipeRefs = useRef<any>({});
     const currentlyOpenSwipe = useRef<any>(null);
-
     const { user: { business } } = useSelector((state: any) => state.auth);
-    
     const initialState: UserItem = {
         name: "", user_id: "", phone_number: "", email: "", role: "",
         business_id: business?._id || ""
     };
-
     const [users, setUsers] = useState<UserItem[]>([]);
     const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -43,7 +39,6 @@ const UsersScreen = () => {
     const [uploadModalVisible, setUploadModalVisible] = useState(false);
     const [item, setItem] = useState<UserItem>(initialState);
     const [msg, setMsg] = useState({ msg: "", state: "" });
-
     const loadDataCallback = useCallback(async () => {
         try {
             const db = await getDBConnection();
@@ -61,7 +56,6 @@ const UsersScreen = () => {
         await loadDataCallback();
         setRefreshing(false);
     };
-
     const handleSaveUser = async () => {
         if (!validateItem(item, setMsg)) return;
         setLoading(true);
@@ -84,7 +78,6 @@ const UsersScreen = () => {
             setMsg({ msg: err.message || ' Could not save user.', state: 'error' });
         } finally { setLoading(false); }
     };
-
     const handleDelete = async (user: UserItem) => {
         try {
             const db = await getDBConnection();
