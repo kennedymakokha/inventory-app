@@ -65,7 +65,7 @@ export function DashboardTabs() {
                             <Ionicons
                                 name={icons[route.name]}
                                 size={focused ? 24 : 22}
-                                color={color}
+                                color={focused ? colors.primaryDark : color}
                             />
                         </View>
                     );
@@ -78,7 +78,8 @@ export function DashboardTabs() {
                 initialParams={{ filter: "home" }}
                 options={{
                     tabBarLabel: "Dashboard",
-                    headerShown: false,
+                    headerShown: true,
+                    header: () => <CustomHeader title="Dashboard" />,
 
                 }}
             />
@@ -86,13 +87,13 @@ export function DashboardTabs() {
                 name="categories"
                 component={CategoriesStack}
                 initialParams={{ filter: "categories" }}
-                options={{ tabBarLabel: "Inventory", headerShown: false }}
+                options={{ tabBarLabel: "Inventory", headerShown: true, header: () => <CustomHeader title="Inventory" /> }}
             />
             <Tab.Screen
                 name="products"
                 component={ProductScreen}
                 initialParams={{ filter: "products" }}
-                options={{ tabBarLabel: "Items", headerShown: false, }}
+                options={{ tabBarLabel: "Items", headerShown: true, header: () => <CustomHeader title="Items" /> }}
             />
             <Tab.Screen
                 name="users"
@@ -100,8 +101,7 @@ export function DashboardTabs() {
                 initialParams={{ filter: "users" }}
                 options={{
                     tabBarLabel: "Staff",
-                    headerShown: false,
-
+                    headerShown: true, header: () => <CustomHeader title="Staff Members" />
                 }}
             />
             <Tab.Screen
@@ -110,7 +110,7 @@ export function DashboardTabs() {
                 initialParams={{ filter: "customers" }}
                 options={{
                     tabBarLabel: "VIP",
-                    headerShown: false,
+                    headerShown: true, header: () => <CustomHeader title="VIP" />
                 }}
             />
         </Tab.Navigator>
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     activeIconContainer: {
         padding: 6,
         paddingHorizontal: 16,
-        borderRadius: 20,
+        borderRadius: 2,
         alignItems: 'center',
         justifyContent: 'center',
     }

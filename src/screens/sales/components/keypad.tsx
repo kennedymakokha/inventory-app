@@ -40,7 +40,6 @@ const Keypad = ({ value, onChange, activeField }: any) => {
     ["U", "V", "W", "X", "Y"],
     ["Z", "⌫", "C"],
   ];
-  console.log(activeField)
   return (
     <View style={{ marginTop: 24 }}>
       {/* MODE TOGGLE TAB */}

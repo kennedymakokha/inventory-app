@@ -99,3 +99,32 @@ const handleStagedCategory = async () => {
 //   await saveCategoryItems(db, element);
 
 // }
+
+/**
+ * Converts a wholesale description into a structured inventory array
+ * with a default 'units_per_package' count for system logic.
+ */
+const processWholesaleData = (categories) => {
+  return categories.map(cat => ({
+    category: cat.category_name,
+    inventory: cat.description.split(/\s*,\s*/).map(product => {
+      // Basic logic to guess bulk size based on common wholesale terms
+      let defaultBulkSize = 12; 
+      if (product.includes("25kg") || product.includes("50kg")) defaultBulkSize = 1;
+      if (product.includes("Gallons") || product.includes("Jerrycans")) defaultBulkSize = 1;
+      if (product.includes("Bales")) defaultBulkSize = 12;
+      if (product.includes("Cartons") || product.includes("Cases")) defaultBulkSize = 24;
+
+      return {
+        product_name: product,
+        units_per_package: defaultBulkSize,
+        stock_level_packages: 0,
+        total_individual_units: 0
+      };
+    })
+  }));
+};
+
+const structuredWholesale = processWholesaleData(wholesaleInventory);
+console.log(structuredWholesale[0].inventory[0]); 
+// Output: { product_name: "25kg Sugar Sacks", units_per_package: 1, ... }

@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 // DB
 import { getDBConnection } from './src/services/db-service';
 import { createUserTable, createCLockTable } from './src/services/users.service';
-import { createCashRegisterTable, createPaymentsTable } from './src/services/closeOpen.service';
+import { createCashRegisterTable, createDeliveryTable, createPaymentsTable } from './src/services/closeOpen.service';
 import { createProductTable } from './src/services/product.service';
 import { createCategoryTable } from './src/services/category.service';
 import { createRefundItemsTable, createRefundsTable, createSalesItemTable, createSalesTable } from './src/services/sales.service';
@@ -194,6 +194,7 @@ const AppWithProviders = () => {
                 await createCashRegisterTable();
                 await createCLockTable();
                 await createNotificationTable()
+                await createDeliveryTable();
                 setDbReady(true);
             } catch (err) {
                 console.error("CRITICAL DB INIT FAILURE:", err);

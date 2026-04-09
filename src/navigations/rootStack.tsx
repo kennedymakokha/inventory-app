@@ -15,6 +15,7 @@ import Dashboard from "../screens/DashboardScreen";
 import { SalesStack } from "./sales/stack";
 import BusinessProfileScreen from "../screens/Business";
 import UserProfileScreen from "../screens/profile";
+import DispatchScreen from "../screens/deliveryScreen";
 
 export function RootStack() {
   const { isDarkMode } = useSettings();
@@ -27,12 +28,17 @@ export function RootStack() {
       <RootStackNav.Screen
         name="dashboard"
         component={user.role === "admin" ? DashboardTabs : Dashboard}
-        options={{ header: () => <CustomHeader title="Dashboard" /> }}
+        options={{ headerShown: user.role === "sales" ? true : false }}
+      />
+      <RootStackNav.Screen
+        name="Deliveries"
+        component={DispatchScreen}
+        options={{ header: () => <CustomHeader back title="Deliveries" /> }}
       />
       <RootStackNav.Screen
         name="products"
         component={ProductScreen}
-        options={{ header: () => <CustomHeader  title="Products" /> }}
+        options={{ header: () => <CustomHeader title="Products" /> }}
       />
       <RootStackNav.Screen
         name="inventory"
@@ -47,7 +53,7 @@ export function RootStack() {
       <RootStackNav.Screen
         name="sales"
         component={SalesStack}
-        options={{ header: () => <CustomHeader  title="Sales" /> }}
+        options={{ headerShown: false }}
       />
       <RootStackNav.Screen
         name="salesreport"
@@ -57,17 +63,17 @@ export function RootStack() {
       <RootStackNav.Screen
         name="business"
         component={BusinessProfileScreen}
-        options={{ header: () => <CustomHeader  title="My Business" /> }}
+        options={{ header: () => <CustomHeader back title="My Business" /> }}
       />
       <RootStackNav.Screen
         name="profile"
         component={UserProfileScreen}
-        options={{ header: () => <CustomHeader  title="My Profile" /> }}
+        options={{ header: () => <CustomHeader back title="My Profile" /> }}
       />
       <RootStackNav.Screen
         name="settings"
         component={SettingsScreen}
-        options={{ header: () => <CustomHeader  title="Settings" /> }}
+        options={{ header: () => <CustomHeader back title="Settings" /> }}
       />
     </RootStackNav.Navigator>
   );

@@ -85,602 +85,259 @@ let MotoCategoryarr = [
 ]
 
 
-export const RvSchools = [
-    // RIFT VALLEY REGION
-    { "category_name": "Kapsabet High School", "description": "Green sweaters, white shirts, grey trousers. County: Nandi" },
-    { "category_name": "Moi High School Kabarak", "description": "Navy blue blazers, white shirts, striped ties. County: Nakuru" },
-    { "category_name": "St. Patrick’s Iten", "description": "Royal blue sweaters, white shirts, grey trousers. County: Elgeyo Marakwet" },
-    { "category_name": "Kipsigis Girls High", "description": "Sky blue dresses/skirts, white blouses. County: Kericho" },
-    { "category_name": "Nakuru Boys High", "description": "Green sweaters, white shirts, grey trousers. County: Nakuru" },
-    { "category_name": "Moi Girls Eldoret", "description": "Green sweaters, white blouses, green skirts. County: Uasin Gishu" },
-    { "category_name": "Tenwek High School", "description": "Maroon/Dark red sweaters, white shirts, grey trousers. County: Bomet" },
-    { "category_name": "St. Anthony’s Boys Kitale", "description": "Royal blue blazers/sweaters, white shirts. County: Trans Nzoia" },
-    { "category_name": "Bahati Girls Secondary", "description": "Light blue sweaters/skirts, white blouses. County: Nakuru" },
-    { "category_name": "Kericho High School", "description": "Green blazers, white shirts, grey trousers. County: Kericho" },
-    { "category_name": "Kabianga High School", "description": "Navy blue sweaters, white shirts, grey trousers. County: Kericho" },
-    { "category_name": "St. Joseph’s Boys Kitale", "description": "Navy blue sweaters, white shirts, grey trousers. County: Trans Nzoia" },
-    { "category_name": "Mary Mount Secondary", "description": "Brown sweaters/skirts, white blouses. County: Nakuru" },
-    { "category_name": "Nanyuki High School", "description": "Green sweaters, white shirts, grey trousers. County: Laikipia" },
-    { "category_name": "Lelboinet Boys High", "description": "Maroon sweaters, white shirts, grey trousers. County: Elgeyo Marakwet" },
-    { "category_name": "Chebonei Girls High", "description": "Green dresses, green sweaters. County: Bomet" },
-    { "category_name": "Tartar Girls High", "description": "Green dresses, white blouses. County: West Pokot" },
-    { "category_name": "Kapenguria Boys High", "description": "Navy blue sweaters, grey trousers. County: West Pokot" },
-    { "category_name": "Kabarnet High School", "description": "Green sweaters, white shirts, grey trousers. County: Baringo" },
-    { "category_name": "Eldama Ravine Girls", "description": "Royal blue sweaters, white blouses. County: Baringo" },
-    { "category_name": "Moi Girls Nangili", "description": "Green sweaters, white blouses, green skirts. County: Kakamega/Border" },
-    { "category_name": "Loreto High School Matunda", "description": "Navy blue sweaters, white blouses. County: Uasin Gishu" },
-    { "category_name": "Arnesens High School", "description": "Green sweaters, white shirts, grey trousers. County: Uasin Gishu" },
-    { "category_name": "Wareng High School", "description": "Navy blue sweaters, white shirts. County: Uasin Gishu" },
-    { "category_name": "Kapkenda Girls High", "description": "Yellow sweaters, brown skirts. County: Elgeyo Marakwet" },
-    { "category_name": "Sing'ore Girls High", "description": "Royal blue sweaters, white blouses. County: Elgeyo Marakwet" },
-    { "category_name": "Tambach High School", "description": "Green sweaters, white shirts, grey trousers. County: Elgeyo Marakwet" },
-    { "category_name": "Chewoyet High School", "description": "Green sweaters, white shirts. County: West Pokot" },
-    { "category_name": "Ortum Secondary School", "description": "Navy blue sweaters, white shirts. County: West Pokot" },
-    { "category_name": "St. Columbans High", "description": "Green sweaters, grey trousers. County: Trans Nzoia" },
-    { "category_name": "Kitale School", "description": "Navy blue sweaters, white shirts. County: Trans Nzoia" },
-    { "category_name": "St. Monica Girls Kitale", "description": "Sky blue dresses, navy blue sweaters. County: Trans Nzoia" },
-    { "category_name": "Bomet Central High", "description": "Green sweaters, white shirts. County: Bomet" },
-    { "category_name": "Longisa Boys High", "description": "Maroon sweaters, grey trousers. County: Bomet" },
-    { "category_name": "Siongiroi Girls High", "description": "Royal blue dresses. County: Bomet" },
-    { "category_name": "Molo Academy", "description": "Navy blue blazers, grey trousers. County: Nakuru" },
-    { "category_name": "Njoro Boys High", "description": "Green sweaters, white shirts. County: Nakuru" },
-    { "category_name": "Njoro Girls High", "description": "Green sweaters, green skirts. County: Nakuru" },
-    { "category_name": "Naivasha Girls Secondary", "description": "Navy blue sweaters, white blouses. County: Nakuru" },
-    { "category_name": "Gilgil Hills Academy", "description": "Navy blue sweaters, grey trousers. County: Nakuru" },
-    { "category_name": "Koelel High School", "description": "Green sweaters, white shirts. County: Nakuru" },
-    { "category_name": "Eldoret Two Rivers High", "description": "Maroon sweaters, white shirts. County: Uasin Gishu" },
-    { "category_name": "Turbo Boys High", "description": "Green sweaters, white shirts. County: Uasin Gishu" },
-    { "category_name": "Segero Adventist High", "description": "Navy blue sweaters, white shirts. County: Uasin Gishu" },
-    { "category_name": "Hill School Eldoret", "description": "Green sweaters, grey trousers. County: Uasin Gishu" },
-    { "category_name": "AIC Diguna High", "description": "Navy blue sweaters. County: Baringo" },
-    { "category_name": "Mogotio Girls High", "description": "Royal blue sweaters, white blouses. County: Baringo" },
-    { "category_name": "Oshwal Academy", "description": "Navy blue sweaters, grey trousers. County: Nakuru" },
-    { "category_name": "Menengai High School", "description": "Grey sweaters, white shirts. County: Nakuru" },
-    { "category_name": "Kabianga Girls High", "description": "Green sweaters, white blouses. County: Kericho" },
+export const clinicalCategories = [
+    {
+        category_name: "Personal Protective Equipment (PPE)",
+        description: "Disposable items designed to protect healthcare workers and patients from the spread of infection or illness."
+    },
+    {
+        category_name: "Sanitation & Infection Control",
+        description: "Cleaning agents and tools used to disinfect surfaces, equipment, and hands to maintain a sterile environment."
+    },
+    {
+        category_name: "Wound Care Consumables",
+        description: "Non-medicated supplies such as gauze, tapes, and bandages used for cleaning and protecting physical injuries."
+    },
+    {
+        category_name: "Waste Management",
+        description: "Specialized containers and liners for the safe disposal of hazardous clinical waste and sharp objects."
+    },
+    {
+        category_name: "Disposable Linens & Paper Products",
+        description: "Single-use paper and fabric items used for patient comfort and hygiene, including couch rolls and paper towels."
+    },
+    {
+        category_name: "Diagnostic & Administrative Stationery",
+        description: "Physical accessories required for patient identification, specimen collection, and manual documentation."
+    }
+];
 
-    // WESTERN REGION
-    { "category_name": "Friends School Kamusinga", "description": "Grey sweaters, white shirts, grey trousers. County: Bungoma" },
-    { "category_name": "Kakamega School", "description": "Green blazers/sweaters, white shirts, grey trousers. County: Kakamega" },
-    { "category_name": "Butere Girls High", "description": "Red/Maroon dresses/skirts, white blouses. County: Kakamega" },
-    { "category_name": "Lugulu Girls High", "description": "Brown/Beige dresses, brown sweaters. County: Bungoma" },
-    { "category_name": "Chavakali High School", "description": "Navy blue sweaters, white shirts, grey trousers. County: Vihiga" },
-    { "category_name": "Bunyore Girls High", "description": "Light blue dresses, white blouses. County: Vihiga" },
-    { "category_name": "Kibabii Boys High", "description": "Royal blue sweaters, white shirts, grey trousers. County: Bungoma" },
-    { "category_name": "St. Mary’s Mumias", "description": "Navy blue sweaters, white shirts. County: Kakamega" },
-    { "category_name": "Musingu High School", "description": "Green sweaters, white shirts, grey trousers. County: Kakamega" },
-    { "category_name": "St. Peters Mumias", "description": "Navy blue sweaters, white shirts. County: Kakamega" },
-    { "category_name": "Bungoma High School", "description": "Royal blue sweaters, white shirts. County: Bungoma" },
-    { "category_name": "Misikhu Friends Girls", "description": "Green dresses, green sweaters. County: Bungoma" },
-    { "category_name": "Chesamisi Boys High", "description": "Navy blue sweaters, white shirts. County: Bungoma" },
-    { "category_name": "Nyang’ori High School", "description": "Maroon sweaters, white shirts. County: Vihiga" },
-    { "category_name": "Keveye Girls High", "description": "Royal blue dresses/sweaters. County: Vihiga" },
-    { "category_name": "Vihiga High School", "description": "Green sweaters, white shirts. County: Vihiga" },
-    { "category_name": "Sigalame High School", "description": "Navy blue sweaters, grey trousers. County: Busia" },
-    { "category_name": "Butula Boys High", "description": "Royal blue sweaters, white shirts. County: Busia" },
-    { "category_name": "Kolanya Boys High", "description": "Green sweaters, white shirts. County: Busia" },
-    { "category_name": "Nambale Boys High", "description": "Navy blue sweaters, white shirts. County: Busia" },
-    { "category_name": "Moding High School", "description": "Maroon sweaters, white shirts. County: Busia" },
-    { "category_name": "Busia Girls High", "description": "Blue dresses, white blouses. County: Busia" },
-    { "category_name": "St. Mary's Amukura", "description": "Brown sweaters, white shirts. County: Busia" },
-    { "category_name": "Senende Boys High", "description": "Navy blue sweaters, grey trousers. County: Vihiga" },
-    { "category_name": "Kaimosi Friends Girls", "description": "Green dresses, green sweaters. County: Vihiga" },
-    { "category_name": "Ingotse Boys High", "description": "Green sweaters, white shirts. County: Kakamega" },
-    { "category_name": "Malava Boys High", "description": "Navy blue sweaters, white shirts. County: Kakamega" },
-    { "category_name": "St. Joseph's Girls Chepterit", "description": "Blue dresses. County: Nandi/Border" },
-    { "category_name": "Mukumu Girls High", "description": "Navy blue sweaters, white blouses, navy blue skirts. County: Kakamega" },
-    { "category_name": "Mukumu Boys High", "description": "Navy blue sweaters, white shirts. County: Kakamega" },
-    { "category_name": "Bokoli Boys High", "description": "Green sweaters, grey trousers. County: Bungoma" },
-    { "category_name": "Cardinal Otunga Girls High", "description": "Royal blue sweaters, white blouses. County: Bungoma" },
-    { "category_name": "St. Mary's Kibabii", "description": "Navy blue sweaters, white shirts. County: Bungoma" },
-    { "category_name": "Kimilili Boys High", "description": "Green sweaters, white shirts. County: Bungoma" },
-    { "category_name": "Moi Girls Kamusinga", "description": "Grey sweaters, white blouses, grey skirts. County: Bungoma" },
-    { "category_name": "Mudavadi Girls Madira", "description": "Green dresses, white blouses. County: Vihiga" },
-    { "category_name": "Chavakali Friends High", "description": "Navy blue sweaters, grey trousers. County: Vihiga" },
-    { "category_name": "Kaimosi Boys High", "description": "Green sweaters, white shirts. County: Vihiga" },
-    { "category_name": "Khasoko Boys High", "description": "Navy blue sweaters, white shirts. County: Bungoma" },
-    { "category_name": "Teremi Boys High", "description": "Maroon sweaters, white shirts. County: Bungoma" },
-    { "category_name": "Ndivisi Boys High", "description": "Green sweaters, grey trousers. County: Bungoma" },
-    { "category_name": "Webuye Boys High", "description": "Royal blue sweaters, white shirts. County: Bungoma" },
-    { "category_name": "Malakisi Boys High", "description": "Navy blue sweaters, grey trousers. County: Bungoma" },
-    { "category_name": "Kolanya Girls High", "description": "Green dresses, white blouses. County: Busia" },
-    { "category_name": "Nangina Girls High", "description": "Royal blue dresses, white blouses. County: Busia" },
-    { "category_name": "Busia Central Secondary", "description": "Grey sweaters, white shirts. County: Busia" },
-    { "category_name": "Butula Girls High", "description": "Royal blue sweaters, white blouses. County: Busia" },
-    { "category_name": "Lukhuna Secondary", "description": "Green sweaters, white shirts. County: Bungoma" },
-    { "category_name": "Matunda Friends Secondary", "description": "Maroon sweaters, white shirts. County: Kakamega" },
-    { "category_name": "Eshisiru Secondary", "description": "Navy blue sweaters. County: Kakamega" },
+export const clinicalInventory = [
+    {
+        category_name: "Personal Protective Equipment (PPE)",
+        products: [
+            "Nitrile Gloves (Small)", "Nitrile Gloves (Medium)", "Nitrile Gloves (Large)",
+            "Latex Gloves (Powder-free)", "Vinyl Examination Gloves", "Sterile Surgical Gloves",
+            "3-Ply Surgical Masks", "N95 Respirators", "KN95 Masks", "Face Shields",
+            "Disposable Isolation Gowns", "Fluid-Resistant Aprons", "Bouffant Hair Caps",
+            "Beard Covers", "Shoe Covers (Anti-skid)", "Safety Goggles", "Over-glasses",
+            "Disposable Coveralls", "Finger Cots", "Thumb-loop Gowns"
+        ]
+    },
+    {
+        category_name: "Sanitation & Infection Control",
+        products: [
+            "70% Isopropyl Alcohol", "Hand Sanitizer Gel (500ml)", "Alcohol Prep Pads",
+            "Surface Disinfectant Spray", "Chlorine Disinfectant Tablets", "CaviWipes (Disinfecting Wipes)",
+            "Antibacterial Hand Soap", "Hydrogen Peroxide Solution", "Enzymatic Detergent",
+            "Autoclave Indicator Tape", "Sterilization Pouches (Small)", "Sterilization Pouches (Large)",
+            "Distilled Water (for Autoclave)", "Instrument Lubricant", "Glutaraldehyde Solution",
+            "Povidone-Iodine Scrub", "Chlorhexidine Gluconate Solution", "Antiseptic Hand Wash",
+            "UVC Disinfection Lamp Bulbs", "Ultrasonic Cleaning Solution"
+        ]
+    },
+    {
+        category_name: "Wound Care Consumables",
+        products: [
+            "Gauze Swabs (Non-sterile)", "Gauze Swabs (Sterile)", "Cotton Wool Rolls",
+            "Cotton Tipped Applicators", "Micropore Medical Tape", "Zinc Oxide Tape",
+            "Transparent Film Dressings", "Non-Adherent Dressings", "Adhesive Bandages (Assorted)",
+            "Crepe Bandages (5cm)", "Crepe Bandages (10cm)", "Tubular Gauze Bandages",
+            "Elastic Wrap Bandages", "Butterfly Closure Strips", "Petroleum Jelly Gauze",
+            "Wound Irrigation Solution", "Sterile Saline Pods", "Alcohol-free Cleansing Wipes",
+            "Medical Grade Honey Dressing", "Silver Alginate Dressing"
+        ]
+    },
+    {
+        category_name: "Waste Management",
+        products: [
+            "Yellow Biohazard Bags (Small)", "Yellow Biohazard Bags (Large)", "Red Biohazard Bags",
+            "Sharps Container (1 Litre)", "Sharps Container (5 Litre)", "Cardboard Safety Boxes",
+            "Hazardous Waste Labels", "Clinical Waste Bin Liners", "Infectious Waste Seals",
+            "Spill Kit (Body Fluids)", "Absorbent Granules (for Spills)", "Cytotoxic Waste Bags",
+            "Step-on Waste Bins (Yellow)", "Waste Bin Trolleys", "Double-bagging Ties",
+            "Autoclave Bags", "Pathology Specimen Bags", "Odour Control Filters",
+            "Medical Waste Log Books", "Sanitary Disposal Bags"
+        ]
+    },
+    {
+        category_name: "Disposable Linens & Paper Products",
+        products: [
+            "Examination Couch Rolls", "Paper Hand Towels (C-Fold)", "Paper Hand Towels (Roll)",
+            "Disposable Bed Sheets", "Disposable Pillowcases", "Disposable Patient Gowns",
+            "Facial Tissues", "Paper Underpads (Incontinence)", "Disposable Breast Pads",
+            "Medical Grade Toilet Tissue", "Disposable Baby Changing Mats", "Paper Drapes (Sterile)",
+            "Paper Drapes (Non-sterile)", "Dental Bibs", "Headrest Covers",
+            "Washcloths (Disposable)", "Disposable Privacy Curtains", "Body Bags",
+            "Stretcher Sheets", "Examination Table Paper"
+        ]
+    },
+    {
+        category_name: "Diagnostic & Administrative Stationery",
+        products: [
+            "Wooden Tongue Depressors", "Plastic Specimen Cups (Urine)", "Stool Containers",
+            "Patient ID Wristbands (Adult)", "Patient ID Wristbands (Pediatric)", "Urine Dipsticks",
+            "Blood Collection Tubes (Plain)", "Blood Collection Tubes (EDTA)", "Vacutainer Holders",
+            "Tourniquets (Disposable)", "Pregnancy Test Strips", "Glucose Test Strips",
+            "Lancets (Disposable)", "ECG Electrodes", "Ultrasound Transmission Gel",
+            "Medical Referral Pads", "Prescription Pads", "Patient File Folders",
+            "Appointment Cards", "Medical Certificate Booklets"
+        ]
+    }
+];
+export const clinicalInventor1 = [
+  {
+    category_name: "Personal Protective Equipment (PPE)",
+    description: "Nitrile Gloves (S/M/L), Latex Gloves, Vinyl Gloves, Surgical Gloves, 3-Ply Masks, N95 Respirators, Face Shields, Isolation Gowns, Plastic Aprons, Hair Caps, Shoe Covers, Safety Goggles, Over-glasses, Disposable Coveralls, Finger Cots, Thumb-loop Gowns, Surgical Caps, Patient Veils, Sleeved Aprons, Protective Hoods"
+  },
+  {
+    category_name: "Sanitation & Infection Control",
+    description: "70% Isopropyl Alcohol, Hand Sanitizer Gel, Alcohol Prep Pads, Surface Spray, Chlorine Tablets, Disinfecting Wipes, Antibacterial Soap, Hydrogen Peroxide, Enzymatic Detergent, Autoclave Tape, Sterilization Pouches, Distilled Water, Instrument Lubricant, Glutaraldehyde, Povidone-Iodine, Chlorhexidine, Antiseptic Wash, UVC Bulbs, Ultrasonic Solution, Instrument Soaking Trays"
+  },
+  {
+    category_name: "Wound Care Consumables",
+    description: "Non-sterile Gauze, Sterile Gauze, Cotton Wool Rolls, Cotton Buds, Micropore Tape, Zinc Oxide Tape, Film Dressings, Non-Adherent Pads, Adhesive Plasters, Crepe Bandages, Tubular Gauze, Elastic Wraps, Butterfly Strips, Petroleum Gauze, Irrigation Saline, Cleansing Wipes, Honey Dressings, Silver Alginate, Padding Bandages, Cohesive Bandages"
+  },
+  {
+    category_name: "Waste Management",
+    description: "Yellow Biohazard Bags, Red Biohazard Bags, 1L Sharps Bins, 5L Sharps Bins, Safety Boxes, Hazardous Labels, Bin Liners, Bag Seals, Body Fluid Spill Kits, Absorbent Granules, Cytotoxic Bags, Step-on Bins, Waste Trolleys, Cable Ties, Autoclave Bags, Specimen Transport Bags, Odour Filters, Waste Log Books, Sanitary Bags, Chemical Waste Containers"
+  },
+  {
+    category_name: "Disposable Linens & Paper Products",
+    description: "Couch Rolls, C-Fold Towels, Kitchen Towels, Disposable Sheets, Pillowcases, Patient Gowns, Facial Tissues, Incontinence Underpads, Breast Pads, Toilet Tissue, Changing Mats, Sterile Drapes, Non-sterile Drapes, Dental Bibs, Headrest Covers, Disposable Washcloths, Privacy Curtains, Body Bags, Stretcher Sheets, Table Paper"
+  },
+  {
+    category_name: "Diagnostic & Administrative Stationery",
+    description: "Tongue Depressors, Urine Cups, Stool Containers, Adult ID Bands, Pediatric ID Bands, Urine Dipsticks, Plain Blood Tubes, EDTA Tubes, Vacutainer Holders, Disposable Tourniquets, Pregnancy Strips, Glucose Strips, Lancets, ECG Electrodes, Ultrasound Gel, Referral Pads, Prescription Pads, File Folders, Appointment Cards, Medical Booklets"
+  }
+];
+export const transNzoiaUniforms = [
+  {
+    category_name: "St. Anthony’s Boys High School (Kitale)",
+    description: "Brown shirts, Black trousers, Black blazers with school crest, Black sweaters with yellow stripes, Black ties with yellow stripes, Black socks, Black leather shoes, White PE t-shirts, Black PE shorts, School tracksuits"
+  },
+  {
+    category_name: "St. Brigid’s Girls High School (Kiminini)",
+    description: "Cream blouses, Brown skirts, Brown blazers, Brown sweaters with cream stripes, Brown ties, White socks, Black leather shoes, Brown berets, Green PE kits, School branded cardigans"
+  },
+  {
+    category_name: "St. Joseph’s Boys High School (Kitale)",
+    description: "White shirts, Grey trousers, Navy blue blazers, Navy blue sweaters, Navy blue ties with school logo, Grey socks, Black leather shoes, Navy blue tracksuits, White PE kits, School lab coats"
+  },
+  {
+    category_name: "Kitale School",
+    description: "White shirts, Grey shorts (Primary) or Trousers (Secondary), Green sweaters, Green ties, Grey socks with green stripes, Black leather shoes, Green blazers, Yellow PE t-shirts, Green PE shorts, School sun hats"
+  },
+  {
+    category_name: "St. Monica Girls High School (Kitale)",
+    description: "Light blue blouses, Navy blue skirts, Navy blue blazers, Navy blue sweaters with light blue trim, Navy blue ties, White socks, Black leather shoes, Navy blue headscarves, Light blue PE kits, School tracksuits"
+  },
+  {
+    category_name: "St. Patrick’s High School (Iten - Regional Reference)",
+    description: "White shirts, Grey trousers, Royal blue sweaters, Royal blue blazers, Blue and white striped ties, Grey socks, Black leather shoes, Blue tracksuits, White PE t-shirts, Blue PE shorts"
+  },
+  {
+    category_name: "Friends School Kamusinga (Regional Reference)",
+    description: "White shirts, Grey trousers, Red sweaters, Red blazers, Red and white striped ties, Grey socks, Black leather shoes, Red tracksuits, Red PE kits, School branded lab coats"
+  }
+];
 
-    // ... (This list repeats common patterns for the remaining 100 entries)
-    { "category_name": "Kiptoim High School", "description": "Navy blue sweaters, grey trousers. County: Bomet" },
-    { "category_name": "Kimulot Boys High", "description": "Green sweaters, white shirts. County: Bomet" },
-    { "category_name": "Sotik Boys High", "description": "Navy blue sweaters, grey trousers. County: Bomet" },
-    { "category_name": "Kaplong Boys High", "description": "Maroon sweaters, white shirts. County: Bomet" },
-    { "category_name": "Kaplong Girls High", "description": "Maroon sweaters, maroon skirts. County: Bomet" },
-    { "category_name": "Mulot Boys Secondary", "description": "Green sweaters, white shirts. County: Bomet" },
-    { "category_name": "Kabote Adventist High", "description": "Navy blue sweaters. County: Nandi" },
-    { "category_name": "Samoei Boys High", "description": "Green blazers, grey trousers. County: Nandi" },
-    { "category_name": "Kilibwoni High School", "description": "Navy blue sweaters. County: Nandi" },
-    { "category_name": "Nandi Hills High", "description": "Green sweaters, white shirts. County: Nandi" },
-    { "category_name": "Kemeloi Boys High", "description": "Navy blue sweaters. County: Nandi" },
-    { "category_name": "Aldai Girls High", "description": "Royal blue sweaters, white blouses. County: Nandi" },
-    { "category_name": "St. Pauls Kapcheno", "description": "Maroon sweaters. County: Nandi" },
-    { "category_name": "Laboret Boys High", "description": "Green sweaters. County: Nandi" },
-    { "category_name": "Kapsabet Girls High", "description": "Green sweaters, white blouses, green skirts. County: Nandi" },
-    { "category_name": "Kosirai Girls High", "description": "Royal blue sweaters. County: Nandi" },
-    { "category_name": "St. Theresa's Girls High", "description": "Sky blue dresses. County: Elgeyo Marakwet" },
-    { "category_name": "Kapkess Secondary", "description": "Green sweaters. County: Uasin Gishu" },
-    { "category_name": "Moiben Boys High", "description": "Navy blue sweaters. County: Uasin Gishu" },
-    { "category_name": "Kipsombe High School", "description": "Maroon sweaters. County: Uasin Gishu" },
-    { "category_name": "Cheptiret Boys High", "description": "Green sweaters. County: Uasin Gishu" },
-    { "category_name": "Ziwa Secondary School", "description": "Navy blue sweaters. County: Uasin Gishu" },
-    { "category_name": "Tuiyo Secondary School", "description": "Green sweaters. County: Uasin Gishu" },
-    { "category_name": "Kuinet Secondary School", "description": "Navy blue sweaters. County: Uasin Gishu" },
-    { "category_name": "Kamagut High School", "description": "Maroon sweaters. County: Uasin Gishu" },
-    { "category_name": "Ainabkoi Secondary", "description": "Green sweaters. County: Uasin Gishu" },
-    { "category_name": "Burnt Forest Secondary", "description": "Navy blue sweaters. County: Uasin Gishu" },
-    { "category_name": "Timboroa Secondary", "description": "Green sweaters. County: Uasin Gishu" },
-    { "category_name": "Eldoret Day Secondary", "description": "Grey sweaters. County: Uasin Gishu" },
-    { "category_name": "Kipkenyo Secondary", "description": "Maroon sweaters. County: Uasin Gishu" },
-    { "category_name": "Chepkoilel Secondary", "description": "Green sweaters. County: Uasin Gishu" },
-    { "category_name": "Kapyemit Secondary", "description": "Navy blue sweaters. County: Uasin Gishu" },
-    { "category_name": "Koisagat Secondary", "description": "Green sweaters. County: Nandi" },
-    { "category_name": "Kabiyet Secondary", "description": "Navy blue sweaters. County: Nandi" },
-    { "category_name": "Moi Sirgoi Secondary", "description": "Maroon sweaters. County: Nandi" },
-    { "category_name": "Lelmokwo High School", "description": "Green sweaters. County: Nandi" },
-    { "category_name": "Kaptumo Secondary", "description": "Navy blue sweaters. County: Nandi" },
-    { "category_name": "Kipkarren Secondary", "description": "Green sweaters. County: Nandi" },
-    { "category_name": "Meteitei Secondary", "description": "Maroon sweaters. County: Nandi" },
-    { "category_name": "Lessos Secondary", "description": "Navy blue sweaters. County: Nandi" },
-    { "category_name": "Ol'Lessos Technical", "description": "Green sweaters. County: Nandi" },
-    { "category_name": "Kapsimotwo Secondary", "description": "Navy blue sweaters. County: Nandi" },
-    { "category_name": "Eldama Ravine High", "description": "Green blazers, grey trousers. County: Baringo" },
-    { "category_name": "Baringo High School", "description": "Navy blue sweaters, white shirts. County: Baringo" },
-    { "category_name": "Tenges High School", "description": "Maroon sweaters, white shirts. County: Baringo" },
-    { "category_name": "Pemwai Girls High", "description": "Royal blue sweaters, white blouses. County: Baringo" },
-    { "category_name": "Tabagon Girls High", "description": "Green sweaters, white blouses. County: Baringo" },
-    { "category_name": "Kituro High School", "description": "Navy blue sweaters. County: Baringo" },
-    { "category_name": "Bartolimo Secondary", "description": "Green sweaters. County: Baringo" },
-    { "category_name": "Kipsaraman Secondary", "description": "Maroon sweaters. County: Baringo" },
-    { "category_name": "Kabartonjo Secondary", "description": "Navy blue sweaters. County: Baringo" },
-    { "category_name": "Ochinga Secondary", "description": "Green sweaters. County: Kakamega" },
-    { "category_name": "Eshibinga Secondary", "description": "Navy blue sweaters. County: Kakamega" },
-    { "category_name": "Musingu Secondary", "description": "Green sweaters. County: Kakamega" },
-    { "category_name": "Munyeti Secondary", "description": "Maroon sweaters. County: Kakamega" },
-    { "category_name": "Shibuye Secondary", "description": "Navy blue sweaters. County: Kakamega" },
-    { "category_name": "Ikolomani Secondary", "description": "Green sweaters. County: Kakamega" },
-    { "category_name": "Solio Secondary", "description": "Navy blue sweaters. County: Kakamega" },
-    { "category_name": "Kilingili Secondary", "description": "Maroon sweaters. County: Vihiga" },
-    { "category_name": "Ebusiloli Secondary", "description": "Green sweaters. County: Vihiga" },
-    { "category_name": "Esani Secondary", "description": "Navy blue sweaters. County: Vihiga" },
-    { "category_name": "Hamisi High School", "description": "Green sweaters. County: Vihiga" },
-    { "category_name": "Givole Secondary", "description": "Maroon sweaters. County: Vihiga" },
-    { "category_name": "Goibei Girls High", "description": "Royal blue sweaters. County: Vihiga" },
-    { "category_name": "Tigoi Girls High", "description": "Green sweaters, green skirts. County: Vihiga" },
-    { "category_name": "Mbale Boys High", "description": "Navy blue sweaters. County: Vihiga" },
-    { "category_name": "Vihiga Boys High", "description": "Green sweaters. County: Vihiga" },
-    { "category_name": "Friends School Igunga", "description": "Navy blue sweaters. County: Vihiga" },
-    { "category_name": "Emusire High School", "description": "Maroon sweaters. County: Vihiga" },
-    { "category_name": "Kaimosi Demo High", "description": "Green sweaters. County: Vihiga" },
-    { "category_name": "Nyang'ori Boys", "description": "Maroon sweaters. County: Vihiga" },
-    { "category_name": "Keveye Girls", "description": "Royal blue sweaters. County: Vihiga" },
-    { "category_name": "Ebwali Secondary", "description": "Navy blue sweaters. County: Vihiga" },
-    { "category_name": "Bumala AC", "description": "Green sweaters. County: Busia" },
-    { "category_name": "Butula High", "description": "Royal blue sweaters. County: Busia" },
-    { "category_name": "Sigalame High", "description": "Navy blue sweaters. County: Busia" },
-    { "category_name": "Nambale Boys", "description": "Green sweaters. County: Busia" },
-    { "category_name": "Matayos Secondary", "description": "Maroon sweaters. County: Busia" },
-    { "category_name": "Busia Township", "description": "Navy blue sweaters. County: Busia" },
-    { "category_name": "Burumba Secondary", "description": "Green sweaters. County: Busia" },
-    { "category_name": "Lupida Secondary", "description": "Maroon sweaters. County: Busia" },
-    { "category_name": "Odiado Secondary", "description": "Navy blue sweaters. County: Busia" },
-    { "category_name": "Kingandole Secondary", "description": "Green sweaters. County: Busia" },
-    { "category_name": "Madende Secondary", "description": "Maroon sweaters. County: Busia" },
-    { "category_name": "Bujumba Secondary", "description": "Navy blue sweaters. County: Busia" },
-    { "category_name": "Mundika High School", "description": "Green sweaters. County: Busia" },
-    { "category_name": "St. Mathias Busia", "description": "Navy blue sweaters. County: Busia" },
-    { "category_name": "Our Lady of Mercy", "description": "Royal blue sweaters. County: Busia" },
-    { "category_name": "Lugari Boys High", "description": "Green sweaters. County: Kakamega" },
-    { "category_name": "St. Pauls Lugari", "description": "Navy blue sweaters. County: Kakamega" },
-    { "category_name": "Bishop Sulumeti Girls", "description": "Maroon sweaters. County: Kakamega" },
-    { "category_name": "Lumakanda Boys", "description": "Green sweaters. County: Kakamega" },
-    { "category_name": "Mautuma Secondary", "description": "Navy blue sweaters. County: Kakamega" },
-    { "category_name": "Chekalini Secondary", "description": "Maroon sweaters. County: Kakamega" },
-    { "category_name": "Kongoni Secondary", "description": "Green sweaters. County: Kakamega" },
-    { "category_name": "Likuyani Secondary", "description": "Navy blue sweaters. County: Kakamega" },
-    { "category_name": "Nangili Secondary", "description": "Maroon sweaters. County: Kakamega" },
-    { "category_name": "Soi Secondary", "description": "Green sweaters. County: Uasin Gishu" },
-    { "category_name": "Matunda Secondary", "description": "Navy blue sweaters. County: Kakamega" },
-    { "category_name": "Kivaywa High School", "description": "Maroon sweaters. County: Kakamega" },
-    { "category_name": "Friends School Tande", "description": "Green sweaters. County: Kakamega" },
-    { "category_name": "Malava Girls", "description": "Navy blue sweaters. County: Kakamega" },
-    { "category_name": "Chebuyusi High School", "description": "Maroon sweaters. County: Kakamega" },
-    { "category_name": "Namirama Girls", "description": "Green sweaters. County: Kakamega" },
-    { "category_name": "Navakholo Secondary", "description": "Navy blue sweaters. County: Kakamega" },
-    { "category_name": "St. Johns Nambucha", "description": "Maroon sweaters. County: Bungoma" },
-    { "category_name": "Bungoma Boys High", "description": "Navy blue sweaters. County: Bungoma" },
-    { "category_name": "Kanduyi Secondary", "description": "Green sweaters. County: Bungoma" },
-    { "category_name": "Sang'alo Secondary", "description": "Maroon sweaters. County: Bungoma" },
-    { "category_name": "Kibabii High", "description": "Royal blue sweaters. County: Bungoma" },
-    { "category_name": "Kabula Secondary", "description": "Navy blue sweaters. County: Bungoma" },
-    { "category_name": "Tuuti Secondary", "description": "Green sweaters. County: Bungoma" },
-    { "category_name": "Musikoma Secondary", "description": "Maroon sweaters. County: Bungoma" },
-    { "category_name": "Namachanja High", "description": "Navy blue sweaters. County: Bungoma" },
-    { "category_name": "St. Marys Sosio", "description": "Green sweaters. County: Bungoma" },
-    { "category_name": "Kamusinga High", "description": "Grey sweaters. County: Bungoma" },
-    { "category_name": "Kimilili High", "description": "Maroon sweaters. County: Bungoma" },
-    { "category_name": "Chesamisi High", "description": "Navy blue sweaters. County: Bungoma" },
-    { "category_name": "Bokoli High", "description": "Green sweaters. County: Bungoma" },
-    { "category_name": "Khasoko High", "description": "Maroon sweaters. County: Bungoma" },
-    { "category_name": "Naitiri High", "description": "Navy blue sweaters. County: Bungoma" },
-    { "category_name": "Tongaren Secondary", "description": "Green sweaters. County: Bungoma" },
-    { "category_name": "Mbakalo Secondary", "description": "Maroon sweaters. County: Bungoma" },
-    { "category_name": "Mitua Secondary", "description": "Navy blue sweaters. County: Bungoma" },
-    { "category_name": "Milo Secondary", "description": "Green sweaters. County: Bungoma" },
-    { "category_name": "Sitikho Secondary", "description": "Maroon sweaters. County: Bungoma" },
-    { "category_name": "Matulo Secondary", "description": "Navy blue sweaters. County: Bungoma" },
-    { "category_name": "Misikhu Girls", "description": "Green sweaters. County: Bungoma" },
-    { "category_name": "Lugulu Girls", "description": "Brown sweaters. County: Bungoma" },
-    { "category_name": "Chwele Girls", "description": "Maroon sweaters. County: Bungoma" },
-    { "category_name": "Namwela Secondary", "description": "Navy blue sweaters. County: Bungoma" },
-    { "category_name": "Sirisia Secondary", "description": "Green sweaters. County: Bungoma" },
-    { "category_name": "Lwakhakha Secondary", "description": "Maroon sweaters. County: Bungoma" },
-    { "category_name": "Butonge Secondary", "description": "Navy blue sweaters. County: Bungoma" },
-    { "category_name": "Malakisi Secondary", "description": "Green sweaters. County: Bungoma" },
-    { "category_name": "Kolanya High", "description": "Maroon sweaters. County: Busia" }
-]
-export const TransNzoiaSchools = [
-    // NATIONAL & EXTRA-COUNTY SCHOOLS (Premium Sets)
-    { "category_name": "St. Brigid's Girls National School - Kiminini", "description": "Red blazer, red knit cardigan, white blouse, grey box-pleated skirt, red/white tie, white socks." },
-    { "category_name": "St. Joseph's Boys High School - Kitale", "description": "Maroon blazer, maroon V-neck sweater, white shirt, medium grey trousers, maroon/white tie." },
-    { "category_name": "St. Anthony's Boys High School - Kitale", "description": "Royal blue blazer, royal blue sweater, white shirt, charcoal grey trousers, blue/gold tie." },
-    { "category_name": "St. Monica's Girls High School - Kitale", "description": "Bottle green blazer, green sweater with gold trim, white blouse, charcoal grey skirt, green/gold tie." },
-    { "category_name": "Kitale School Secondary", "description": "Navy blue blazer, navy blue sweater, white shirt/blouse, grey trousers/skirt, navy/white tie." },
-    { "category_name": "St. Joseph's Girls High School - Kitale", "description": "Maroon blazer, maroon sweater, sky blue blouse, grey skirt, maroon tie, white socks." },
-    { "category_name": "St. Mark's Boys High School - Cherangany", "description": "Navy blue blazer, navy blue sweater, white shirt, grey trousers, navy/white striped tie." },
-    { "category_name": "Friends School Bwake Boys", "description": "Green blazer, green sweater, white shirt, grey trousers, green/white tie." },
-    { "category_name": "St. Mark's Girls High School - Cherangany", "description": "Navy blue blazer, navy blue cardigan, white blouse, grey skirt, navy/white tie." },
-    { "category_name": "St. Francis Boys High School - Suwerwa", "description": "Maroon sweater, white shirt, grey trousers, maroon school tie." },
+export const hardwareInventory = [
+  {
+    category_name: "Fasteners & Fixings",
+    description: "Wood Screws, Machine Bolts, Hex Nuts, Flat Washers, Spring Washers, Drywall Screws, Concrete Nails, Roofing Nails, Pop Rivets, Wall Plugs, Anchor Bolts, Threaded Rods, Cotter Pins, Eye Bolts, U-Bolts, Coach Screws, Self-Tapping Screws, Brass Screws, Toggle Bolts, Masonry Nails"
+  },
+  {
+    category_name: "Hand Tools",
+    description: "Claw Hammers, Ball Peen Hammers, Flathead Screwdrivers, Phillips Screwdrivers, Adjustable Wrenches, Combination Spanners, Needle Nose Pliers, Locking Pliers, Retractable Utility Knives, Hand Saws, Hacksaws, Wood Chisels, Spirit Levels, Tape Measures, Chalk Lines, Wire Strippers, Pipe Wrenches, Rivet Guns, Hand Planes, C-Clamps"
+  },
+  {
+    category_name: "Power Tools & Accessories",
+    description: "Cordless Drills, Impact Drivers, Angle Grinders, Circular Saws, Jigsaws, Orbital Sanders, Rotary Hammers, Heat Guns, Drill Bit Sets, Masonry Bits, HSS Metal Bits, Grinding Discs, Cutting Discs, Sanding Belts, Router Bits, Carbon Brushes, Lithium-Ion Batteries, Battery Chargers, Hole Saws, Extension Cords"
+  },
+  {
+    category_name: "Plumbing Supplies",
+    description: "PPR Pipes, PVC Pipes, GI Pipes, Elbow Joints, Tee Junctions, Pipe Couplings, Ball Valves, Gate Valves, Teflon Tape, PVC Solvent Cement, Pipe Straps, Kitchen Faucets, Shower Heads, Floor Traps, Toilet Shifting Flanges, Flexible Hoses, Waste Pipes, Sink Strainers, Float Valves, Pipe Inserts"
+  },
+  {
+    category_name: "Electrical Supplies",
+    description: "Electrical Conduit, Conduit Boxes, Twin and Earth Cables, Single Core Wires, MCB Circuit Breakers, Consumer Units, Light Switches, Wall Sockets, LED Bulbs, Batten Holders, Electrical Tape, Junction Boxes, Cable Ties, Pattress Boxes, Dimmer Switches, Doorbell Kits, Mounting Blocks, Industrial Plugs, Distribution Boards, Fish Tape"
+  },
+  {
+    category_name: "Paint & Adhesives",
+    description: "Emulsion Paint, Gloss Paint, Undercoat Primer, Paint Thinner, Turpentine, Wood Varnish, Spray Paint, Paint Brushes, Paint Rollers, Masking Tape, Wood Glue, Super Glue, Contact Cement, Silicone Sealant, Expanding Foam, Sandpaper Sheets, Steel Wool, Paint Trays, Putty Knives, Scrapers"
+  },
+  {
+    category_name: "Building & Masonry",
+    description: "Portland Cement, White Cement, Tile Adhesive, Grout, Waterproofing Slurry, Steel Rebar, Binding Wire, Brick Trowels, Plastering Floats, Wheelbarrows, Shovels, Spades, Pickaxes, Sledgehammers, Chicken Wire, Wire Mesh, Damp Proof Membrane, Expansion Joint Strips, Corner Beads, Wall Ties"
+  }
+];
 
-    // COUNTY & SUB-COUNTY SCHOOLS
-    { "category_name": "Kabuyefwe Friends Secondary", "description": "Green sweater, white shirt, grey trousers, green tie." },
-    { "category_name": "Kabuyefwe Friends Girls", "description": "Green cardigan, white blouse, grey skirt, green tie, white socks." },
-    { "category_name": "Saboti Secondary School", "description": "Navy blue sweater, white shirt, grey trousers, navy tie." },
-    { "category_name": "Immaculate Heart Girls - Saboti", "description": "Light blue cardigan, white blouse, navy blue skirt, white socks." },
-    { "category_name": "Kapsara Secondary School", "description": "Maroon sweater, white shirt, grey trousers, maroon tie." },
-    { "category_name": "St. Christopher's Secondary", "description": "Royal blue sweater, white shirt, grey trousers, blue tie." },
-    { "category_name": "Immaculate Conception Mukuyu", "description": "Green sweater, white shirt, grey trousers, green tie." },
-    { "category_name": "Friends Bwake Girls", "description": "Green cardigan, white blouse, grey skirt, green/white tie." },
-    { "category_name": "Kibomet A.I.C Secondary", "description": "Navy blue sweater, sky blue shirt, grey trousers, navy tie." },
-    { "category_name": "Misemwa Secondary School", "description": "Maroon sweater, white shirt, grey trousers, maroon tie." },
-    { "category_name": "Naisambu Girls Secondary", "description": "Royal blue cardigan, white blouse, grey skirt, blue tie." },
-    { "category_name": "Gidea Girls Secondary", "description": "Maroon sweater, white blouse, maroon/grey checked skirt, white socks." },
-    { "category_name": "Kobus Boys Secondary", "description": "Navy blue sweater, white shirt, grey trousers, navy tie." },
-    { "category_name": "Maridadi Secondary School", "description": "Green sweater, white shirt, grey trousers, green tie." },
-    { "category_name": "Mukuyuni Secondary School", "description": "Royal blue sweater, white shirt, grey trousers, blue tie." },
-    { "category_name": "Kobos Girls Secondary", "description": "Green cardigan, white blouse, grey skirt, green tie." },
-    { "category_name": "Matisi Secondary School", "description": "Navy blue sweater, white shirt, grey trousers, navy striped tie." },
-    { "category_name": "St. Barnabas Girls - Endebess", "description": "Maroon cardigan, white blouse, grey skirt, maroon tie, white socks." },
-    { "category_name": "St. Johns Sirende", "description": "Green sweater, white shirt, grey trousers, green tie." },
-    { "category_name": "Boma Secondary School", "description": "Navy blue sweater, white shirt, grey trousers, navy tie." },
-    { "category_name": "St. Patrick's Boys - Waitaluk", "description": "Royal blue sweater, white shirt, grey trousers, blue tie." },
-    { "category_name": "Bikeke Secondary School", "description": "Maroon sweater, white shirt, grey trousers, maroon tie." },
-    { "category_name": "St. Columban's Secondary", "description": "Navy blue sweater, white shirt, grey trousers, navy tie." },
-    { "category_name": "Matisi Friends High School", "description": "Green sweater, white shirt, grey trousers, green tie." },
-    { "category_name": "Nyabomo SDA Secondary", "description": "Royal blue sweater, white shirt, grey trousers, blue tie." },
-    { "category_name": "Machungwa High School", "description": "Maroon sweater, white shirt, grey trousers, maroon tie." },
-    { "category_name": "Trans Nzoia Mixed Secondary", "description": "Navy blue sweater, white shirt/blouse, grey trousers/skirt, navy tie." },
-    { "category_name": "A.I.C Lessos Secondary", "description": "Green sweater, white shirt, grey trousers, green tie." },
-    { "category_name": "Masinde Muliro Memorial", "description": "Royal blue sweater, white shirt, grey trousers, blue tie." },
-    { "category_name": "St. Joseph's ACK Kibagenge", "description": "Navy blue sweater, white shirt, grey trousers, navy tie." },
-    { "category_name": "St. James Amagoro Secondary", "description": "Maroon sweater, white shirt, grey trousers, maroon tie." },
-    { "category_name": "Michael Kijana Memorial", "description": "Green sweater, white shirt, grey trousers, green tie." },
-    { "category_name": "Tuwan Girls Day School", "description": "Navy blue cardigan, white blouse, navy blue skirt, white socks." },
-    { "category_name": "Grassland Secondary School", "description": "Royal blue sweater, white shirt, grey trousers, blue tie." },
-    { "category_name": "AIC Kaptien Secondary", "description": "Maroon sweater, white shirt, grey trousers, maroon tie." },
-    { "category_name": "St. Patricks Secondary - Makunga", "description": "Green sweater, white shirt, grey trousers, green tie." },
-    { "category_name": "Nabunga S.A. Secondary", "description": "Navy blue sweater, white shirt, grey trousers, navy tie." },
-    { "category_name": "Kiungani Secondary School", "description": "Royal blue sweater, white shirt, grey trousers, blue tie." },
-    { "category_name": "St. Luke's Secondary - Sikhendu", "description": "Maroon sweater, white shirt, grey trousers, maroon tie." },
-    { "category_name": "Masaba Secondary School", "description": "Green sweater, white shirt, grey trousers, green tie." },
-    { "category_name": "Friends Mufutu Secondary", "description": "Navy blue sweater, white shirt, grey trousers, navy tie." },
-    { "category_name": "Hilario Secondary - Wekhonye", "description": "Royal blue sweater, white shirt, grey trousers, blue tie." },
-    { "category_name": "Birunda High School", "description": "Maroon sweater, white shirt, grey trousers, maroon tie." },
-    { "category_name": "St. Raphael Big Tree Secondary", "description": "Green sweater, white shirt, grey trousers, green tie." },
-    { "category_name": "St. Michael Kikwameti Secondary", "description": "Navy blue sweater, white shirt, grey trousers, navy tie." },
-    { "category_name": "St. Mary's Machewa Secondary", "description": "Royal blue sweater, white shirt, grey trousers, blue tie." },
-    { "category_name": "Sikinwa Secondary School", "description": "Maroon sweater, white shirt, grey trousers, maroon tie." },
-    { "category_name": "Nakami Friends Secondary", "description": "Green sweater, white shirt, grey trousers, green tie." },
-    { "category_name": "St. Patrick's School Koykoy", "description": "Navy blue sweater, white shirt, grey trousers, navy tie." },
-    { "category_name": "St. Thomas Aquinas - Kapretwa", "description": "Royal blue sweater, white shirt, grey trousers, blue tie." },
-    { "category_name": "Friends Secondary School - Muroki", "description": "Maroon sweater, white shirt, grey trousers, maroon tie." },
-    { "category_name": "St. Philips A.C.K Tuyoo-Koony", "description": "Green sweater, white shirt, grey trousers, green tie." },
-    { "category_name": "St. Athanas Kissawai Secondary", "description": "Navy blue sweater, white shirt, grey trousers, navy tie." },
-    { "category_name": "Bishop Crowley Secondary", "description": "Royal blue sweater, white shirt, grey trousers, blue tie." },
-    { "category_name": "Senator Wamalwa Secondary", "description": "Maroon sweater, white shirt, grey trousers, maroon tie." },
-    { "category_name": "St. Benedict's - Chemchemi", "description": "Green sweater, white shirt, grey trousers, green tie." },
-    { "category_name": "St. Augustine Bondeni Secondary", "description": "Navy blue sweater, white shirt, grey trousers, navy tie." },
-    { "category_name": "Sitatunga Secondary School", "description": "Royal blue sweater, white shirt, grey trousers, blue tie." },
-    { "category_name": "Moi High School Kaplamai", "description": "Maroon sweater, white shirt, grey trousers, maroon tie." },
-    { "category_name": "Wiyeta Secondary School", "description": "Green sweater, white shirt, grey trousers, green tie." },
-    { "category_name": "Sinoko Secondary School", "description": "Navy blue sweater, white shirt, grey trousers, navy tie." },
-    { "category_name": "St. Peter's Nyakinywa Mixed", "description": "Royal blue sweater, white shirt, grey trousers, blue tie." },
-    { "category_name": "Kesogon Mixed Secondary", "description": "Maroon sweater, white shirt, grey trousers, maroon tie." },
-    { "category_name": "St. Teresa's Mixed - Sinyereri", "description": "Green sweater, white shirt, grey trousers, green tie." },
-    { "category_name": "Chisare Secondary School", "description": "Navy blue sweater, white shirt, grey trousers, navy tie." },
-    { "category_name": "St. Thomas Secondary - Kongoli", "description": "Royal blue sweater, white shirt, grey trousers, blue tie." },
-    { "category_name": "Kimoson Secondary School", "description": "Maroon sweater, white shirt, grey trousers, maroon tie." },
-    { "category_name": "Yuya Secondary School", "description": "Green sweater, white shirt, grey trousers, green tie." },
-    { "category_name": "St. Augustine - Munyaka", "description": "Navy blue sweater, white shirt, grey trousers, navy tie." },
-    { "category_name": "Chematich Secondary School", "description": "Royal blue sweater, white shirt, grey trousers, blue tie." },
-    { "category_name": "St. Joseph's Cheptil", "description": "Maroon sweater, white shirt, grey trousers, maroon tie." },
-    { "category_name": "AIC Seum Mixed Secondary", "description": "Green sweater, white shirt, grey trousers, green tie." },
-    { "category_name": "Namanjalala Secondary School", "description": "Navy blue sweater, white shirt, grey trousers, navy tie." },
-    { "category_name": "Gidea Secondary School", "description": "Royal blue sweater, white shirt, grey trousers, blue tie." },
-    { "category_name": "St. Peter's High - Kapomboi", "description": "Maroon sweater, white shirt, grey trousers, maroon tie." },
-    { "category_name": "St. Stephen's Bwayi Mixed", "description": "Green sweater, white shirt, grey trousers, green tie." },
-    { "category_name": "St. Maurice High - Lunyu", "description": "Navy blue sweater, white shirt, grey trousers, navy tie." },
-    { "category_name": "Luuya Secondary School", "description": "Royal blue sweater, white shirt, grey trousers, blue tie." },
-    { "category_name": "Amuka Secondary School", "description": "Maroon sweater, white shirt, grey trousers, maroon tie." },
-    { "category_name": "Milimani Secondary - Kwanza", "description": "Green sweater, white shirt, grey trousers, green tie." },
-    { "category_name": "Nzoia Centre Secondary", "description": "Navy blue sweater, white shirt, grey trousers, navy tie." },
-    { "category_name": "Milima Mixed Secondary", "description": "Royal blue sweater, white shirt, grey trousers, blue tie." },
-    { "category_name": "St. Patrick High - Kipsaina", "description": "Maroon sweater, white shirt, grey trousers, maroon tie." },
-    { "category_name": "St. Lukes Secondary Taito", "description": "Green sweater, white shirt, grey trousers, green tie." },
-    { "category_name": "St. Mary's - Kipsingori", "description": "Navy blue sweater, white shirt, grey trousers, navy tie." },
-    { "category_name": "St. Christopher's Girls Secondary", "description": "Royal blue cardigan, white blouse, grey skirt, blue tie." },
-    { "category_name": "Noigam Secondary School", "description": "Maroon sweater, white shirt, grey trousers, maroon tie." },
-    { "category_name": "Osorongai Secondary School", "description": "Green sweater, white shirt, grey trousers, green tie." },
-    { "category_name": "Sitamani Secondary School", "description": "Navy blue sweater, white shirt, grey trousers, navy tie." },
-    { "category_name": "Tunen Secondary School", "description": "Royal blue sweater, white shirt, grey trousers, blue tie." },
-    { "category_name": "Mwaita Secondary School", "description": "Maroon sweater, white shirt, grey trousers, maroon tie." },
-    { "category_name": "Kapkarwa Secondary School", "description": "Green sweater, white shirt, grey trousers, green tie." },
-    { "category_name": "Tuigoin Secondary School", "description": "Navy blue sweater, white shirt, grey trousers, navy tie." },
-    { "category_name": "Kiptoror Secondary School", "description": "Royal blue sweater, white shirt, grey trousers, blue tie." },
-    { "category_name": "Chepsiro Secondary School", "description": "Maroon sweater, white shirt, grey trousers, maroon tie." },
-    { "category_name": "Kapsirowa Secondary School", "description": "Green sweater, white shirt, grey trousers, green tie." },
-    { "category_name": "St. Mary's Kibuswa", "description": "Navy blue sweater, white shirt, grey trousers, navy tie." },
-    { "category_name": "Sibanga Secondary School", "description": "Royal blue sweater, white shirt, grey trousers, blue tie." },
-    { "category_name": "Sinyereri Secondary School", "description": "Maroon sweater, white shirt, grey trousers, maroon tie." },
-    { "category_name": "Barmalel Secondary School", "description": "Green sweater, white shirt, grey trousers, green tie." }
-]
+export const wholesaleInventory = [
+  {
+    category_name: "Bulk Dry Goods",
+    description: "25kg Sugar Sacks, 50kg Maize Flour, 25kg Rice Bags, 10L Vegetable Oil, 20L Jerrycans Oil, Bulk Salt Bales, Wheat Flour Bales, Spaghetti Cartons, Legumes Bulk Sacks, Powdered Milk Tins, Tea Leaf Chests, Coffee Bean Bags, Canned Vegetable Cases, Tomato Paste Crates, Pasta Bales, Seasoning Cube Cartons, Honey Buckets, Bulk Yeast, Baking Powder Cases, Vinegar Gallons"
+  },
+  {
+    category_name: "Beverages & Liquid Bales",
+    description: "Mineral Water Shrink-wraps, Soda PET Bales, Carbonated Can Trays, Energy Drink Cartons, Juice Box Cases, Long-life Milk Bales, Tonic Water Crates, Flavored Water Packs, Malt Drink Bales, Iced Tea Cases, Bulk Syrup Bottles, Concentrated Squash, Sports Drink Trays, Sparkling Juice Bales, Cider Cases, Beverage Mix Tubs, Water Gallons, Seltzer Bales, Coconut Water Trays, Non-Alcoholic Wine Cases"
+  },
+  {
+    category_name: "Household & Personal Care (Bulk)",
+    description: "Laundry Detergent Buckets, Bar Soap Bales, Toilet Paper Bundles, Hand Wash Gallons, Dishwashing Liquid Trays, Scouring Powder Cases, Fabric Softener Bales, Toothpaste Cartons, Shampoo Gallons, Sanitary Pad Bales, Diaper Bulk Packs, Trash Bag Rolls, Air Freshener Cases, Matchbox Bricks, Candle Bales, Insecticide Spray Trays, Floor Cleaner Gallons, Bleach Bales, Sponge Multi-packs, Steel Wool Bricks"
+  },
+  {
+    category_name: "Packaging & Shipping Supplies",
+    description: "Corrugated Cardboard Boxes, Heavy Duty Pallets, Stretch Wrap Film, Brown Packing Tape, Bubble Wrap Rolls, Poly Bags (Assorted), Strapping Bands, Shipping Labels, Padded Envelopes, Mailing Tubes, Plastic Crates, Thermal Receipt Rolls, Permanent Marker Boxes, Box Cutters Bulk, Pallet Jack Parts, Fragile Tape Rolls, Shrink Sleeves, Zip Ties Bulk, Desiccant Packets, Security Seals"
+  },
+  {
+    category_name: "Storage & Material Handling",
+    description: "Industrial Shelving Units, Plastic Storage Totes, Metal Racking Beams, Pallet Collars, Heavy Duty Tubs, Stacking Bins, Wire Mesh Containers, Loading Ramps, Sack Trucks, Platform Trolleys, Hand Pallet Trucks, Safety Cones, Warehouse Ladders, Spill Pallets, Cargo Nets, Ratchet Straps, Forklift Tires, Protective Corner Guards, Inventory Tags, Document Envelopes"
+  },
+  {
+    category_name: "Commercial Kitchen & Catering (Bulk)",
+    description: "Aluminum Foil Rolls (100m), Cling Film Bulk, Chafing Fuel Cans, Disposable Cutlery Bales, Napkin Packs (1000s), Paper Plate Sleeves, Styrofoam Container Bales, Plastic Cup Sleeves, Bulk Coffee Filters, Industrial Dish Soap, Scouring Pad Bricks, Food Grade Gloves, Chef Hat Packs, Apron Bales, Menu Folder Boxes, Buffet Serving Trays, Bulk Salt/Pepper Sachets, Straw Bundles, Toothpick Boxes, Grill Cleaning Bricks"
+  },
+  {
+    category_name: "Office & School Supplies (Wholesale)",
+    description: "A4 Photocopy Paper Reams, Ballpoint Pen Boxes, HB Pencil Gross, Box File Cartons, Counter Book Bales, Stapler Pin Bricks, Permanent Marker Sets, Whiteboard Eraser Packs, Manila Paper Rolls, Glue Stick Trays, Exercise Book Bales, Ruler Bundles, Eraser Boxes, Scientific Calculator Cases, Ink Cartridge Multi-packs, Clipboard Stacks, Document Sleeve Boxes, Paper Clip Tubs, Sticky Note Bricks, Desk Organizer Crates"
+  }
+];
 
-export const TNproducts = [
-    // --- 1. ST. ANTHONY’S BOYS HIGH (NATIONAL) ---
-    { "category": "St. Anthony's Boys High School - Kitale", "product_name": "Official Royal Blue Blazer", "price": 3500, "Bprice": 2450, "initial_stock": 50, "description": "Royal blue wool-blend blazer with school crest." },
-    { "category": "St. Anthony's Boys High School - Kitale", "product_name": "Royal Blue V-Neck Sweater", "price": 1250, "Bprice": 850, "initial_stock": 50, "description": "Heavy-knit royal blue acrylic sweater." },
-    { "category": "St. Anthony's Boys High School - Kitale", "product_name": "White Long-Sleeve Shirt", "price": 600, "Bprice": 380, "initial_stock": 50, "description": "Formal white tetrex shirt, easy-iron." },
-    { "category": "St. Anthony's Boys High School - Kitale", "product_name": "Charcoal Grey Trousers", "price": 1100, "Bprice": 750, "initial_stock": 50, "description": "Terlenka fabric grey trousers, straight cut." },
-    { "category": "St. Anthony's Boys High School - Kitale", "product_name": "Blue/Gold Striped Tie", "price": 350, "Bprice": 150, "initial_stock": 50, "description": "Official school tie with logo embroidery." },
-
-    // --- 2. ST. BRIGID’S GIRLS HIGH (NATIONAL) ---
-    { "category": "St. Brigid's Girls High School - Kiminini", "product_name": "Official Red Blazer", "price": 3200, "Bprice": 2200, "initial_stock": 50, "description": "Bright red blazer with school logo." },
-    { "category": "St. Brigid's Girls High School - Kiminini", "product_name": "Red Knit Cardigan", "price": 1300, "Bprice": 900, "initial_stock": 50, "description": "Red button-up cardigan for girls." },
-    { "category": "St. Brigid's Girls High School - Kiminini", "product_name": "Grey Box-Pleated Skirt", "price": 1450, "Bprice": 1000, "initial_stock": 50, "description": "Charcoal grey pleated skirt, heavy polyester." },
-
-    // --- 3. ST. JOSEPH’S BOYS HIGH (EXTRA-COUNTY) ---
-    { "category": "St. Joseph's Boys High School - Kitale", "product_name": "Maroon Executive Blazer", "price": 3400, "Bprice": 2350, "initial_stock": 50, "description": "Maroon school blazer with crest." },
-    { "category": "St. Joseph's Boys High School - Kitale", "product_name": "Maroon V-Neck Sweater", "price": 1200, "Bprice": 820, "initial_stock": 50, "description": "Deep maroon knit sweater." },
-    { "category": "St. Joseph's Boys High School - Kitale", "product_name": "Medium Grey Trousers", "price": 1050, "Bprice": 700, "initial_stock": 50, "description": "Standard grey school trousers." },
-
-    // --- 4. ST. MONICA’S GIRLS HIGH (EXTRA-COUNTY) ---
-    { "category": "St. Monica's Girls High School - Kitale", "product_name": "Bottle Green Blazer", "price": 3100, "Bprice": 2100, "initial_stock": 50, "description": "Bottle green blazer with gold trim." },
-    { "category": "St. Monica's Girls High School - Kitale", "product_name": "Green Sweater (Gold Trim)", "price": 1300, "Bprice": 880, "initial_stock": 50, "description": "Green sweater with gold neck-line stripes." },
-
-    // --- 5. KITALE SCHOOL SECONDARY ---
-    { "category": "Kitale School Secondary", "product_name": "Navy Blue Blazer", "price": 3400, "Bprice": 2380, "initial_stock": 50, "description": "Official navy blue blazer for Kitale School." },
-    { "category": "Kitale School Secondary", "product_name": "Navy Blue Sweater", "price": 1250, "Bprice": 860, "initial_stock": 50, "description": "Navy blue V-neck sweater." },
-
-    // --- 6. ST. JOSEPH’S GIRLS KITALE ---
-    { "category": "St. Joseph's Girls High School - Kitale", "product_name": "Maroon Blazer", "price": 3150, "Bprice": 2150, "initial_stock": 50, "description": "Official maroon school blazer." },
-    { "category": "St. Joseph's Girls High School - Kitale", "product_name": "Sky Blue Blouse", "price": 650, "Bprice": 400, "initial_stock": 50, "description": "Sky blue cotton-rich blouse." },
-
-    // --- 7. ST. MARK’S BOYS CHERANGANY ---
-    { "category": "St. Mark's Boys High School - Cherangany", "product_name": "Navy Blue Blazer", "price": 3300, "Bprice": 2250, "initial_stock": 50, "description": "Navy blue blazer with Cherangany crest." },
-    { "category": "St. Mark's Boys High School - Cherangany", "product_name": "Navy Blue Sweater", "price": 1200, "Bprice": 820, "initial_stock": 50, "description": "Dark navy blue knit sweater." },
-
-    // --- 8. FRIENDS SCHOOL BWAKE BOYS ---
-    { "category": "Friends School Bwake Boys", "product_name": "Green V-Neck Sweater", "price": 1150, "Bprice": 780, "initial_stock": 50, "description": "Standard green sweater for Bwake Boys." },
-    { "category": "Friends School Bwake Boys", "product_name": "Green/White Striped Tie", "price": 300, "Bprice": 120, "initial_stock": 50, "description": "School tie in green and white." },
-
-    // --- 9. ST. FRANCIS BOYS SUWERWA ---
-    { "category": "St. Francis Boys High School - Suwerwa", "product_name": "Maroon Knit Sweater", "price": 1100, "Bprice": 750, "initial_stock": 50, "description": "Maroon V-neck sweater." },
-
-    // --- 10. KWANZA GIRLS HIGH ---
-    { "category": "Kwanza Girls High School", "product_name": "Maroon Cardigan", "price": 1250, "Bprice": 850, "initial_stock": 50, "description": "Maroon knit cardigan for girls." },
-
-    // --- SYSTEMATIC GENERATION FOR SCHOOLS 11-100 ---
-    // (Pattern: Catholic=Maroon, ACK=Navy, Friends=Green)
-    { "category": "Kabuyefwe Friends Secondary", "product_name": "Green Sweater", "price": 1050, "Bprice": 720, "initial_stock": 50, "description": "Forest green V-neck sweater." },
-    { "category": "Saboti Secondary School", "product_name": "Navy Blue Sweater", "price": 1050, "Bprice": 720, "initial_stock": 50, "description": "Navy blue school sweater." },
-    { "category": "Kapsara Secondary School", "product_name": "Maroon V-Neck Sweater", "price": 1050, "Bprice": 720, "initial_stock": 50, "description": "Deep maroon sweater." },
-    { "category": "St. Christopher's Secondary", "product_name": "Royal Blue Sweater", "price": 1100, "Bprice": 750, "initial_stock": 50, "description": "Royal blue knit sweater." },
-    { "category": "Kibomet A.I.C Secondary", "product_name": "Sky Blue Shirt", "price": 550, "Bprice": 350, "initial_stock": 50, "description": "Sky blue cotton-rich school shirt." },
-    { "category": "Matisi Secondary School", "product_name": "Navy Blue Striped Tie", "price": 300, "Bprice": 120, "initial_stock": 50, "description": "Navy blue school tie." },
-    { "category": "St. Johns Sirende", "product_name": "Green Knit Sweater", "price": 1050, "Bprice": 720, "initial_stock": 50, "description": "Forest green school sweater." },
-    { "category": "Gidea Girls Secondary", "product_name": "Maroon/Grey Checked Skirt", "price": 1650, "Bprice": 1150, "initial_stock": 50, "description": "Signature checkered skirt." },
-    { "category": "Birunda High School", "product_name": "Maroon V-Neck Sweater", "price": 1050, "Bprice": 720, "initial_stock": 50, "description": "Maroon knit sweater." },
-    { "category": "Wiyeta Girls Secondary", "product_name": "Green Cardigan", "price": 1200, "Bprice": 820, "initial_stock": 50, "description": "Green button-up school cardigan." },
-    { "category": "St. Luke's Sikhendu", "product_name": "Maroon Sweater", "price": 1050, "Bprice": 720, "initial_stock": 50, "description": "Maroon knit sweater." },
-    { "category": "Masaba Secondary School", "product_name": "Green Sweater", "price": 1050, "Bprice": 720, "initial_stock": 50, "description": "Green school sweater." },
-
-    // --- UNIVERSAL ITEMS (High Volume) ---
-    { "category": "Universal Items", "product_name": "Standard Grey Trousers", "price": 950, "Bprice": 650, "initial_stock": 200, "description": "Terlenka grey trousers, fits most Trans Nzoia schools." },
-    { "category": "Universal Items", "product_name": "Standard White Shirt (Short Sleeve)", "price": 450, "Bprice": 310, "initial_stock": 200, "description": "White tetrex school shirt." },
-    { "category": "Universal Items", "product_name": "Standard White Blouse", "price": 450, "Bprice": 310, "initial_stock": 200, "description": "White school blouse for girls." },
-    { "category": "Universal Items", "product_name": "Black Leather School Shoes", "price": 2800, "Bprice": 1900, "initial_stock": 100, "description": "Durable genuine leather school shoes." },
-    { "category": "Universal Items", "product_name": "Large Metal Trunk", "price": 3800, "Bprice": 2900, "initial_stock": 40, "description": "Standard boarding school metal box." }
-]
-export const HardwareCategories = [
-    { "category_name": "Fasteners & Fixings", "description": "General category for items used to join or secure materials together." },
-    { "category_name": "Nails", "description": "Metal pins used for fastening wood and other materials." },
-    { "category_name": "Screws", "description": "Threaded fasteners used with screwdrivers or drills." },
-    { "category_name": "Bolts & Nuts", "description": "Threaded fasteners used with nuts for strong joints." },
-    { "category_name": "Washers", "description": "Flat rings used to distribute load under nuts and bolts." },
-    { "category_name": "Wall Anchors", "description": "Devices used to support screws in drywall or masonry." },
-    { "category_name": "Rivets", "description": "Permanent fasteners used in metalwork and construction." },
-    { "category_name": "Hooks & Eyes", "description": "Fasteners for hanging items or securing ropes." },
-
-    { "category_name": "Hand Tools", "description": "Manual tools used for construction, repair, and maintenance." },
-    { "category_name": "Hammers", "description": "Tools used for driving nails or breaking objects." },
-    { "category_name": "Screwdrivers", "description": "Tools for driving or removing screws." },
-    { "category_name": "Pliers", "description": "Tools used for gripping, bending, and cutting wires." },
-    { "category_name": "Spanners & Wrenches", "description": "Tools used for tightening and loosening nuts and bolts." },
-    { "category_name": "Measuring Tools", "description": "Includes tape measures, rulers, and levels." },
-    { "category_name": "Cutting Tools", "description": "Hand tools like hacksaws, chisels, and cutters." },
-
-    { "category_name": "Power Tools", "description": "Electric or battery-powered tools for heavy-duty tasks." },
-    { "category_name": "Drills", "description": "Power tools used for drilling holes and driving screws." },
-    { "category_name": "Angle Grinders", "description": "Tools used for cutting, grinding, and polishing." },
-    { "category_name": "Electric Saws", "description": "Includes circular saws and jigsaws for cutting materials." },
-    { "category_name": "Sanders", "description": "Tools used for smoothing surfaces." },
-    { "category_name": "Power Tool Accessories", "description": "Includes drill bits, blades, sanding discs, and batteries." },
-
-    { "category_name": "Building Materials", "description": "Core materials used in construction projects." },
-    { "category_name": "Cement", "description": "Binding material used in construction." },
-    { "category_name": "Sand & Ballast", "description": "Aggregates used in mixing concrete." },
-    { "category_name": "Bricks & Blocks", "description": "Construction units for walls and structures." },
-    { "category_name": "Timber & Wood", "description": "Wood materials for construction and carpentry." },
-    { "category_name": "Roofing Materials", "description": "Includes iron sheets, tiles, and accessories." },
-
-    { "category_name": "Plumbing Supplies", "description": "Products used in water systems and piping." },
-    { "category_name": "Pipes", "description": "PVC, PPR, and metal pipes for water distribution." },
-    { "category_name": "Pipe Fittings", "description": "Elbows, tees, and connectors for pipes." },
-    { "category_name": "Valves", "description": "Devices to control water flow." },
-    { "category_name": "Taps & Faucets", "description": "Fixtures for controlling water output." },
-    { "category_name": "Water Tanks", "description": "Storage tanks for water supply." },
-    { "category_name": "Sinks", "description": "Kitchen and utility sinks." },
-
-    { "category_name": "Electrical Supplies", "description": "Components used in electrical installations." },
-    { "category_name": "Wires & Cables", "description": "Conductors for transmitting electricity." },
-    { "category_name": "Switches & Sockets", "description": "Devices for controlling electrical flow." },
-    { "category_name": "Lighting", "description": "Bulbs, LEDs, and lighting fixtures." },
-    { "category_name": "Circuit Breakers", "description": "Safety devices for electrical circuits." },
-    { "category_name": "Extension Cables", "description": "Portable power extension solutions." },
-
-    { "category_name": "Paint & Finishing", "description": "Products for decorating and protecting surfaces." },
-    { "category_name": "Paints", "description": "Includes emulsion, gloss, and exterior paints." },
-    { "category_name": "Brushes & Rollers", "description": "Tools for applying paint." },
-    { "category_name": "Varnish & Wood Finish", "description": "Protective coatings for wood." },
-    { "category_name": "Thinners & Solvents", "description": "Liquids used to dilute paint and clean tools." },
-
-    { "category_name": "Security & Safety", "description": "Products for protection and safety." },
-    { "category_name": "Padlocks", "description": "Portable locks for securing property." },
-    { "category_name": "Door Locks", "description": "Locks installed in doors." },
-    { "category_name": "CCTV & Surveillance", "description": "Basic security camera systems." },
-    { "category_name": "Protective Gear", "description": "Helmets, gloves, boots, and safety wear." },
-
-    { "category_name": "Home & Garden", "description": "Tools and supplies for home improvement and gardening." },
-    { "category_name": "Garden Tools", "description": "Includes hoes, rakes, and shovels." },
-    { "category_name": "Wheelbarrows", "description": "Used for transporting materials." },
-    { "category_name": "Fencing Materials", "description": "Wire mesh, posts, and accessories." },
-    { "category_name": "Watering Equipment", "description": "Hoses, sprinklers, and watering cans." },
-
-    { "category_name": "Doors & Windows", "description": "Fixtures and fittings for building openings." },
-    { "category_name": "Door Hardware", "description": "Handles, hinges, and stoppers." },
-    { "category_name": "Window Hardware", "description": "Locks, frames, and fittings." },
-    { "category_name": "Glass", "description": "Sheets and panels for windows and doors." },
-
-    { "category_name": "Adhesives & Sealants", "description": "Products for bonding and sealing materials." },
-    { "category_name": "Glue", "description": "General-purpose adhesives." },
-    { "category_name": "Silicone Sealants", "description": "Used for sealing joints and gaps." },
-    { "category_name": "Epoxy", "description": "Strong adhesive for heavy-duty bonding." },
-    { "category_name": "Tapes", "description": "Includes masking, duct, and electrical tapes." },
-
-    { "category_name": "Tiling & Flooring", "description": "Materials used for floor and wall finishes." },
-    { "category_name": "Tiles", "description": "Ceramic, porcelain, and decorative tiles." },
-    { "category_name": "Tile Adhesive", "description": "Used to fix tiles to surfaces." },
-    { "category_name": "Grout", "description": "Fills gaps between tiles." },
-    { "category_name": "Floor Finishes", "description": "Includes laminates and coatings." },
-
-    { "category_name": "Welding & Metalwork", "description": "Tools and materials for metal fabrication." },
-    { "category_name": "Welding Machines", "description": "Equipment for joining metal." },
-    { "category_name": "Welding Electrodes", "description": "Consumables used in welding." },
-    { "category_name": "Metal Sheets", "description": "Flat metal pieces for fabrication." },
-    { "category_name": "Metal Rods", "description": "Bars used in construction and fabrication." },
-
-    { "category_name": "Sanitary Ware", "description": "Bathroom and sanitation fixtures." },
-    { "category_name": "Toilets", "description": "Complete toilet units." },
-    { "category_name": "Basins", "description": "Wash basins for bathrooms." },
-    { "category_name": "Showers", "description": "Shower heads and systems." },
-    { "category_name": "Bathroom Accessories", "description": "Includes towel racks and soap holders." },
-
-    { "category_name": "Lubricants & Chemicals", "description": "Products for maintenance and cleaning." },
-    { "category_name": "Grease & Oil", "description": "Lubricants for machinery and tools." },
-    { "category_name": "Cleaning Supplies", "description": "Chemicals and tools for cleaning." },
-    { "category_name": "Rust Removers", "description": "Chemicals for removing corrosion." },
-
-    { "category_name": "Miscellaneous", "description": "General hardware items and consumables." },
-    { "category_name": "Batteries", "description": "Portable power sources." },
-    { "category_name": "Flashlights", "description": "Portable lighting devices." },
-    { "category_name": "Storage & Organization", "description": "Toolboxes and storage solutions." }
-]
-
-export const HardwareProducts = [
-    { "category": "Nails", "product_name": "2 inch Steel Nails (1kg)", "price": 250, "Bprice": 180, "initial_stock": 45 },
-    { "category": "Screws", "product_name": "Wood Screws Assorted Pack", "price": 300, "Bprice": 220, "initial_stock": 30 },
-    { "category": "Bolts & Nuts", "product_name": "M10 Bolts & Nuts Set", "price": 400, "Bprice": 300, "initial_stock": 25 },
-    { "category": "Washers", "product_name": "Flat Washers Pack", "price": 150, "Bprice": 100, "initial_stock": 60 },
-    { "category": "Wall Anchors", "product_name": "Plastic Wall Plugs (Pack)", "price": 120, "Bprice": 80, "initial_stock": 70 },
-
-    { "category": "Hammers", "product_name": "Claw Hammer 16oz", "price": 850, "Bprice": 650, "initial_stock": 20 },
-    { "category": "Screwdrivers", "product_name": "Screwdriver Set (6pcs)", "price": 950, "Bprice": 700, "initial_stock": 18 },
-    { "category": "Pliers", "product_name": "Combination Pliers 8 inch", "price": 700, "Bprice": 500, "initial_stock": 22 },
-    { "category": "Spanners & Wrenches", "product_name": "Adjustable Spanner 10 inch", "price": 1200, "Bprice": 900, "initial_stock": 15 },
-    { "category": "Measuring Tools", "product_name": "Tape Measure 5m", "price": 350, "Bprice": 250, "initial_stock": 40 },
-
-    { "category": "Drills", "product_name": "Electric Drill 650W", "price": 4500, "Bprice": 3500, "initial_stock": 10 },
-    { "category": "Angle Grinders", "product_name": "Angle Grinder 4.5 inch", "price": 5200, "Bprice": 4000, "initial_stock": 8 },
-    { "category": "Electric Saws", "product_name": "Circular Saw 1400W", "price": 7800, "Bprice": 6000, "initial_stock": 6 },
-    { "category": "Sanders", "product_name": "Orbital Sander", "price": 3500, "Bprice": 2600, "initial_stock": 9 },
-    { "category": "Power Tool Accessories", "product_name": "Drill Bits Set", "price": 1200, "Bprice": 900, "initial_stock": 25 },
-
-    { "category": "Cement", "product_name": "Portland Cement 50kg", "price": 750, "Bprice": 680, "initial_stock": 100 },
-    { "category": "Sand & Ballast", "product_name": "Ballast per Ton", "price": 1800, "Bprice": 1400, "initial_stock": 50 },
-    { "category": "Bricks & Blocks", "product_name": "Concrete Blocks (6 inch)", "price": 65, "Bprice": 50, "initial_stock": 500 },
-    { "category": "Timber & Wood", "product_name": "Timber 2x4 (per piece)", "price": 450, "Bprice": 350, "initial_stock": 120 },
-    { "category": "Roofing Materials", "product_name": "Iron Sheet Gauge 30", "price": 900, "Bprice": 750, "initial_stock": 70 },
-
-    { "category": "Pipes", "product_name": "PVC Pipe 1 inch", "price": 600, "Bprice": 450, "initial_stock": 60 },
-    { "category": "Pipe Fittings", "product_name": "PVC Elbow 1 inch", "price": 120, "Bprice": 80, "initial_stock": 80 },
-    { "category": "Valves", "product_name": "Gate Valve 1 inch", "price": 1500, "Bprice": 1200, "initial_stock": 20 },
-    { "category": "Taps & Faucets", "product_name": "Kitchen Tap Mixer", "price": 2500, "Bprice": 2000, "initial_stock": 15 },
-    { "category": "Water Tanks", "product_name": "1000L Water Tank", "price": 12000, "Bprice": 10000, "initial_stock": 5 },
-
-    { "category": "Wires & Cables", "product_name": "Electrical Cable 1.5mm (per meter)", "price": 100, "Bprice": 75, "initial_stock": 200 },
-    { "category": "Switches & Sockets", "product_name": "Double Socket Outlet", "price": 350, "Bprice": 250, "initial_stock": 50 },
-    { "category": "Lighting", "product_name": "LED Bulb 12W", "price": 250, "Bprice": 180, "initial_stock": 100 },
-    { "category": "Circuit Breakers", "product_name": "MCB 32A", "price": 1200, "Bprice": 900, "initial_stock": 30 },
-
-    { "category": "Paints", "product_name": "Emulsion Paint 4L", "price": 1800, "Bprice": 1400, "initial_stock": 25 },
-    { "category": "Brushes & Rollers", "product_name": "Paint Roller Set", "price": 500, "Bprice": 350, "initial_stock": 35 },
-    { "category": "Varnish & Wood Finish", "product_name": "Clear Varnish 1L", "price": 700, "Bprice": 500, "initial_stock": 20 },
-
-    { "category": "Padlocks", "product_name": "Padlock 50mm", "price": 600, "Bprice": 450, "initial_stock": 40 },
-    { "category": "Door Locks", "product_name": "Mortise Door Lock", "price": 2200, "Bprice": 1700, "initial_stock": 18 },
-    { "category": "Protective Gear", "product_name": "Safety Gloves", "price": 200, "Bprice": 120, "initial_stock": 60 },
-
-    { "category": "Garden Tools", "product_name": "Garden Hoe", "price": 450, "Bprice": 300, "initial_stock": 25 },
-    { "category": "Wheelbarrows", "product_name": "Wheelbarrow Heavy Duty", "price": 6500, "Bprice": 5000, "initial_stock": 10 },
-    { "category": "Fencing Materials", "product_name": "Barbed Wire Roll", "price": 4500, "Bprice": 3500, "initial_stock": 12 },
-
-    { "category": "Door Hardware", "product_name": "Door Hinges Set", "price": 400, "Bprice": 280, "initial_stock": 50 },
-    { "category": "Glass", "product_name": "Window Glass Panel", "price": 1200, "Bprice": 900, "initial_stock": 15 },
-
-    { "category": "Glue", "product_name": "Super Glue Tube", "price": 150, "Bprice": 100, "initial_stock": 80 },
-    { "category": "Silicone Sealants", "product_name": "Silicone Sealant Tube", "price": 350, "Bprice": 250, "initial_stock": 45 },
-
-    { "category": "Tiles", "product_name": "Ceramic Floor Tiles (Box)", "price": 1800, "Bprice": 1500, "initial_stock": 30 },
-    { "category": "Grout", "product_name": "Tile Grout 2kg", "price": 300, "Bprice": 220, "initial_stock": 40 },
-
-    { "category": "Welding Machines", "product_name": "Arc Welding Machine", "price": 9500, "Bprice": 8000, "initial_stock": 6 },
-    { "category": "Welding Electrodes", "product_name": "Welding Rods 2.5mm (5kg)", "price": 2200, "Bprice": 1800, "initial_stock": 12 },
-
-    { "category": "Toilets", "product_name": "Ceramic Toilet Set", "price": 8500, "Bprice": 7000, "initial_stock": 7 },
-    { "category": "Basins", "product_name": "Wash Hand Basin", "price": 2500, "Bprice": 2000, "initial_stock": 10 },
-
-    { "category": "Grease & Oil", "product_name": "Multipurpose Grease 500g", "price": 400, "Bprice": 300, "initial_stock": 35 },
-    { "category": "Cleaning Supplies", "product_name": "Industrial Cleaning Liquid 5L", "price": 1200, "Bprice": 900, "initial_stock": 20 },
-
-    { "category": "Batteries", "product_name": "AA Batteries Pack (4pcs)", "price": 300, "Bprice": 220, "initial_stock": 90 },
-    { "category": "Flashlights", "product_name": "Rechargeable Torch", "price": 800, "Bprice": 600, "initial_stock": 25 }
-]
+ export const bookInventory = [
+  {
+    category_name: "Oxford University Press",
+    sub_category: "Grade 1",
+    description: "Oxford Early Learners English, Oxford Early Learners Mathematics, Oxford Early Learners Kiswahili, Oxford Environmental Activities, Oxford CRE Activities, Oxford Music Activities, Oxford Art & Craft Activities"
+  },
+  {
+    category_name: "Longhorn Publishers",
+    sub_category: "Grade 4",
+    description: "Longhorn Smart CBC English, Longhorn Smart CBC Mathematics, Longhorn Smart CBC Kiswahili, Longhorn Science and Technology, Longhorn Social Studies, Longhorn Home Science, Longhorn Agriculture, Longhorn Physical Education"
+  },
+  {
+    category_name: "Kenya Literature Bureau (KLB)",
+    sub_category: "Grade 7 (JSS)",
+    description: "KLB TopMark English, KLB TopMark Mathematics, KLB TopMark Integrated Science, KLB TopMark Health Education, KLB TopMark Pre-Technical Studies, KLB TopMark Social Studies, KLB TopMark Life Skills"
+  },
+  {
+    category_name: "Mountain Top Publishers",
+    sub_category: "PP2",
+    description: "Mountain Top Language Activities, Mountain Top Mathematical Activities, Mountain Top Environmental Activities, Mountain Top Religious Activities, Mountain Top Creative Activities, Mountain Top Psychomotor Activities"
+  },
+  {
+    category_name: "Moran Publishers",
+    sub_category: "Grade 6",
+    description: "Moran Shine English Pupil's Book, Moran Shine Mathematics, Moran Shine Kiswahili, Moran Shine Science & Technology, Moran Shine Social Studies, Moran Shine Creative Arts, Moran Shine Music"
+  },
+  {
+    category_name: "Storymoja",
+    sub_category: "Class 8",
+    description: "Storymoja English Revision Guide, Storymoja Kiswahili Mufti, Storymoja Science Simplified, Storymoja Social Studies Gold, Storymoja CRE Revision, Storymoja KCPE Encyclopedia"
+  },
+  {
+    category_name: "East African Educational Publishers (EAEP)",
+    sub_category: "Secondary Form 1",
+    description: "Peak English Student's Book, Peak Mathematics, Peak Biology, Peak Chemistry, Peak Physics, Peak History and Government, Peak Geography, Peak Business Studies"
+  }
+];

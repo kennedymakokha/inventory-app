@@ -63,19 +63,9 @@ const SalesReport = () => {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       
-      {/* 1. ABSOLUTE FLOATING BACK BUTTON */}
-      <TouchableOpacity 
-          onPress={() => navigation.goBack()}
-          style={[styles.floatingBackBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-      >
-          <Ionicons name="arrow-back" size={22} color={colors.text} />
-      </TouchableOpacity>
+    
 
-      {/* 2. ABSOLUTE FLOATING TITLE */}
-      <View pointerEvents="none" style={styles.absoluteHeader}>
-          <Text style={[styles.mainTitle, { color: colors.text }]}>Analytics</Text>
-          <View style={[styles.miniIndicator, { backgroundColor: colors.primary }]} />
-      </View>
+     
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
@@ -155,46 +145,12 @@ const SalesReport = () => {
 };
 
 const styles = StyleSheet.create({
-    floatingBackBtn: {
-        position: 'absolute',
-        top: Platform.OS === 'ios' ? 50 : 25,
-        left: 20,
-        zIndex: 99,
-        width: 42,
-        height: 42,
-        borderRadius: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-        elevation: 5,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 6,
-    },
-    absoluteHeader: {
-        position: 'absolute',
-        top: Platform.OS === 'ios' ? 50 : 25,
-        left: 0,
-        right: 0,
-        alignItems: 'center',
-        zIndex: 90,
-    },
-    mainTitle: {
-        fontSize: 16,
-        fontWeight: '900',
-        textTransform: 'uppercase',
-        letterSpacing: 2,
-    },
-    miniIndicator: {
-        width: 20,
-        height: 3,
-        borderRadius: 2,
-        marginTop: 4
-    },
+   
+ 
+ 
     scrollContent: {
-        paddingTop: 110, // Moves content below the floating title
-        paddingBottom: 120
+        paddingTop: 10, // Moves content below the floating title
+        paddingBottom: 10
     },
     filterWrapper: {
         marginBottom: 20,

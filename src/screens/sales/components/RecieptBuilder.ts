@@ -64,8 +64,8 @@ export const buildReceiptText = ({
     text += line;
 
     if (deliveryFee) {
-        const feeStr = `Delivery Fee: ${deliveryFee.toFixed(2)}`;
-        text += feeStr.padStart(width) + '\n';
+        // const feeStr = `Delivery Fee: ${deliveryFee.toFixed(2)}`;
+        // text += feeStr.padStart(width) + '\n';
         text += `Delivery Fee`.padEnd(width - deliveryFee.toFixed(2).length) + deliveryFee.toFixed(2) + '\n';
     }
     text += line;

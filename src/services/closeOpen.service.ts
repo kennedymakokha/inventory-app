@@ -7,6 +7,7 @@ import { getDBConnection } from './db-service';
 import { API_URL } from '@env';
 import { createTableIfNotExists } from '../utils/tableExists';
 
+import { v4 as uuidv4 } from "uuid";
 export const createCashRegisterTable = async () => {
     try {
         const db = await getDBConnection();
@@ -60,6 +61,9 @@ export const createPaymentsTable = async () => {
         throw err;
     }
 };
+
+
+
 
 
 export const calculateExpectedCash = async (userRole: string, userId?: string) => {
@@ -116,3 +120,146 @@ export const closeRegister = async (
     }
 };
 
+
+export const createDeliveryTable = async () => {
+    try {
+        const db = await getDBConnection();
+        await createTableIfNotExists(
+            db,
+            'Delivery',
+            `CREATE TABLE IF NOT EXISTS Delivery (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              delivery_id TEXT UNIQUE,
+              customerName TEXT,      
+              phoneNumber TEXT,       
+              address TEXT, 
+              dispachedAt TEXT,
+              dispachedBy TEXT,
+              distatus INTEGER DEFAULT 0,
+              notes TEXT,
+              receipt_no TEXT, 
+              business_id TEXT,
+              sale_id TEXT, 
+              rider_description TEXT, 
+              rider_phoneNumber TEXT,
+              rider_name TEXT,    
+              deliveryFee TEXT,
+              isExpress INTEGER,
+              createdBy TEXT,
+              created_at TEXT,
+              synced INTEGER DEFAULT 0,
+              updatedAt TEXT
+             ) `
+        );
+    } catch (err) {
+        // Fixed the log name to match the table
+        console.error('createDeliveryTable failed:', err);
+        throw err;
+    }
+};
+
+
+
+export const getPendingDeliveries = async (): Promise<any[]> => {
+    try {
+        const db = await getDBConnection();
+
+        /**
+         * Logic Breakdown:
+         * 1. distatus ASC: 0 (Pending) comes before 1 (Dispatched/Completed).
+         * 2. created_at ASC: Oldest dates come first within their status group.
+         */
+        const query = `
+      SELECT * FROM Delivery 
+      WHERE distatus=0
+      ORDER BY 
+        distatus ASC, 
+        created_at ASC
+    `;
+
+        const results = await db.executeSql(query);
+        const deliveries = [];
+
+        for (let i = 0; i < results[0].rows.length; i++) {
+            deliveries.push(results[0].rows.item(i));
+        }
+
+        return deliveries;
+    } catch (error) {
+        console.error("Failed to fetch deliveries:", error);
+        return [];
+    }
+};
+
+
+export const dispatchDelivery = async (data: any) => {
+    const { 
+        delivery_id,
+        rider_description,
+        rider_phoneNumber,
+        rider_name,
+        dispachedBy
+    } = data;
+
+    try {
+        const db = await getDBConnection();
+
+        await db.executeSql(
+            `UPDATE Delivery
+             SET rider_description = ?,
+                 rider_phoneNumber = ?,
+                 rider_name = ?,
+                 dispachedAt = datetime('now'),
+                 dispachedBy = ?,
+                 distatus = 1,
+                 synced = 0
+             WHERE delivery_id = ?`,
+            // Added delivery_id here to match the 5th '?'
+            [rider_description, rider_phoneNumber, rider_name, dispachedBy, delivery_id] 
+        );
+
+        await getPendingDeliveries();
+        console.log("Dispatch updated locally");
+    } catch (error) {
+        console.error("dispatchDelivery failed:", error);
+        throw error;
+    }
+};
+
+export const getRiderDeliveryStats = async () => {
+    try {
+        const db = await getDBConnection();
+
+        const query = `
+            SELECT 
+                rider_name AS name, 
+                rider_phoneNumber AS phone, 
+                rider_description AS vehicleNo, 
+                COUNT(*) AS totalDeliveries
+            FROM Delivery
+            WHERE rider_phoneNumber IS NOT NULL
+            GROUP BY rider_phoneNumber
+          
+        `;
+
+        // In many SQLite plugins, results is returned as an array [resultSet]
+        const response: any = await db.executeSql(query);
+
+        // Use index 0 if your library returns an array of results
+        const results = Array.isArray(response) ? response[0] : response;
+
+        let stats = [];
+
+        // Check if rows and item method exist to avoid the TypeError
+        if (results && results.rows) {
+            for (let i = 0; i < results.rows.length; i++) {
+                stats.push(results.rows.item(i));
+            }
+        }
+
+        return stats;
+    } catch (err) {
+        console.error('Fetching rider stats failed:', err);
+        throw err;
+    }
+};

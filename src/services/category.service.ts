@@ -317,14 +317,7 @@ export const softDeleteCategory = async (
   );
 };
 
-/* -------------------------- */
-/* MARK SYNCED */
-/* -------------------------- */
 
-
-/* -------------------------- */
-/* INVENTORY */
-/* -------------------------- */
 
 export const insertInventory = async (
   product: string,

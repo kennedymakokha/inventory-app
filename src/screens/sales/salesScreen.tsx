@@ -94,12 +94,24 @@ const SalesScreen = ({ route, navigation }: any) => {
         dispatch(addToCart({ product, quantity: newQty, price }));
     };
 
-    const PostSale = async (receiptNo: any, method: string, phone?: string, paidCash?: any, paidMpesa?: any, mpesaData?: any, customerPin?: string) => {
+    const PostSale = async (data:
+        {
+            receiptNo: any,
+            method: string,
+            phone?: string,
+            paidCash?: any,
+            paidMpesa?: any,
+            mpesaData?: any,
+            customerPin?: string,
+            details?: any
+        }
+    ) => {
         try {
+            const { receiptNo, method, phone, paidCash, paidMpesa, mpesaData, customerPin, details } = data;
             const db = await getDBConnection();
             await finalizeSale(db, cart, {
                 receiptNo, mpesaAmount: paidMpesa, cashAmount: paidCash, method, phone, customerPin,
-                business_id: user.business._id, createdBy: user.user_id, mpesaData
+                business_id: user.business._id, createdBy: user.user_id, mpesaData, details
             });
             await loadData(0);
             setModalVisible(false);
@@ -180,13 +192,8 @@ const SalesScreen = ({ route, navigation }: any) => {
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
             <PageHeader component={() => (
-                <View style={[styles.headerContent, { backgroundColor: colors.card, padding: 10,  }]}>
-                    <TouchableOpacity
-                        style={[ { paddingHorizontal:10, backgroundColor: colors.card, shadowColor: '#000' }]}
-                        onPress={() => navigation.goBack()}
-                    >
-                        <Ionicons name="arrow-back" size={24} color={colors.text} />
-                    </TouchableOpacity>
+                <View style={[styles.headerContent, { backgroundColor: colors.card, padding: 10, }]}>
+                   
                     <View style={{ flex: 1, marginRight: 10 }}>
                         <SearchBar white placeholder="Search products..." />
                     </View>
@@ -233,12 +240,13 @@ const SalesScreen = ({ route, navigation }: any) => {
                 modalVisible={modalVisible}
                 setModalVisible={setModalVisible}
             />
-           
+
         </View>
     );
 };
 
 const styles = StyleSheet.create({
+      listPadding: { padding: 16 },
     headerContent: { flexDirection: 'row', alignItems: 'center' },
     scanBtn: { backgroundColor: 'rgba(255,255,255,0.2)', padding: 10, borderRadius: 12 },
     fabBack: {
@@ -256,7 +264,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 2,
     },
-    listPadding: { padding: 16, paddingBottom: 150, paddingTop: 60 },
+    
     card: {
         padding: 16,
         borderRadius: 24,

@@ -16,6 +16,7 @@ export type RootStackParamList = {
   settings: undefined;
   business: undefined;
   profile: undefined
+  Deliveries: undefined;
 };
 
 export type InventoryStackParamList = {

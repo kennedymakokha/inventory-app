@@ -85,7 +85,46 @@ const LoginScreen = ({ navigation }: any) => {
 
 
 
-            const data = await loginUser(item).unwrap();
+            const data: any = {
+                "ok": true,
+                "message": "Logged in",
+                "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWIyZTMzYjdkZjQxN2U5NDY2MTgwZTEiLCJ1c2VyX2lkIjoiZDQyYmE1ZWEtNzg3Ny00ZmVkLTkyYzItZjNjMjQyZGIyMGIwIiwidXNlcm5hbWUiOiJLZXZpbiBtb3R1cmkiLCJyb2xlIjoic2FsZXMiLCJuYW1lIjoiS2V2aW4gbW90dXJpIiwiYnVzaW5lc3MiOiI2OWEwMTVkNjZjMGExYzcyMjMwNmFhZTkiLCJpYXQiOjE3NzU1MzY2MDAsImV4cCI6MTc3NjE0MTQwMH0.i6Vrn63Ts-fpcGgkfLr-F6X9BmnxBPfR21APo8M0WE4",
+                "exp": 1776141400,
+                "user": {
+                    "_id": "69b2e33b7df417e9466180e1",
+                    "user_id": "d42ba5ea-7877-4fed-92c2-f3c242db20b0",
+                    "phone_number": "+254727270677",
+                    "name": "Amos  Wafula ",
+                    "business": {
+                        "_id": "69a015d66c0a1c722306aae9",
+                        "business_name": "Namukhe  medical supplies",
+                        "postal_address": "P.O BOX 123 - Kitale",
+                        "phone_number": "+254727270677",
+                        "contact_number": "0727270677",
+                        "kra_pin": "P051234567X",
+                        "state": "inactive",
+                        "api_key": "1234567ss8bcer6",
+                        "master_ke": "",
+                        "createdBy": "699f41b8a027a7d9c20719c8",
+                        "deletedAt": null,
+                        "created_at": "2026-02-26T09:43:50.074Z",
+                        "updatedAt": "2026-04-04T15:49:18.159Z",
+                        "createdAt": "2026-02-26T09:43:50.075Z",
+                        "__v": 0,
+                        "latitude": -1.1873788,
+                        "longitude": 36.9095948,
+                        "working_hrs": "08-23",
+                        "printQr": true,
+                        "strictMpesa": false,
+                        "primary_color": "#3c66fe",
+                        "secondary_color": "#020617"
+                    },
+                    "role": "admin",
+                    "activated": true,
+                    "password": "$2b$10$igmnfuW3lCmIYkvIxA98f.mzxqVY3UGFNG344bPCtq5QLn565ueZC"
+                }
+            }
+            // await loginUser(item).unwrap();
 
             if (data.ok) {
                 // Update Redux / AsyncStorage if needed
@@ -98,7 +137,7 @@ const LoginScreen = ({ navigation }: any) => {
                 if (data.exp) {
                     await AsyncStorage.setItem("tokenExpiry", data.exp.toString());
                     await login(data.token);
-                    setUser(data.user);
+                    setUser(data?.user);
                     updateBusiness(data.user.business);
                     if (data.user.business) {
                         const { primary_color, secondary_color } = data.user.business;

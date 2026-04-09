@@ -112,6 +112,7 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = ({ navigation }) => 
         {menuItem("Business", "briefcase-outline", "business", "admin")}
         {!isInactive && menuItem("Sales", "cart-outline", "sales", "sales")}
         {menuItem("Reports", "bar-chart-outline", "salesreport", "sales")}
+        {menuItem("Deliveries", "bicycle-outline", "Deliveries", "sales")}
         {menuItem("Profile", "person-outline", "profile", "sales")}
         {menuItem("Settings", "settings-outline", "settings", "sales")}
       </View>

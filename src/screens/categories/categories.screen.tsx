@@ -7,7 +7,8 @@ import {
     StyleSheet,
     LayoutAnimation,
     RefreshControl,
-    ActivityIndicator
+    ActivityIndicator,
+    Alert
 } from 'react-native';
 import Ionicons from "react-native-vector-icons/Ionicons";
 
@@ -26,6 +27,7 @@ import Toast from '../../components/Toast';
 import SwipeableCard from '../../components/SwipeableCard';
 import { validateItem } from '../validations/category.validation';
 import { useTheme } from '../../context/themeContext';
+import { clinicalCategories } from '../../../data';
 
 const CategoryScreen = () => {
     const { query } = useSearch();
@@ -42,7 +44,7 @@ const CategoryScreen = () => {
 
     const swipeRefs = useRef<any>({});
     const currentlyOpenSwipe = useRef<any>(null);
-    
+
     const [categories, setCategories] = useState<CategoryItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
@@ -107,7 +109,27 @@ const CategoryScreen = () => {
     const filteredCategories = categories.filter(c =>
         c.category_name.toLowerCase().includes(query.toLowerCase())
     );
+    const handleStagedCategory = async () => {
 
+        try {
+            const db = await getDBConnection();
+
+            for (let index = 0; index < clinicalCategories.length; index++) {
+                const element = clinicalCategories[index];
+                element.category_id = ""
+                element.business_id = business._id
+                console.log(element)
+                await saveCategoryItems(db, element);
+            }
+
+            setItem(initialState);
+            setUploadModalVisible(false);
+            await onRefresh();
+        } catch (err: any) {
+            console.log(err)
+            setMsg({ msg: err.message || " Error saving category.", state: "error" });
+        }
+    };
     const renderCategoryCard = ({ item }: { item: CategoryItem }) => (
         <SwipeableCard
             uniqueId={item.category_id}
@@ -139,7 +161,7 @@ const CategoryScreen = () => {
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
             <PageHeader />
-            
+            {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
             {loading && !refreshing ? (
                 <View style={styles.center}>
                     <ActivityIndicator size="large" color={colors.primary} />
@@ -152,9 +174,9 @@ const CategoryScreen = () => {
                     contentContainerStyle={styles.listContainer}
                     showsVerticalScrollIndicator={false}
                     refreshControl={
-                        <RefreshControl 
-                            refreshing={refreshing} 
-                            onRefresh={onRefresh} 
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
                             tintColor={colors.primary}
                         />
                     }
@@ -169,7 +191,7 @@ const CategoryScreen = () => {
                 />
             )}
 
-            {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
+
 
             <AddCategoryModal
                 isDarkMode={isDarkMode}
@@ -189,7 +211,7 @@ const CategoryScreen = () => {
                 isDarkMode={isDarkMode}
                 setMsg={setMsg}
                 msg={msg}
-                PostLocally={() => { }}
+                onUpload={() => handleStagedCategory()}
                 modalVisible={uploadModalVisible}
                 setItem={setItem}
                 fetchProducts={onRefresh}
@@ -206,6 +228,7 @@ const CategoryScreen = () => {
                     { icon: 'add-outline', label: 'New Category', onPress: () => setModalVisible(true) },
                     { icon: 'cloud-upload-outline', label: 'Bulk Import', onPress: () => setUploadModalVisible(true) },
                     { icon: 'sync-outline', label: 'Refresh', onPress: onRefresh },
+                    { icon: 'sync-outline', label: 'Refresh', onPress: handleStagedCategory },
                 ]}
             />
         </View>
@@ -214,10 +237,10 @@ const CategoryScreen = () => {
 
 const styles = StyleSheet.create({
     center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    listContainer: { 
-        paddingHorizontal: 16, 
-        paddingTop: 16, 
-        paddingBottom: 120 
+    listContainer: {
+        paddingHorizontal: 16,
+        paddingTop: 16,
+        paddingBottom: 120
     },
     card: {
         width: '100%',

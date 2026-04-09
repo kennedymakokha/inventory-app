@@ -34,6 +34,7 @@ import { useTheme } from '../../context/themeContext';
 import { InputContainer } from '../../components/Input';
 import RestockModal from './components/restockModal';
 import getInitials from '../../utils/initials';
+import { clinicalInventor1, clinicalInventory } from '../../../data';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 40) / 2; // Adjusted for better spacing
@@ -176,12 +177,66 @@ const ProductScreen = () => {
         }
     };
 
+    const handleStagedProduct = async () => {
+
+        try {
+            setSaving(true);
+
+            const categoryMap: any = {};
+            categories.forEach(cat => {
+                categoryMap[cat.category_name] = cat.category_id;
+            });
+
+            // Step 2: Replace category name with category_id
+            const updatedProducts = clinicalInventor1.map(({ category_name, ...rest }) => ({
+                ...rest,
+                category_id: categoryMap[category_name]
+            }));
+            // console.log(updatedProducts)
+
+            for (let index = 0; index < updatedProducts.length; index++) {
+                const element = updatedProducts[index];
+
+                element.business_id = business._id
+                const productsArray = element.description.split(/\s*,\s*/);
+
+                for (let index = 0; index < productsArray.length; index++) {
+                    const element1 = productsArray[index];
+
+                    let item: any = {}
+                    item.business_id = business._id
+                    item.category_id = element.category_id
+                    item.product_name = element1
+                    item.price = Math.floor(Math.random() * 1000)
+                    item.initial_stock = Math.floor(Math.random() * 100)
+                    item.description = element1
+                    item.Bprice = Math.floor(Math.random() * 1000)
+
+                    let R = await createProduct(item)
+                    // console.log("ITEM Inserted", R, item)
+
+                }
+
+            }
+            setMsg({ msg: "Product added!", state: "success" });
+            setItem(initialState);
+            setModalVisible(false);
+            await onRefresh();
+
+        } catch (error: any) {
+            console.log(error)
+            setMsg({ msg: error.message || " Error saving product.", state: "error" });
+        } finally {
+            setSaving(false);
+        }
+    };
     const filteredProducts = products.filter(p => {
         const matchesSearch = p?.product_name?.toLowerCase().includes(query?.toLowerCase());
         const matchesCategory = selectedCategoryId ? p.category_id === selectedCategoryId : true;
         return matchesSearch && matchesCategory;
     });
 
+    console.log("PRODUCTS", products)
     const renderProductCard = ({ item }: { item: ProductItem }) => {
         const isLowStock = item.quantity <= 5;
         const isOutOfStock = item.quantity <= 0;
@@ -268,7 +323,7 @@ const ProductScreen = () => {
                     </ScrollView>
                 )}
             />
-
+            {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
             <FlatList
                 data={filteredProducts}
                 keyExtractor={(item) => item.product_id}
@@ -282,7 +337,7 @@ const ProductScreen = () => {
                 ListFooterComponent={loading ? <ActivityIndicator color={colors.primary} style={{ margin: 20 }} /> : null}
             />
 
-            {msg.msg && <Toast setMsg={setMsg} msg={msg.msg} state={msg.state} />}
+
 
 
 
@@ -323,6 +378,8 @@ const ProductScreen = () => {
                 actions={[
                     { icon: 'cube-outline', label: 'Product', onPress: () => setModalVisible(true) },
                     { icon: 'cloud-upload-outline', label: 'Import', onPress: () => setUploadModalVisible(true) },
+                    { icon: 'sync-outline', label: 'Refresh', onPress: handleStagedProduct },
+
                 ]}
             />
         </View>

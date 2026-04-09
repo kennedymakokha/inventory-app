@@ -7,6 +7,8 @@ import { createTableIfNotExists } from "../utils/tableExists";
 
 import { v4 as uuidv4 } from "uuid";
 
+import { DeliveryDetails } from "../screens/sales/components/deliveryModal";
+
 
 
 
@@ -319,19 +321,150 @@ export const createRefundItemsTable = async () => {
 
 //   });
 // };
+// export const finalizeSale = async (
+//   db: SQLiteDatabase,
+//   cartItems: CartItem[],
+//   data: {
+//     receiptNo: any;
+//     method: string; // "CASH", "MPESA", or "SPLIT"
+//     phone?: string;
+//     cashAmount?: number;  // Added for split
+//     mpesaAmount?: number; // Added for split
+//     business_id?: string;
+//     createdBy: string;
+//     mpesaData?: any;
+//     customerPin?: string;
+//     details?: DeliveryDetails;
+//   }
+// ): Promise<void> => {
+//   if (!cartItems || cartItems.length === 0) {
+//     console.log("Cart is empty");
+//     return;
+//   }
+
+//   const now = new Date().toISOString();
+//   const saleId = uuidv4();
+//   const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+//   return new Promise((resolve, reject) => {
+//     db.transaction(
+//       (tx) => {
+//         // 1. INSERT SALE
+//         tx.executeSql(
+//           `INSERT INTO Sale 
+//           (sale_id, total, createdBy, customerPin, receipt_number, payment_method, phone, synced, created_at, updatedAt) 
+//           VALUES (?,?,?,?,?,?,?,?,?,?)`,
+//           [saleId, total, data.createdBy, data.customerPin, data.receiptNo, data.method, data.phone ?? null, 0, now, now],
+//           (_, result) => {
+//             if (result.rowsAffected === 0) throw new Error("Sale insert failed");
+//           },
+//           (_, error) => { throw error; }
+//         );
+
+//         // 2. PROCESS ITEMS, STOCK & LOGS
+//         for (const item of cartItems) {
+//           const saleItemId = uuidv4();
+//           const itemTotal = item.price * item.quantity;
+
+//           tx.executeSql(
+//             `INSERT INTO SaleItems (sale_item_id, sale_id, product_id, quantity, price, total, synced, created_at, updatedAt) VALUES (?,?,?,?,?,?,?,?,?)`,
+//             [saleItemId, saleId, item.product_id, item.quantity, item.price, itemTotal, 0, now, now]
+//           );
+
+//           tx.executeSql(
+//             `UPDATE Product SET quantity = quantity - ?, synced = 0, updatedAt = ? WHERE product_id = ? AND quantity >= ?`,
+//             [item.quantity, now, item.product_id, item.quantity],
+//             (_, res) => {
+//               if (res.rowsAffected === 0) throw new Error(`Insufficient stock for ${item.product_id}`);
+//             }
+//           );
+
+//           tx.executeSql(
+//             `INSERT INTO Inventory_log (inventory_log_id, business, product_id, quantity, reference_id, reference_type, createdBy, synced, createdAt, updatedAt) VALUES (?,?,?,?,?,?,?,?,?,?)`,
+//             [uuidv4(), data.business_id, item.product_id, item.quantity, saleId, "SALE", data.createdBy, 0, now, now]
+//           );
+//         }
+
+//         // 3. INSERT PAYMENTS (Handling Split Logic)
+//         const paymentsToRecord = [];
+
+//         if (data.method === 'SPLIT') {
+//           if ((data.cashAmount ?? 0) > 0) {
+//             paymentsToRecord.push({ method: 'CASH', amount: data.cashAmount, isMpesa: false });
+//           }
+//           if ((data.mpesaAmount ?? 0) > 0) {
+//             paymentsToRecord.push({ method: 'MPESA', amount: data.mpesaAmount, isMpesa: true });
+//           }
+//         } else {
+//           // Single payment method (Normal flow)
+//           paymentsToRecord.push({
+//             method: data.method,
+//             amount: total,
+//             isMpesa: data.method === 'MPESA'
+//           });
+//         }
+
+//         for (const pay of paymentsToRecord) {
+//           tx.executeSql(
+//             `INSERT INTO Payments 
+//             (payment_id, sale_id, method, amount, synced, created_at, updatedAt, createdBy, customer_phone, customer_name, mpesa_receipt, receipt_no) 
+//             VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+//             [
+//               uuidv4(),
+//               saleId,
+//               pay.method,
+//               pay.amount,
+//               0,
+//               now,
+//               now,
+//               data.createdBy ?? "",
+//               pay.isMpesa ? (data?.mpesaData?.phone ?? data.phone ?? "") : "",
+//               pay.isMpesa ? (data?.mpesaData?.customer_name ?? "Unknown Customer") : "",
+//               pay.isMpesa ? (data?.mpesaData?.receiptNumber ?? "") : "",
+//               data?.receiptNo ?? ""
+//             ],
+//             () => console.log(`✅ ${pay.method} Payment recorded`),
+//             (_, error) => { throw error; }
+//           );
+//         }
+//         if(details){
+//           await saveDelivery({
+//               customerName: details.customerName,
+//               phoneNumber: details.phoneNumber,
+//               address: details.address,
+//               deliveryFee: details.deliveryFee,
+//               isExpress: details.isExpress,
+//               notes: details.notes,
+//               receipt_no: receiptNo,
+//               sale_id: invoiceId,
+//               business_id: business?._id || businessData?._id || "",
+//             });
+//         }
+//       },
+//       (error) => {
+//         console.log("Transaction error:", error);
+//         reject(error);
+//       },
+//       () => {
+//         resolve();
+//       }
+//     );
+//   });
+// };
 export const finalizeSale = async (
   db: SQLiteDatabase,
   cartItems: CartItem[],
   data: {
     receiptNo: any;
-    method: string; // "CASH", "MPESA", or "SPLIT"
+    method: string;
     phone?: string;
-    cashAmount?: number;  // Added for split
-    mpesaAmount?: number; // Added for split
+    cashAmount?: number;
+    mpesaAmount?: number;
     business_id?: string;
     createdBy: string;
     mpesaData?: any;
     customerPin?: string;
+    details?: DeliveryDetails;
   }
 ): Promise<void> => {
   if (!cartItems || cartItems.length === 0) {
@@ -339,6 +472,7 @@ export const finalizeSale = async (
     return;
   }
 
+  console.log("DETAILS", data.details)
   const now = new Date().toISOString();
   const saleId = uuidv4();
   const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -351,11 +485,7 @@ export const finalizeSale = async (
           `INSERT INTO Sale 
           (sale_id, total, createdBy, customerPin, receipt_number, payment_method, phone, synced, created_at, updatedAt) 
           VALUES (?,?,?,?,?,?,?,?,?,?)`,
-          [saleId, total, data.createdBy, data.customerPin, data.receiptNo, data.method, data.phone ?? null, 0, now, now],
-          (_, result) => {
-            if (result.rowsAffected === 0) throw new Error("Sale insert failed");
-          },
-          (_, error) => { throw error; }
+          [saleId, total, data.createdBy, data.customerPin, data.receiptNo, data.method, data.phone ?? null, 0, now, now]
         );
 
         // 2. PROCESS ITEMS, STOCK & LOGS
@@ -382,23 +512,13 @@ export const finalizeSale = async (
           );
         }
 
-        // 3. INSERT PAYMENTS (Handling Split Logic)
+        // 3. INSERT PAYMENTS
         const paymentsToRecord = [];
-
         if (data.method === 'SPLIT') {
-          if ((data.cashAmount ?? 0) > 0) {
-            paymentsToRecord.push({ method: 'CASH', amount: data.cashAmount, isMpesa: false });
-          }
-          if ((data.mpesaAmount ?? 0) > 0) {
-            paymentsToRecord.push({ method: 'MPESA', amount: data.mpesaAmount, isMpesa: true });
-          }
+          if ((data.cashAmount ?? 0) > 0) paymentsToRecord.push({ method: 'CASH', amount: data.cashAmount, isMpesa: false });
+          if ((data.mpesaAmount ?? 0) > 0) paymentsToRecord.push({ method: 'MPESA', amount: data.mpesaAmount, isMpesa: true });
         } else {
-          // Single payment method (Normal flow)
-          paymentsToRecord.push({
-            method: data.method,
-            amount: total,
-            isMpesa: data.method === 'MPESA'
-          });
+          paymentsToRecord.push({ method: data.method, amount: total, isMpesa: data.method === 'MPESA' });
         }
 
         for (const pay of paymentsToRecord) {
@@ -407,29 +527,53 @@ export const finalizeSale = async (
             (payment_id, sale_id, method, amount, synced, created_at, updatedAt, createdBy, customer_phone, customer_name, mpesa_receipt, receipt_no) 
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
             [
-              uuidv4(),
-              saleId,
-              pay.method,
-              pay.amount,
-              0,
-              now,
-              now,
-              data.createdBy ?? "",
+              uuidv4(), saleId, pay.method, pay.amount, 0, now, now, data.createdBy ?? "",
               pay.isMpesa ? (data?.mpesaData?.phone ?? data.phone ?? "") : "",
               pay.isMpesa ? (data?.mpesaData?.customer_name ?? "Unknown Customer") : "",
               pay.isMpesa ? (data?.mpesaData?.receiptNumber ?? "") : "",
               data?.receiptNo ?? ""
+            ]
+          );
+        }
+
+        // 4. INSERT DELIVERY (if applicable)
+        if (data.details) {
+          const deliveryId = uuidv4();
+          tx.executeSql(
+            `INSERT INTO Delivery 
+            (delivery_id, customerName, phoneNumber, address, distatus, notes, receipt_no, deliveryFee, isExpress, sale_id, business_id, createdBy, created_at, synced, updatedAt) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              deliveryId,
+              data.details.customerName,
+              data.details.phoneNumber || "",
+              data.details.address || "",
+              0, // distatus (Pending)
+              data.details.notes || "",
+              data.receiptNo || "",
+              String(data.details.deliveryFee || 0),
+              data.details.isExpress ? 1 : 0,
+              saleId,
+              data.business_id || "",
+              data.createdBy || "",
+              now,
+              0, // synced
+              now
             ],
-            () => console.log(`✅ ${pay.method} Payment recorded`),
-            (_, error) => { throw error; }
+            () => console.log("✅ Delivery record created within transaction"),
+            (_, error) => {
+              console.log("ERROR", error)
+              throw error;
+            }
           );
         }
       },
       (error) => {
-        console.log("Transaction error:", error);
+        console.error("❌ Transaction failed, rolling back:", error);
         reject(error);
       },
       () => {
+        console.log("🚀 Sale, Inventory, and Delivery finalized successfully");
         resolve();
       }
     );

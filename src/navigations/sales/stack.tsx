@@ -6,6 +6,7 @@ import UsersScreen from "../../screens/users/users.screen";
 import { SalesStackParamList, UsersStackParamList } from "../../../models/navigationTypes";
 import GroupedProductsForSale from "../../screens/sales";
 import SalesScreen from "../../screens/sales/salesScreen";
+import CustomHeader from "../../components/customHeader";
 
 export function SalesStack() {
   const { isDarkMode } = useSettings();
@@ -15,12 +16,19 @@ export function SalesStack() {
       <SalesStackNav.Screen
         name="Sales_Dashboard"
         component={GroupedProductsForSale}
-        options={{ headerShown: false }}
+        options={{ header: () => <CustomHeader title="Sales" /> }}
       />
       <SalesStackNav.Screen
         name="Sales_Details"
         component={SalesScreen}
-        options={{ headerShown: false }}
+        options={({ route }: any) => {
+          console.log(route)
+          return {
+            header: () => <CustomHeader back title={`${route.params.category.slice(0,15) + "..."}`} />,
+            // title: 
+          }
+        }}
+      // options={{header: () => <CustomHeader back title="Sales" /> }}
       />
     </SalesStackNav.Navigator>
   );

@@ -48,6 +48,11 @@ export type CategoryItem = {
     updatedAt?: string
     synced?: boolean
 };
+export interface RiderDetails {
+    name: string;
+    phone: string;
+    vehicleNo: string;
+}
 
 export type NotificationType =
     | 'system-update'

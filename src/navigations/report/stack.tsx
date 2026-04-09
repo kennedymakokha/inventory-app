@@ -5,6 +5,7 @@ import { ReportStackParamList } from "../../../models/navigationTypes";
 import SalesReport from "../../screens/reports/sales";
 import { ReportsTabs } from "./tabs";
 import { useSelector } from "react-redux";
+import CustomHeader from "../../components/customHeader";
 
 export function ReportStack() {
   const { isDarkMode } = useSettings();
@@ -15,7 +16,7 @@ export function ReportStack() {
       <ReportStackNav.Screen
         name="salesReport"
         component={user.role === "admin" ? ReportsTabs : SalesReport}
-        options={{ headerShown: user.role === "admin" ? false : true }}
+        options={{ header: () => <CustomHeader back title="Reports" /> }}
       />
     </ReportStackNav.Navigator>
   );

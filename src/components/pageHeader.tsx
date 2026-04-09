@@ -45,9 +45,9 @@ const POSHeader = ({ component, title }: POSHeaderProps) => {
 
 const styles = StyleSheet.create({
   container: {
-    // paddingHorizontal: 20,
-    // paddingTop: 10,
-    // paddingBottom: 5,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 5,
     // Ensure it sits nicely below the absolute-positioned CustomHeader
     // marginTop: Platform.OS === 'ios' ? 90 : 70, 
   },

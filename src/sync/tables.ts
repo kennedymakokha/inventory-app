@@ -96,5 +96,13 @@ export const syncTables = [
         lastSyncKey: "notifications_last_sync",
         payloadKey: "notifications",
     },
+     {
+        tableName: "Delivery",
+        primaryKey: "delivery_id",
+        bulkEndpoint: "/api/deliveries/bulk",
+        updatedSinceEndpoint: "/api/deliveries/updated-since",
+        lastSyncKey: "deliveries_last_sync",
+        payloadKey: "deliveries",
+    },
     
 ];

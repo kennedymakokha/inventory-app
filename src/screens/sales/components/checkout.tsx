@@ -36,7 +36,18 @@ interface CheckoutModalProps {
   setMsg: (msg: { msg: string; state: "success" | "error" }) => void;
   msg: { msg: string; state: "success" | "error" };
   cartItems: CartItem[];
-  PostLocally: (receiptNo: string, method: string, phone: string, amount: number, mpesaData?: any, displayNo?: any, cashPaid?: number, mpesaPaid?: number, customerPin?: string) => Promise<void>;
+  // PostLocally: (receiptNo: string, method: string, phone: string, amount: number, mpesaData?: any, displayNo?: any, cashPaid?: number, mpesaPaid?: number, customerPin?: string, details?: any) => Promise<void>;
+  PostLocally: (params: {
+    receiptNo: string;
+    method: string;
+    phone: string;
+    amount: number;
+    mpesaData?: any;
+    cashPaid?: number;
+    mpesaPaid?: number;
+    customerPin?: string;
+    details?: any;
+  }) => Promise<void>;
   setModalVisible: (v: boolean) => void;
 }
 
@@ -173,7 +184,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
       for (const r of receipts) {
         try {
           await printToPrinter(selectedPrinterMac, r.receiptText, "https://mtandao.app", business?.printQr);
-          await PostLocally(r.receiptNo, r.method, r.phone, r.amount);
+          await PostLocally({ receiptNo: r.receiptNo, method: r.method, phone: r.phone, amount: r.amount });
         } catch { remaining.push(r); }
       }
       await AsyncStorage.setItem("PENDING_RECEIPTS", JSON.stringify(remaining));
@@ -182,6 +193,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   };
 
   const finalizeCheckout = async () => {
+    console.log("DETAILS", details)
     const { remaining } = paymentTotals;
     if (remaining > 0.05) {
       setMsg({ msg: `Balance of Ksh ${remaining.toFixed(2)} unpaid`, state: "error" });
@@ -237,13 +249,24 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
               business: business || businessData,
             });
             await printToPrinter(selectedPrinterMac, deliveryNoteText, "https://mtandao.app", business?.printQr);
+
           }
         } catch {
           await savePendingReceipt({ receiptNo, method: finalMethod, phone: phoneNumber, amount: totals.finalTotal, receiptText });
         }
       }
-
-      await PostLocally(receiptNo, finalMethod, phoneNumber, totals.finalTotal, mpesaData, null, cashPortion, mpesaToCharge, customerPin);
+     
+      await PostLocally({
+        receiptNo,
+        method: finalMethod,
+        phone: phoneNumber,
+        amount: totals.finalTotal,
+        mpesaData,
+        cashPaid: cashPortion,
+        mpesaPaid: mpesaToCharge,
+        customerPin,
+        details: delivering ? details : null, // Only pass details if delivering is active
+      });
 
       setMsg({ msg: "Transaction Complete", state: "success" });
       setTimeout(() => {
