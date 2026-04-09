@@ -579,6 +579,38 @@ export const finalizeSale = async (
     );
   });
 };
+
+export const getProductsByFilter = async (
+  db: SQLiteDatabase,
+  id: string | undefined,
+  type: 'category' | 'sub_category' | 'product',
+  limit = 20,
+  offset = 0
+) => {
+  let whereClause = '';
+  if (type === 'category') whereClause = 'p.category_id = ?';
+  else if (type === 'sub_category') whereClause = 'p.sub_category_id = ?';
+  else if (type === 'product') whereClause = 'p.id = ?';
+
+  const [results] = await db.executeSql(
+    `
+        SELECT p.*, c.category_name, s.sub_category_name
+        FROM Product p
+        LEFT JOIN Category c ON p.category_id = c.category_id
+        LEFT JOIN SubCategory s ON p.sub_category_id = s.sub_category_id
+        WHERE ${whereClause} AND p.deleted_at IS NULL
+        ORDER BY p.product_name ASC
+        LIMIT ? OFFSET ?
+        `,
+    [id, limit, offset]
+  );
+
+  const rows: any[] = [];
+  for (let i = 0; i < results.rows.length; i++) {
+    rows.push(results.rows.item(i));
+  }
+  return rows;
+};
 export const createRefund = async (
   db: SQLiteDatabase,
   saleId: string,

@@ -20,7 +20,7 @@ import { useSelector } from 'react-redux';
 import { getDBConnection } from '../../services/db-service';
 import { CategoryItem, ProductItem } from '../../../models';
 import { getProducts, createProduct, softDeleteProduct, updateProduct } from '../../services/product.service';
-import { getCategories } from '../../services/category.service';
+import { getsubCategories } from '../../services/category.service';
 import { validateItem } from '../validations/product.validation';
 
 import AddProductModal from './components/addProductModal';
@@ -34,7 +34,7 @@ import { useTheme } from '../../context/themeContext';
 import { InputContainer } from '../../components/Input';
 import RestockModal from './components/restockModal';
 import getInitials from '../../utils/initials';
-import { clinicalInventor1, clinicalInventory } from '../../../data';
+import { clinicalInventory } from '../../../data';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 40) / 2; // Adjusted for better spacing
@@ -48,6 +48,7 @@ const ProductScreen = () => {
     const initialState = {
         product_name: "",
         category_id: "",
+        sub_category_id: "",
         business_id: business._id,
         price: 0,
         expiryDate: "",
@@ -62,7 +63,7 @@ const ProductScreen = () => {
     const currentlyOpenSwipe = useRef<any>(null);
 
     const [products, setProducts] = useState<ProductItem[]>([]);
-    const [categories, setCategories] = useState<CategoryItem[]>([]);
+    const [categories, setCategories] = useState<CategoryItem[] | any>([]);
     const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(false);
     const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
@@ -97,7 +98,7 @@ const ProductScreen = () => {
                 setHasMore(newProducts.length === PAGE_SIZE);
             }
 
-            const cats = await getCategories(db);
+            const cats = await getsubCategories(db);
             setCategories(cats);
         } catch (err) {
             console.log("loadProducts error:", err);
@@ -176,68 +177,69 @@ const ProductScreen = () => {
             console.log(error);
         }
     };
-
     const handleStagedProduct = async () => {
-
         try {
             setSaving(true);
 
-            const categoryMap: any = {};
-            categories.forEach(cat => {
-                categoryMap[cat.category_name] = cat.category_id;
+            // 1. Map Sub-Category names to an object containing BOTH IDs
+            const subCategoryMap: Record<string, { catId: string, subCatId: string }> = {};
+            console.log(categories)
+            categories.forEach((cat: any) => {
+                const name = cat.sub_category_name?.trim().toLowerCase();
+                subCategoryMap[name] = {
+                    catId: cat.category_id,      // The parent category ID
+                    subCatId: cat.sub_category_id // The specific sub-category ID
+                };
             });
 
-            // Step 2: Replace category name with category_id
-            const updatedProducts = clinicalInventor1.map(({ category_name, ...rest }) => ({
-                ...rest,
-                category_id: categoryMap[category_name]
-            }));
-            // console.log(updatedProducts)
+            for (const mainCategory of clinicalInventory) {
+                for (const subCat of mainCategory.sub_categories) {
 
-            for (let index = 0; index < updatedProducts.length; index++) {
-                const element = updatedProducts[index];
+                    const subCatName = subCat.sub_category_name.trim().toLowerCase();
+                    const ids = subCategoryMap[subCatName];
 
-                element.business_id = business._id
-                const productsArray = element.description.split(/\s*,\s*/);
+                    if (!ids) {
+                        console.warn(`Missing IDs for sub-category: ${subCat.sub_category_name}`);
+                        continue;
+                    }
 
-                for (let index = 0; index < productsArray.length; index++) {
-                    const element1 = productsArray[index];
+                    const productsArray = subCat.description.split(/\s*,\s*/);
 
-                    let item: any = {}
-                    item.business_id = business._id
-                    item.category_id = element.category_id
-                    item.product_name = element1
-                    item.price = Math.floor(Math.random() * 1000)
-                    item.initial_stock = Math.floor(Math.random() * 100)
-                    item.description = element1
-                    item.Bprice = Math.floor(Math.random() * 1000)
+                    for (const productName of productsArray) {
+                        const item = {
+                            business_id: business._id,
+                            category_id: ids.catId,       // Parent ID saved here
+                            sub_category_id: ids.subCatId, // Sub ID saved here
+                            product_name: productName,
+                            price: Math.floor(Math.random() * 801) + 200,
+                            initial_stock: Math.floor(Math.random() * 51) + 50,
+                            description: productName,
+                            Bprice: Math.floor(Math.random() * 1000),
+                        };
 
-                    let R = await createProduct(item)
-                    // console.log("ITEM Inserted", R, item)
-
+                        await createProduct(item);
+                    }
                 }
-
             }
-            setMsg({ msg: "Product added!", state: "success" });
-            setItem(initialState);
+
+            setMsg({ msg: "Inventory products added!", state: "success" });
             setModalVisible(false);
             await onRefresh();
 
         } catch (error: any) {
-            console.log(error)
-            setMsg({ msg: error.message || " Error saving product.", state: "error" });
+            console.error(error);
+            setMsg({ msg: error.message || "Error saving products.", state: "error" });
         } finally {
             setSaving(false);
         }
     };
-    const filteredProducts = products.filter(p => {
+    const filteredProducts = products.filter((p:any) => {
         const matchesSearch = p?.product_name?.toLowerCase().includes(query?.toLowerCase());
-        const matchesCategory = selectedCategoryId ? p.category_id === selectedCategoryId : true;
+        const matchesCategory = selectedCategoryId ? p.sub_category_id === selectedCategoryId : true;
         return matchesSearch && matchesCategory;
     });
-
-    console.log("PRODUCTS", products)
-    const renderProductCard = ({ item }: { item: ProductItem }) => {
+    console.log(categories)
+    const renderProductCard = ({ item }: { item: ProductItem | any }) => {
         const isLowStock = item.quantity <= 5;
         const isOutOfStock = item.quantity <= 0;
 
@@ -274,7 +276,7 @@ const ProductScreen = () => {
                     </View>
 
                     <Text style={[styles.categoryLabel, { color: colors.subText }]}>
-                        {categories.find(c => c.category_id === item.category_id)?.category_name || 'General'}
+                        {categories.find((c: any) => c.sub_category_id === item.sub_category_id)?.sub_category_name || 'General'}
                     </Text>
 
                     <View style={styles.cardFooter}>
@@ -309,14 +311,14 @@ const ProductScreen = () => {
                         >
                             <Text style={[styles.chipText, { color: selectedCategoryId === null ? '#fff' : colors.subText }]}>All</Text>
                         </TouchableOpacity>
-                        {categories.map((cat) => (
+                        {categories.map((cat: any) => (
                             <TouchableOpacity
-                                key={cat.category_id}
-                                onPress={() => setSelectedCategoryId(cat.category_id)}
-                                style={[styles.chip, { backgroundColor: selectedCategoryId === cat.category_id ? colors.primary : colors.card, borderColor: colors.border }]}
+                                key={cat.sub_category_id}
+                                onPress={() => setSelectedCategoryId(cat.sub_category_id)}
+                                style={[styles.chip, { backgroundColor: selectedCategoryId === cat.sub_category_id ? colors.primary : colors.card, borderColor: colors.border }]}
                             >
-                                <Text style={[styles.chipText, { color: selectedCategoryId === cat.category_id ? '#fff' : colors.subText }]}>
-                                    {cat.category_name}
+                                <Text style={[styles.chipText, { color: selectedCategoryId === cat.sub_category_id ? '#fff' : colors.subText }]}>
+                                    {cat.sub_category_name}
                                 </Text>
                             </TouchableOpacity>
                         ))}
@@ -362,7 +364,7 @@ const ProductScreen = () => {
                 setItem={setItem}
                 categories={categories}
                 PostLocally={handleAddProduct}
-                onClose={() => setModalVisible(false)}
+                onClose={() => { setModalVisible(false); setItem(initialState) }}
                 msg={msg}
                 setMsg={setMsg}
                 loading={loading}

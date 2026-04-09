@@ -88,7 +88,7 @@ export const syncTables = [
         lastSyncKey: "clocks_last_sync",
         payloadKey: "clocks",
     },
-      {
+    {
         tableName: "Notification",
         primaryKey: "notification_id",
         bulkEndpoint: "/api/notifications/bulk",
@@ -96,7 +96,7 @@ export const syncTables = [
         lastSyncKey: "notifications_last_sync",
         payloadKey: "notifications",
     },
-     {
+    {
         tableName: "Delivery",
         primaryKey: "delivery_id",
         bulkEndpoint: "/api/deliveries/bulk",
@@ -104,5 +104,13 @@ export const syncTables = [
         lastSyncKey: "deliveries_last_sync",
         payloadKey: "deliveries",
     },
-    
+    {
+        tableName: "SubCategory",
+        primaryKey: "sub_category_id",
+        bulkEndpoint: "/api/sub-categories/bulk",
+        updatedSinceEndpoint: "/api/sub-categories/updated-since",
+        lastSyncKey: "sub_categories_last_sync",
+        payloadKey: "sub_categories",
+    },
+
 ];

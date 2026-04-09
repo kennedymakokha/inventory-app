@@ -11,6 +11,7 @@ import { CategoriesStack } from "../categories/stack";
 import { UsersStack } from "../users/stack";
 import CustomersScreen from "../../screens/customers/customers.screen";
 import CustomHeader from "../../components/customHeader";
+import { SubCategoriesStack } from "../subCategory/stack";
 
 const Tab = createBottomTabNavigator();
 
@@ -54,6 +55,7 @@ export function DashboardTabs() {
                     const icons: Record<string, string> = {
                         home: focused ? "home" : "home-outline",
                         categories: focused ? "grid" : "grid-outline",
+                        sub_categories: focused ? "grid" : "grid-outline",
                         products: focused ? "bag-handle" : "bag-handle-outline",
                         users: focused ? "people" : "people-outline",
                         Customers: focused ? "shield-checkmark" : "shield-outline",
@@ -87,7 +89,13 @@ export function DashboardTabs() {
                 name="categories"
                 component={CategoriesStack}
                 initialParams={{ filter: "categories" }}
-                options={{ tabBarLabel: "Inventory", headerShown: true, header: () => <CustomHeader title="Inventory" /> }}
+                options={{ tabBarLabel: "Inventory", headerShown: false,}}
+            />
+            <Tab.Screen
+                name="sub_categories"
+                component={SubCategoriesStack}
+                initialParams={{ filter: "sub_categories" }}
+                options={{ tabBarLabel: "Sub_Inventory", headerShown: true, header: () => <CustomHeader title="Sub Categories " /> }}
             />
             <Tab.Screen
                 name="products"

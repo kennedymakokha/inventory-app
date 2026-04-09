@@ -5,9 +5,10 @@ import { API_URL } from "@env";
 import { authorizedFetch } from "../middleware/auth.middleware";
 import { getDBConnection } from "./db-service";
 import { createTableIfNotExists } from "../utils/tableExists";
-import { ProductItem } from "../../models";
+import { CategoryItem, ProductItem } from "../../models";
 import { v4 as uuidv4 } from "uuid";
 import getInitials from "../utils/initials";
+import { AnyActionArg } from "react";
 /* =========================================================
    TABLE CREATION
 ========================================================= */
@@ -29,6 +30,7 @@ export const createProductTable = async () => {
       Bprice REAL,
       soldprice REAL,
       category_id TEXT,
+      sub_category_id TEXT,
       description TEXT,
       quantity INTEGER DEFAULT 0,
       synced INTEGER DEFAULT 0,
@@ -57,10 +59,10 @@ export const createProduct = async (product: any) => {
     tx.executeSql(
       `INSERT INTO Product
       (product_id, product_name, barcode, business,
-       price, Bprice, soldprice, category_id,
+       price, Bprice, soldprice, category_id,sub_category_id,
        description, quantity, synced,
        expiryDate, createdAt, createdBy, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)`,
       [
         productId,
         product.product_name,
@@ -70,6 +72,7 @@ export const createProduct = async (product: any) => {
         product.Bprice,
         product.soldprice || 0,
         product.category_id || "",
+        product.sub_category_id || "",
         product.description || "",
         product.initial_stock || 0,
         0, // synced
@@ -290,6 +293,61 @@ export const getProducts = async (
     return [];
   }
 };
+
+
+
+interface CategoryDetailsResponse {
+  // category?: CategoryItem | null;
+  subCategories: any[];
+  products: ProductItem[];
+}
+
+export const getCategoryFullDetails = async (
+  db: SQLiteDatabase,
+  categoryId: string
+): Promise<CategoryDetailsResponse> => {
+  try {
+    // 1. Fetch the Parent Category details
+    // const [catResult] = await db.executeSql(
+    //   `SELECT * FROM Category WHERE category_id = ? AND deleted_at IS NULL LIMIT 1`,
+    //   [categoryId]
+    // );
+    // const category = catResult.rows.length > 0 ? catResult.rows.item(0) : null;
+
+    // 2. Fetch Sub-categories (Categories where parent_id matches this ID)
+    // Ensure your Category table has a parent_id column
+    const [subCatResult] = await db.executeSql(
+      `SELECT * FROM SubCategory WHERE category_id = ? AND deleted_at IS NULL ORDER BY sub_category_name ASC`,
+      [categoryId]
+    );
+    const subCategories: AnyActionArg[] = [];
+    const products: ProductItem[] = [];
+    for (let i = 0; i < subCatResult.rows.length; i++) {
+      console.log(subCatResult.rows.item(i).sub_category_id)
+      subCategories.push(subCatResult.rows.item(i));
+    }
+
+    // 3. Fetch Products under this specific Category
+    const [prodResult] = await db.executeSql(
+      `SELECT * FROM Product WHERE category_id = ? AND deleted_at IS NULL ORDER BY product_name ASC`,
+      [categoryId]
+    );
+
+    for (let i = 0; i < prodResult.rows.length; i++) {
+      products.push(prodResult.rows.item(i));
+    }
+
+    return {
+      // category,
+      subCategories,
+      products
+    };
+
+  } catch (error) {
+    console.error("getCategoryFullDetails error:", error);
+    return { subCategories: [], products: [] };
+  }
+};
 export const getProductsByCategoryName = async (
   db: SQLiteDatabase,
   categoryName: string,
@@ -362,6 +420,48 @@ export const getProductsGroupedByCategory = async (
   } catch (error) {
     console.log(" getProductsGroupedByCategory error:", error);
     return {};
+  }
+};
+export const getProductsGroupedByHierarchy = async (
+  db: SQLiteDatabase,
+  limit: number = 20,
+  offset: number = 0
+): Promise<any[]> => {
+  try {
+    // 1. Remove the brackets [results]. 
+    // Most RN SQLite wrappers return the result object directly in the promise.
+    const results = await db.executeSql(
+      `
+      SELECT 
+        p.*,
+        c.category_name,
+        s.sub_category_name
+      FROM Product p
+      LEFT JOIN Category c ON p.category_id = c.category_id
+      LEFT JOIN SubCategory s ON p.sub_category_id = s.sub_category_id
+      WHERE p.deleted_at IS NULL
+      ORDER BY c.category_name ASC, s.sub_category_name ASC, p.product_name ASC
+      LIMIT ? OFFSET ?
+      `,
+      [limit, offset]
+    );
+
+    const rows = [];
+    
+    // 2. Check if results and results[0].rows exist 
+    // (In some versions, executeSql returns an array of results for batching)
+    const resultSet = Array.isArray(results) ? results[0] : results;
+
+    if (resultSet && resultSet.rows) {
+      for (let i = 0; i < resultSet.rows.length; i++) {
+        rows.push(resultSet.rows.item(i));
+      }
+    }
+    
+    return rows;
+  } catch (error) {
+    console.error("Error fetching hierarchy:", error);
+    return [];
   }
 };
 export const SearchProduct = async (

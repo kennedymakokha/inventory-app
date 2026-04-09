@@ -32,11 +32,36 @@ export const createCategoryTable = async () => {
           createdBy TEXT,
           description TEXT,
           synced INTEGER DEFAULT 0,
-          expiryDate TEXT,
           createdAt TEXT,
           updatedAt TEXT,
           deleted_at TEXT,
           UNIQUE (category_name, business)
+      );`
+    );
+  } catch (err) {
+    console.error(' createCategoryTable failed:', err);
+    throw err;
+  }
+};
+export const createSubCategoryTable = async () => {
+  try {
+    const db = await getDBConnection();
+    await createTableIfNotExists(
+      db,
+      'SubCategory',
+      `CREATE TABLE SubCategory (
+       id INTEGER PRIMARY KEY AUTOINCREMENT,
+          sub_category_name TEXT COLLATE NOCASE,
+          sub_category_id TEXT UNIQUE,
+          business TEXT,
+          category_id TEXT,
+          createdBy TEXT,
+          description TEXT,
+          synced INTEGER DEFAULT 0,
+          createdAt TEXT,
+          updatedAt TEXT,
+          deleted_at TEXT,
+          UNIQUE (sub_category_name, business)
       );`
     );
   } catch (err) {
@@ -64,6 +89,32 @@ export const updateCategory = async (
            synced = 0
        WHERE category_id = ?`,
       [category_name, description, expiryDate ?? null, category_id]
+    );
+
+    console.log(" Category updated locally");
+  } catch (error) {
+    console.log(" updateCategory failed:", error);
+    throw error;
+  }
+};
+
+export const updateSubCategory = async (
+  data: any
+) => {
+  const { sub_category_id,
+    sub_category_name,
+    description } = data
+  try {
+    const db = await getDBConnection();
+
+    await db.executeSql(
+      `UPDATE Category
+       SET category_name = ?,
+           description = ?,
+           updatedAt = datetime('now'),
+           synced = 0
+       WHERE category_id = ?`,
+      [sub_category_name, description, sub_category_id]
     );
 
     console.log(" Category updated locally");
@@ -216,6 +267,12 @@ export const getCategories = async (
   const result = await db.executeSql(`SELECT * FROM Category WHERE deleted_at IS NULL`);
   return result[0].rows.raw();
 };
+export const getsubCategories = async (
+  db: SQLiteDatabase
+): Promise<any[]> => {
+  const result = await db.executeSql(`SELECT * FROM SubCategory WHERE deleted_at IS NULL`);
+  return result[0].rows.raw();
+};
 
 export const getSyncedCategories = async (
   db: SQLiteDatabase
@@ -278,11 +335,10 @@ export const saveCategoryItems = async (
       createdBy,
       description,
       synced,
-      expiryDate,
       createdAt,
       updatedAt
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?,  ?, ?, ?, ?, ?, ?)
   `;
 
   await db.executeSql(insertQuery, [
@@ -292,12 +348,69 @@ export const saveCategoryItems = async (
     createdBy,
     item.description || "",
     synced,
-    expiryDate,
     now,
     now,
   ]);
 
   return await getCategories(db);
+};
+
+export const saveSubCategoryItems = async (
+
+  item: any,
+
+): Promise<any[]> => {
+
+
+  const db = await getDBConnection();
+  const trimmedName = item.sub_category_name.trim();
+  const createdBy = await AsyncStorage.getItem("userId");
+  const now = new Date().toISOString();
+
+  const sub_category_id = uuidv4();
+
+  const checkQuery =
+    `SELECT COUNT(*) as count FROM SubCategory WHERE LOWER(sub_category_name) = LOWER(?)`;
+
+  const checkResult = await db.executeSql(checkQuery, [trimmedName]);
+  const count = checkResult[0].rows.item(0).count;
+
+  if (count > 0) {
+    throw new Error(`Sub Category "${trimmedName}" already exists`);
+  }
+
+  const state = await NetInfo.fetch();
+  let synced = 0;
+
+  const insertQuery = `
+    INSERT INTO SubCategory
+    (
+      sub_category_name,
+      sub_category_id,
+      category_id,
+      business,
+      createdBy,
+      description,
+      synced,
+      createdAt,
+      updatedAt
+    )
+    VALUES (?, ?,  ?, ?, ?, ?, ?,?, ?)
+  `;
+
+  await db.executeSql(insertQuery, [
+    trimmedName,
+    sub_category_id,
+    item.category_id,
+    item.business_id || "",
+    createdBy,
+    item.description || "",
+    synced,
+    now,
+    now,
+  ]);
+
+  return await getsubCategories(db);
 };
 
 /* -------------------------- */

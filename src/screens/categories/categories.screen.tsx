@@ -27,7 +27,10 @@ import Toast from '../../components/Toast';
 import SwipeableCard from '../../components/SwipeableCard';
 import { validateItem } from '../validations/category.validation';
 import { useTheme } from '../../context/themeContext';
-import { clinicalCategories } from '../../../data';
+import { clinicalInventory } from '../../../data';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
+import { CategoriesStackParamList } from '../../../models/navigationTypes';
 
 const CategoryScreen = () => {
     const { query } = useSearch();
@@ -44,7 +47,7 @@ const CategoryScreen = () => {
 
     const swipeRefs = useRef<any>({});
     const currentlyOpenSwipe = useRef<any>(null);
-
+    const navigation = useNavigation<NativeStackNavigationProp<CategoriesStackParamList, "categories_Dashboard">>();
     const [categories, setCategories] = useState<CategoryItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
@@ -110,36 +113,44 @@ const CategoryScreen = () => {
         c.category_name.toLowerCase().includes(query.toLowerCase())
     );
     const handleStagedCategory = async () => {
-
         try {
             const db = await getDBConnection();
 
-            for (let index = 0; index < clinicalCategories.length; index++) {
-                const element = clinicalCategories[index];
-                element.category_id = ""
-                element.business_id = business._id
-                console.log(element)
-                await saveCategoryItems(db, element);
+            // Iterate directly over clinicalInventory to ensure data alignment
+            for (const item of clinicalInventory) {
+                const categoryData: any = {
+                    category_name: item.category_name,
+                    category_id: "", // SQLite or Backend will likely generate this
+                    business_id: business._id
+                };
+
+                console.log("Saving Category:", categoryData);
+
+                // Ensure this function is awaited so the DB doesn't lock up
+                await saveCategoryItems(db, categoryData);
             }
 
             setItem(initialState);
             setUploadModalVisible(false);
-            await onRefresh();
+            await onRefresh(); // This should pull the fresh categories with their new IDs
+
         } catch (err: any) {
-            console.log(err)
-            setMsg({ msg: err.message || " Error saving category.", state: "error" });
+            console.error(err);
+            setMsg({ msg: err.message || "Error saving category.", state: "error" });
         }
     };
-    const renderCategoryCard = ({ item }: { item: CategoryItem }) => (
+    const renderCategoryCard = ({ item }: { item: any }) => (
         <SwipeableCard
             uniqueId={item.category_id}
             swipeRefs={swipeRefs}
             currentlyOpenSwipe={currentlyOpenSwipe}
             onEdit={() => { setItem(item); setModalVisible(true); }}
             onDelete={() => handleDelete(item)}
+            onPress={() => navigation.navigate("categories_Details", { category: item })}
         >
             <TouchableOpacity
                 activeOpacity={0.7}
+                onPress={() => navigation.navigate("categories_Details", { category: item })}
                 style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
             >
                 <View style={styles.cardHeader}>

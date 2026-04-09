@@ -23,7 +23,7 @@ const NotificationBadge = ({ count, color }: { count: number, color: string }) =
   );
 };
 
-function CustomHeader({ title, add, back }: { title: string; add?: boolean, back?: boolean }) {
+function CustomHeader({ title, add, back, nodetails }: { title: string; add?: boolean, back?: boolean, nodetails?: boolean }) {
   const { isOnline } = useConnectivity();
   const navigation = useNavigation<NavigationProp<authStackParamList>>();
   const { user: { business } } = useSelector((state: any) => state.auth);
@@ -60,7 +60,7 @@ function CustomHeader({ title, add, back }: { title: string; add?: boolean, back
         </Text>
       </View>
 
-      <View className="flex-row items-center gap-x-4">
+      {!nodetails && <View className="flex-row items-center gap-x-4">
         {/* NOTIFICATION ICON WITH BADGE */}
         <View className="items-end">
           <Text style={{ color: "#ffffff" }} className="text-sm font-medium">{dateTime}</Text>
@@ -80,7 +80,7 @@ function CustomHeader({ title, add, back }: { title: string; add?: boolean, back
           <Ionicons name="ellipsis-vertical" size={22} color="#ffffff" />
         </TouchableOpacity>
 
-      </View>
+      </View>}
       <Modal
         visible={menuVisible}
         transparent={true}

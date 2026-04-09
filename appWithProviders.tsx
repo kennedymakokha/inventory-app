@@ -15,7 +15,7 @@ import { getDBConnection } from './src/services/db-service';
 import { createUserTable, createCLockTable } from './src/services/users.service';
 import { createCashRegisterTable, createDeliveryTable, createPaymentsTable } from './src/services/closeOpen.service';
 import { createProductTable } from './src/services/product.service';
-import { createCategoryTable } from './src/services/category.service';
+import { createCategoryTable, createSubCategoryTable } from './src/services/category.service';
 import { createRefundItemsTable, createRefundsTable, createSalesItemTable, createSalesTable } from './src/services/sales.service';
 import { createInventorylogTable } from './src/services/inventory.service';
 
@@ -195,6 +195,7 @@ const AppWithProviders = () => {
                 await createCLockTable();
                 await createNotificationTable()
                 await createDeliveryTable();
+                await  createSubCategoryTable();
                 setDbReady(true);
             } catch (err) {
                 console.error("CRITICAL DB INIT FAILURE:", err);

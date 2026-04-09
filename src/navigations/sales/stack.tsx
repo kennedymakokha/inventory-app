@@ -24,7 +24,7 @@ export function SalesStack() {
         options={({ route }: any) => {
           console.log(route)
           return {
-            header: () => <CustomHeader back title={`${route.params.category.slice(0,15) + "..."}`} />,
+            header: () => <CustomHeader nodetails back title={`${route.params.name.slice(0,120) + "..."}`} />,
             // title: 
           }
         }}

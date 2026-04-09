@@ -1,216 +1,144 @@
 export const motobikeParts = [
-    { "product_name": "Brake Pads (Front)", "price": 32, "Bprice": 25, "category": "Braking System", "description": "Front pads that wear quickly due to heavy braking load." },
-    { "product_name": "Brake Pads (Rear)", "price": 26, "Bprice": 21, "category": "Braking System", "description": "Rear pads used for stability and gradual braking." },
-    { "product_name": "Brake Disc Rotor", "price": 78, "Bprice": 66, "category": "Braking System", "description": "Metal disc that interacts with pads to slow the bike." },
-    { "product_name": "Brake Caliper Seal Kit", "price": 22, "Bprice": 18, "category": "Braking System", "description": "Prevents brake fluid leakage from calipers." },
-    { "product_name": "Brake Lever", "price": 18, "Bprice": 14, "category": "Braking System", "description": "Hand lever used to apply braking force." },
-    { "product_name": "Brake Cable", "price": 14, "Bprice": 10, "category": "Braking System", "description": "Cable connecting lever to braking system." },
-    { "product_name": "Brake Fluid", "price": 12, "Bprice": 9, "category": "Braking System", "description": "Hydraulic fluid essential for brake operation." },
+  { "product_name": "Brake Pads (Front)", "price": 32, "Bprice": 25, "category": "Braking System", "description": "Front pads that wear quickly due to heavy braking load." },
+  { "product_name": "Brake Pads (Rear)", "price": 26, "Bprice": 21, "category": "Braking System", "description": "Rear pads used for stability and gradual braking." },
+  { "product_name": "Brake Disc Rotor", "price": 78, "Bprice": 66, "category": "Braking System", "description": "Metal disc that interacts with pads to slow the bike." },
+  { "product_name": "Brake Caliper Seal Kit", "price": 22, "Bprice": 18, "category": "Braking System", "description": "Prevents brake fluid leakage from calipers." },
+  { "product_name": "Brake Lever", "price": 18, "Bprice": 14, "category": "Braking System", "description": "Hand lever used to apply braking force." },
+  { "product_name": "Brake Cable", "price": 14, "Bprice": 10, "category": "Braking System", "description": "Cable connecting lever to braking system." },
+  { "product_name": "Brake Fluid", "price": 12, "Bprice": 9, "category": "Braking System", "description": "Hydraulic fluid essential for brake operation." },
 
-    { "product_name": "Spark Plug", "price": 11, "Bprice": 8, "category": "Engine & Transmission Parts", "description": "Ignites fuel-air mixture in the engine cylinder." },
-    { "product_name": "Air Filter", "price": 19, "Bprice": 15, "category": "Engine & Transmission Parts", "description": "Prevents dust and debris from entering engine." },
-    { "product_name": "Oil Filter", "price": 17, "Bprice": 13, "category": "Engine & Transmission Parts", "description": "Filters impurities from engine oil." },
-    { "product_name": "Fuel Filter", "price": 15, "Bprice": 11, "category": "Engine & Transmission Parts", "description": "Keeps fuel system clean and efficient." },
-    { "product_name": "Clutch Plates Set", "price": 52, "Bprice": 44, "category": "Engine & Transmission Parts", "description": "Transfers engine power to transmission." },
-    { "product_name": "Clutch Cable", "price": 16, "Bprice": 12, "category": "Engine & Transmission Parts", "description": "Controls clutch engagement." },
-    { "product_name": "Throttle Cable", "price": 14, "Bprice": 10, "category": "Engine & Transmission Parts", "description": "Connects throttle grip to carburetor." },
-    { "product_name": "Carburetor Repair Kit", "price": 28, "Bprice": 22, "category": "Engine & Transmission Parts", "description": "Used to restore carburetor performance." },
-    { "product_name": "Piston Rings", "price": 38, "Bprice": 32, "category": "Engine & Transmission Parts", "description": "Maintains compression in engine cylinders." },
-    { "product_name": "Cylinder Head Gasket", "price": 24, "Bprice": 19, "category": "Engine & Transmission Parts", "description": "Seals cylinder head to prevent leaks." },
-    { "product_name": "Engine Oil (1L)", "price": 20, "Bprice": 16, "category": "Engine & Transmission Parts", "description": "Lubricates engine parts and reduces wear." },
+  { "product_name": "Spark Plug", "price": 11, "Bprice": 8, "category": "Engine & Transmission Parts", "description": "Ignites fuel-air mixture in the engine cylinder." },
+  { "product_name": "Air Filter", "price": 19, "Bprice": 15, "category": "Engine & Transmission Parts", "description": "Prevents dust and debris from entering engine." },
+  { "product_name": "Oil Filter", "price": 17, "Bprice": 13, "category": "Engine & Transmission Parts", "description": "Filters impurities from engine oil." },
+  { "product_name": "Fuel Filter", "price": 15, "Bprice": 11, "category": "Engine & Transmission Parts", "description": "Keeps fuel system clean and efficient." },
+  { "product_name": "Clutch Plates Set", "price": 52, "Bprice": 44, "category": "Engine & Transmission Parts", "description": "Transfers engine power to transmission." },
+  { "product_name": "Clutch Cable", "price": 16, "Bprice": 12, "category": "Engine & Transmission Parts", "description": "Controls clutch engagement." },
+  { "product_name": "Throttle Cable", "price": 14, "Bprice": 10, "category": "Engine & Transmission Parts", "description": "Connects throttle grip to carburetor." },
+  { "product_name": "Carburetor Repair Kit", "price": 28, "Bprice": 22, "category": "Engine & Transmission Parts", "description": "Used to restore carburetor performance." },
+  { "product_name": "Piston Rings", "price": 38, "Bprice": 32, "category": "Engine & Transmission Parts", "description": "Maintains compression in engine cylinders." },
+  { "product_name": "Cylinder Head Gasket", "price": 24, "Bprice": 19, "category": "Engine & Transmission Parts", "description": "Seals cylinder head to prevent leaks." },
+  { "product_name": "Engine Oil (1L)", "price": 20, "Bprice": 16, "category": "Engine & Transmission Parts", "description": "Lubricates engine parts and reduces wear." },
 
-    { "product_name": "Battery 12V", "price": 85, "Bprice": 72, "category": "Electrical System", "description": "Main power source for starting and electronics." },
-    { "product_name": "Headlamp Bulb", "price": 13, "Bprice": 10, "category": "Electrical System", "description": "Provides front visibility at night." },
-    { "product_name": "Tail Light Bulb", "price": 9, "Bprice": 7, "category": "Electrical System", "description": "Ensures rear visibility." },
-    { "product_name": "Indicator Bulb", "price": 8, "Bprice": 6, "category": "Electrical System", "description": "Turn signal lighting component." },
-    { "product_name": "Ignition Coil", "price": 58, "Bprice": 48, "category": "Electrical System", "description": "Boosts voltage for spark plug ignition." },
-    { "product_name": "Starter Relay", "price": 21, "Bprice": 17, "category": "Electrical System", "description": "Controls power flow to starter motor." },
-    { "product_name": "Alternator Stator", "price": 92, "Bprice": 80, "category": "Electrical System", "description": "Generates electricity for charging system." },
-    { "product_name": "Fuse Kit", "price": 7, "Bprice": 5, "category": "Electrical System", "description": "Protects circuits from overload." },
-    { "product_name": "Wiring Harness", "price": 45, "Bprice": 36, "category": "Electrical System", "description": "Connects all electrical components." },
+  { "product_name": "Battery 12V", "price": 85, "Bprice": 72, "category": "Electrical System", "description": "Main power source for starting and electronics." },
+  { "product_name": "Headlamp Bulb", "price": 13, "Bprice": 10, "category": "Electrical System", "description": "Provides front visibility at night." },
+  { "product_name": "Tail Light Bulb", "price": 9, "Bprice": 7, "category": "Electrical System", "description": "Ensures rear visibility." },
+  { "product_name": "Indicator Bulb", "price": 8, "Bprice": 6, "category": "Electrical System", "description": "Turn signal lighting component." },
+  { "product_name": "Ignition Coil", "price": 58, "Bprice": 48, "category": "Electrical System", "description": "Boosts voltage for spark plug ignition." },
+  { "product_name": "Starter Relay", "price": 21, "Bprice": 17, "category": "Electrical System", "description": "Controls power flow to starter motor." },
+  { "product_name": "Alternator Stator", "price": 92, "Bprice": 80, "category": "Electrical System", "description": "Generates electricity for charging system." },
+  { "product_name": "Fuse Kit", "price": 7, "Bprice": 5, "category": "Electrical System", "description": "Protects circuits from overload." },
+  { "product_name": "Wiring Harness", "price": 45, "Bprice": 36, "category": "Electrical System", "description": "Connects all electrical components." },
 
-    { "product_name": "Rear Shock Absorber", "price": 88, "Bprice": 76, "category": "Suspension & Steering", "description": "Absorbs shocks for smoother ride." },
-    { "product_name": "Front Fork Oil", "price": 18, "Bprice": 14, "category": "Suspension & Steering", "description": "Lubricates front suspension forks." },
-    { "product_name": "Fork Seals", "price": 21, "Bprice": 17, "category": "Suspension & Steering", "description": "Prevents oil leakage in forks." },
-    { "product_name": "Handlebar Grips", "price": 13, "Bprice": 10, "category": "Suspension & Steering", "description": "Improves rider comfort and grip." },
-    { "product_name": "Steering Bearings", "price": 34, "Bprice": 27, "category": "Suspension & Steering", "description": "Ensures smooth steering control." },
-    { "product_name": "Swingarm Bushings", "price": 29, "Bprice": 23, "category": "Suspension & Steering", "description": "Reduces friction in rear suspension movement." },
+  { "product_name": "Rear Shock Absorber", "price": 88, "Bprice": 76, "category": "Suspension & Steering", "description": "Absorbs shocks for smoother ride." },
+  { "product_name": "Front Fork Oil", "price": 18, "Bprice": 14, "category": "Suspension & Steering", "description": "Lubricates front suspension forks." },
+  { "product_name": "Fork Seals", "price": 21, "Bprice": 17, "category": "Suspension & Steering", "description": "Prevents oil leakage in forks." },
+  { "product_name": "Handlebar Grips", "price": 13, "Bprice": 10, "category": "Suspension & Steering", "description": "Improves rider comfort and grip." },
+  { "product_name": "Steering Bearings", "price": 34, "Bprice": 27, "category": "Suspension & Steering", "description": "Ensures smooth steering control." },
+  { "product_name": "Swingarm Bushings", "price": 29, "Bprice": 23, "category": "Suspension & Steering", "description": "Reduces friction in rear suspension movement." },
 
-    { "product_name": "Seat Cover", "price": 19, "Bprice": 14, "category": "Body & Ergonomics", "description": "Protects and enhances seat comfort." },
-    { "product_name": "Side Mirror (Left)", "price": 17, "Bprice": 13, "category": "Body & Ergonomics", "description": "Provides rear visibility on left side." },
-    { "product_name": "Side Mirror (Right)", "price": 17, "Bprice": 13, "category": "Body & Ergonomics", "description": "Provides rear visibility on right side." },
-    { "product_name": "Foot Peg", "price": 15, "Bprice": 11, "category": "Body & Ergonomics", "description": "Supports rider's feet." },
-    { "product_name": "Side Stand Spring", "price": 8, "Bprice": 6, "category": "Body & Ergonomics", "description": "Keeps side stand in place." },
-    { "product_name": "Fuel Tank Cap", "price": 12, "Bprice": 9, "category": "Body & Ergonomics", "description": "Seals fuel tank securely." },
-    { "product_name": "Front Fender", "price": 25, "Bprice": 20, "category": "Body & Ergonomics", "description": "Protects from mud and debris." },
-    { "product_name": "Rear Fender", "price": 27, "Bprice": 21, "category": "Body & Ergonomics", "description": "Shields rear wheel spray." },
+  { "product_name": "Seat Cover", "price": 19, "Bprice": 14, "category": "Body & Ergonomics", "description": "Protects and enhances seat comfort." },
+  { "product_name": "Side Mirror (Left)", "price": 17, "Bprice": 13, "category": "Body & Ergonomics", "description": "Provides rear visibility on left side." },
+  { "product_name": "Side Mirror (Right)", "price": 17, "Bprice": 13, "category": "Body & Ergonomics", "description": "Provides rear visibility on right side." },
+  { "product_name": "Foot Peg", "price": 15, "Bprice": 11, "category": "Body & Ergonomics", "description": "Supports rider's feet." },
+  { "product_name": "Side Stand Spring", "price": 8, "Bprice": 6, "category": "Body & Ergonomics", "description": "Keeps side stand in place." },
+  { "product_name": "Fuel Tank Cap", "price": 12, "Bprice": 9, "category": "Body & Ergonomics", "description": "Seals fuel tank securely." },
+  { "product_name": "Front Fender", "price": 25, "Bprice": 20, "category": "Body & Ergonomics", "description": "Protects from mud and debris." },
+  { "product_name": "Rear Fender", "price": 27, "Bprice": 21, "category": "Body & Ergonomics", "description": "Shields rear wheel spray." },
 
-    { "product_name": "Front Tire", "price": 68, "Bprice": 58, "category": "Wheels & Tires", "description": "Provides grip and steering control." },
-    { "product_name": "Rear Tire", "price": 78, "Bprice": 66, "category": "Wheels & Tires", "description": "Handles power and traction." },
-    { "product_name": "Inner Tube", "price": 11, "Bprice": 8, "category": "Wheels & Tires", "description": "Maintains tire air pressure." },
-    { "product_name": "Rim Strip", "price": 7, "Bprice": 5, "category": "Wheels & Tires", "description": "Protects tube from spoke ends." },
-    { "product_name": "Chain & Sprocket Kit", "price": 102, "Bprice": 90, "category": "Wheels & Tires", "description": "Transfers engine power to rear wheel." },
-    { "product_name": "Drive Chain", "price": 55, "Bprice": 46, "category": "Wheels & Tires", "description": "Core component of drivetrain." },
-    { "product_name": "Front Sprocket", "price": 22, "Bprice": 18, "category": "Wheels & Tires", "description": "Works with chain to transfer power." },
-    { "product_name": "Rear Sprocket", "price": 30, "Bprice": 24, "category": "Wheels & Tires", "description": "Mounted on rear wheel for torque delivery." },
-    { "product_name": "Wheel Bearings", "price": 26, "Bprice": 21, "category": "Wheels & Tires", "description": "Allows smooth wheel rotation." }
+  { "product_name": "Front Tire", "price": 68, "Bprice": 58, "category": "Wheels & Tires", "description": "Provides grip and steering control." },
+  { "product_name": "Rear Tire", "price": 78, "Bprice": 66, "category": "Wheels & Tires", "description": "Handles power and traction." },
+  { "product_name": "Inner Tube", "price": 11, "Bprice": 8, "category": "Wheels & Tires", "description": "Maintains tire air pressure." },
+  { "product_name": "Rim Strip", "price": 7, "Bprice": 5, "category": "Wheels & Tires", "description": "Protects tube from spoke ends." },
+  { "product_name": "Chain & Sprocket Kit", "price": 102, "Bprice": 90, "category": "Wheels & Tires", "description": "Transfers engine power to rear wheel." },
+  { "product_name": "Drive Chain", "price": 55, "Bprice": 46, "category": "Wheels & Tires", "description": "Core component of drivetrain." },
+  { "product_name": "Front Sprocket", "price": 22, "Bprice": 18, "category": "Wheels & Tires", "description": "Works with chain to transfer power." },
+  { "product_name": "Rear Sprocket", "price": 30, "Bprice": 24, "category": "Wheels & Tires", "description": "Mounted on rear wheel for torque delivery." },
+  { "product_name": "Wheel Bearings", "price": 26, "Bprice": 21, "category": "Wheels & Tires", "description": "Allows smooth wheel rotation." }
 ]
 
 
 let MotoCategoryarr = [
-    {
-        "category_name": "Engine & Transmission Parts",
-        "description": "Pistons, cylinder blocks, clutch plates, spark plugs, air filters, oil filters, and carburetors."
-    },
-    {
-        "category_name": "Braking System",
-        "description": "Brake pads, discs, brake levers, cables, and calipers."
-    },
-    {
-        "category_name": "Electrical System",
-        "description": "Batteries, headlamps, tail lights, indicators, spark plugs, ignition coils, and alternators."
-    },
-    {
-        "category_name": "Suspension & Steering",
-        "description": "Shock absorbers (rear), fork shocks (front), handlebars, and steering systems."
-    },
-    {
-        "category_name": "Body & Ergonomics",
-        "description": "Fenders, seats, mirrors, fairings, side stands, footpegs, and fuel tanks."
-    },
-    {
-        "category_name": "Wheels & Tires",
-        "description": "Rims, tires, tubes, and chain/sprockets."
-    }
+  {
+    "category_name": "Engine & Transmission Parts",
+    "description": "Pistons, cylinder blocks, clutch plates, spark plugs, air filters, oil filters, and carburetors."
+  },
+  {
+    "category_name": "Braking System",
+    "description": "Brake pads, discs, brake levers, cables, and calipers."
+  },
+  {
+    "category_name": "Electrical System",
+    "description": "Batteries, headlamps, tail lights, indicators, spark plugs, ignition coils, and alternators."
+  },
+  {
+    "category_name": "Suspension & Steering",
+    "description": "Shock absorbers (rear), fork shocks (front), handlebars, and steering systems."
+  },
+  {
+    "category_name": "Body & Ergonomics",
+    "description": "Fenders, seats, mirrors, fairings, side stands, footpegs, and fuel tanks."
+  },
+  {
+    "category_name": "Wheels & Tires",
+    "description": "Rims, tires, tubes, and chain/sprockets."
+  }
 ]
 
 
 export const clinicalCategories = [
-    {
-        category_name: "Personal Protective Equipment (PPE)",
-        description: "Disposable items designed to protect healthcare workers and patients from the spread of infection or illness."
-    },
-    {
-        category_name: "Sanitation & Infection Control",
-        description: "Cleaning agents and tools used to disinfect surfaces, equipment, and hands to maintain a sterile environment."
-    },
-    {
-        category_name: "Wound Care Consumables",
-        description: "Non-medicated supplies such as gauze, tapes, and bandages used for cleaning and protecting physical injuries."
-    },
-    {
-        category_name: "Waste Management",
-        description: "Specialized containers and liners for the safe disposal of hazardous clinical waste and sharp objects."
-    },
-    {
-        category_name: "Disposable Linens & Paper Products",
-        description: "Single-use paper and fabric items used for patient comfort and hygiene, including couch rolls and paper towels."
-    },
-    {
-        category_name: "Diagnostic & Administrative Stationery",
-        description: "Physical accessories required for patient identification, specimen collection, and manual documentation."
-    }
-];
-
-export const clinicalInventory = [
-    {
-        category_name: "Personal Protective Equipment (PPE)",
-        products: [
-            "Nitrile Gloves (Small)", "Nitrile Gloves (Medium)", "Nitrile Gloves (Large)",
-            "Latex Gloves (Powder-free)", "Vinyl Examination Gloves", "Sterile Surgical Gloves",
-            "3-Ply Surgical Masks", "N95 Respirators", "KN95 Masks", "Face Shields",
-            "Disposable Isolation Gowns", "Fluid-Resistant Aprons", "Bouffant Hair Caps",
-            "Beard Covers", "Shoe Covers (Anti-skid)", "Safety Goggles", "Over-glasses",
-            "Disposable Coveralls", "Finger Cots", "Thumb-loop Gowns"
-        ]
-    },
-    {
-        category_name: "Sanitation & Infection Control",
-        products: [
-            "70% Isopropyl Alcohol", "Hand Sanitizer Gel (500ml)", "Alcohol Prep Pads",
-            "Surface Disinfectant Spray", "Chlorine Disinfectant Tablets", "CaviWipes (Disinfecting Wipes)",
-            "Antibacterial Hand Soap", "Hydrogen Peroxide Solution", "Enzymatic Detergent",
-            "Autoclave Indicator Tape", "Sterilization Pouches (Small)", "Sterilization Pouches (Large)",
-            "Distilled Water (for Autoclave)", "Instrument Lubricant", "Glutaraldehyde Solution",
-            "Povidone-Iodine Scrub", "Chlorhexidine Gluconate Solution", "Antiseptic Hand Wash",
-            "UVC Disinfection Lamp Bulbs", "Ultrasonic Cleaning Solution"
-        ]
-    },
-    {
-        category_name: "Wound Care Consumables",
-        products: [
-            "Gauze Swabs (Non-sterile)", "Gauze Swabs (Sterile)", "Cotton Wool Rolls",
-            "Cotton Tipped Applicators", "Micropore Medical Tape", "Zinc Oxide Tape",
-            "Transparent Film Dressings", "Non-Adherent Dressings", "Adhesive Bandages (Assorted)",
-            "Crepe Bandages (5cm)", "Crepe Bandages (10cm)", "Tubular Gauze Bandages",
-            "Elastic Wrap Bandages", "Butterfly Closure Strips", "Petroleum Jelly Gauze",
-            "Wound Irrigation Solution", "Sterile Saline Pods", "Alcohol-free Cleansing Wipes",
-            "Medical Grade Honey Dressing", "Silver Alginate Dressing"
-        ]
-    },
-    {
-        category_name: "Waste Management",
-        products: [
-            "Yellow Biohazard Bags (Small)", "Yellow Biohazard Bags (Large)", "Red Biohazard Bags",
-            "Sharps Container (1 Litre)", "Sharps Container (5 Litre)", "Cardboard Safety Boxes",
-            "Hazardous Waste Labels", "Clinical Waste Bin Liners", "Infectious Waste Seals",
-            "Spill Kit (Body Fluids)", "Absorbent Granules (for Spills)", "Cytotoxic Waste Bags",
-            "Step-on Waste Bins (Yellow)", "Waste Bin Trolleys", "Double-bagging Ties",
-            "Autoclave Bags", "Pathology Specimen Bags", "Odour Control Filters",
-            "Medical Waste Log Books", "Sanitary Disposal Bags"
-        ]
-    },
-    {
-        category_name: "Disposable Linens & Paper Products",
-        products: [
-            "Examination Couch Rolls", "Paper Hand Towels (C-Fold)", "Paper Hand Towels (Roll)",
-            "Disposable Bed Sheets", "Disposable Pillowcases", "Disposable Patient Gowns",
-            "Facial Tissues", "Paper Underpads (Incontinence)", "Disposable Breast Pads",
-            "Medical Grade Toilet Tissue", "Disposable Baby Changing Mats", "Paper Drapes (Sterile)",
-            "Paper Drapes (Non-sterile)", "Dental Bibs", "Headrest Covers",
-            "Washcloths (Disposable)", "Disposable Privacy Curtains", "Body Bags",
-            "Stretcher Sheets", "Examination Table Paper"
-        ]
-    },
-    {
-        category_name: "Diagnostic & Administrative Stationery",
-        products: [
-            "Wooden Tongue Depressors", "Plastic Specimen Cups (Urine)", "Stool Containers",
-            "Patient ID Wristbands (Adult)", "Patient ID Wristbands (Pediatric)", "Urine Dipsticks",
-            "Blood Collection Tubes (Plain)", "Blood Collection Tubes (EDTA)", "Vacutainer Holders",
-            "Tourniquets (Disposable)", "Pregnancy Test Strips", "Glucose Test Strips",
-            "Lancets (Disposable)", "ECG Electrodes", "Ultrasound Transmission Gel",
-            "Medical Referral Pads", "Prescription Pads", "Patient File Folders",
-            "Appointment Cards", "Medical Certificate Booklets"
-        ]
-    }
-];
-export const clinicalInventor1 = [
   {
     category_name: "Personal Protective Equipment (PPE)",
-    description: "Nitrile Gloves (S/M/L), Latex Gloves, Vinyl Gloves, Surgical Gloves, 3-Ply Masks, N95 Respirators, Face Shields, Isolation Gowns, Plastic Aprons, Hair Caps, Shoe Covers, Safety Goggles, Over-glasses, Disposable Coveralls, Finger Cots, Thumb-loop Gowns, Surgical Caps, Patient Veils, Sleeved Aprons, Protective Hoods"
+    description: "Disposable items designed to protect healthcare workers and patients from the spread of infection or illness."
   },
   {
     category_name: "Sanitation & Infection Control",
-    description: "70% Isopropyl Alcohol, Hand Sanitizer Gel, Alcohol Prep Pads, Surface Spray, Chlorine Tablets, Disinfecting Wipes, Antibacterial Soap, Hydrogen Peroxide, Enzymatic Detergent, Autoclave Tape, Sterilization Pouches, Distilled Water, Instrument Lubricant, Glutaraldehyde, Povidone-Iodine, Chlorhexidine, Antiseptic Wash, UVC Bulbs, Ultrasonic Solution, Instrument Soaking Trays"
+    description: "Cleaning agents and tools used to disinfect surfaces, equipment, and hands to maintain a sterile environment."
   },
   {
     category_name: "Wound Care Consumables",
-    description: "Non-sterile Gauze, Sterile Gauze, Cotton Wool Rolls, Cotton Buds, Micropore Tape, Zinc Oxide Tape, Film Dressings, Non-Adherent Pads, Adhesive Plasters, Crepe Bandages, Tubular Gauze, Elastic Wraps, Butterfly Strips, Petroleum Gauze, Irrigation Saline, Cleansing Wipes, Honey Dressings, Silver Alginate, Padding Bandages, Cohesive Bandages"
+    description: "Non-medicated supplies such as gauze, tapes, and bandages used for cleaning and protecting physical injuries."
   },
   {
     category_name: "Waste Management",
-    description: "Yellow Biohazard Bags, Red Biohazard Bags, 1L Sharps Bins, 5L Sharps Bins, Safety Boxes, Hazardous Labels, Bin Liners, Bag Seals, Body Fluid Spill Kits, Absorbent Granules, Cytotoxic Bags, Step-on Bins, Waste Trolleys, Cable Ties, Autoclave Bags, Specimen Transport Bags, Odour Filters, Waste Log Books, Sanitary Bags, Chemical Waste Containers"
+    description: "Specialized containers and liners for the safe disposal of hazardous clinical waste and sharp objects."
   },
   {
     category_name: "Disposable Linens & Paper Products",
-    description: "Couch Rolls, C-Fold Towels, Kitchen Towels, Disposable Sheets, Pillowcases, Patient Gowns, Facial Tissues, Incontinence Underpads, Breast Pads, Toilet Tissue, Changing Mats, Sterile Drapes, Non-sterile Drapes, Dental Bibs, Headrest Covers, Disposable Washcloths, Privacy Curtains, Body Bags, Stretcher Sheets, Table Paper"
+    description: "Single-use paper and fabric items used for patient comfort and hygiene, including couch rolls and paper towels."
   },
   {
     category_name: "Diagnostic & Administrative Stationery",
-    description: "Tongue Depressors, Urine Cups, Stool Containers, Adult ID Bands, Pediatric ID Bands, Urine Dipsticks, Plain Blood Tubes, EDTA Tubes, Vacutainer Holders, Disposable Tourniquets, Pregnancy Strips, Glucose Strips, Lancets, ECG Electrodes, Ultrasound Gel, Referral Pads, Prescription Pads, File Folders, Appointment Cards, Medical Booklets"
+    description: "Physical accessories required for patient identification, specimen collection, and manual documentation."
   }
 ];
+
+
+// export const clinicalInventor1 = [
+//   {
+//     category_name: "Personal Protective Equipment (PPE)",
+//     description: "Nitrile Gloves (S/M/L), Latex Gloves, Vinyl Gloves, Surgical Gloves, 3-Ply Masks, N95 Respirators, Face Shields, Isolation Gowns, Plastic Aprons, Hair Caps, Shoe Covers, Safety Goggles, Over-glasses, Disposable Coveralls, Finger Cots, Thumb-loop Gowns, Surgical Caps, Patient Veils, Sleeved Aprons, Protective Hoods"
+//   },
+//   {
+//     category_name: "Sanitation & Infection Control",
+//     description: "70% Isopropyl Alcohol, Hand Sanitizer Gel, Alcohol Prep Pads, Surface Spray, Chlorine Tablets, Disinfecting Wipes, Antibacterial Soap, Hydrogen Peroxide, Enzymatic Detergent, Autoclave Tape, Sterilization Pouches, Distilled Water, Instrument Lubricant, Glutaraldehyde, Povidone-Iodine, Chlorhexidine, Antiseptic Wash, UVC Bulbs, Ultrasonic Solution, Instrument Soaking Trays"
+//   },
+//   {
+//     category_name: "Wound Care Consumables",
+//     description: "Non-sterile Gauze, Sterile Gauze, Cotton Wool Rolls, Cotton Buds, Micropore Tape, Zinc Oxide Tape, Film Dressings, Non-Adherent Pads, Adhesive Plasters, Crepe Bandages, Tubular Gauze, Elastic Wraps, Butterfly Strips, Petroleum Gauze, Irrigation Saline, Cleansing Wipes, Honey Dressings, Silver Alginate, Padding Bandages, Cohesive Bandages"
+//   },
+//   {
+//     category_name: "Waste Management",
+//     description: "Yellow Biohazard Bags, Red Biohazard Bags, 1L Sharps Bins, 5L Sharps Bins, Safety Boxes, Hazardous Labels, Bin Liners, Bag Seals, Body Fluid Spill Kits, Absorbent Granules, Cytotoxic Bags, Step-on Bins, Waste Trolleys, Cable Ties, Autoclave Bags, Specimen Transport Bags, Odour Filters, Waste Log Books, Sanitary Bags, Chemical Waste Containers"
+//   },
+//   {
+//     category_name: "Disposable Linens & Paper Products",
+//     description: "Couch Rolls, C-Fold Towels, Kitchen Towels, Disposable Sheets, Pillowcases, Patient Gowns, Facial Tissues, Incontinence Underpads, Breast Pads, Toilet Tissue, Changing Mats, Sterile Drapes, Non-sterile Drapes, Dental Bibs, Headrest Covers, Disposable Washcloths, Privacy Curtains, Body Bags, Stretcher Sheets, Table Paper"
+//   },
+//   {
+//     category_name: "Diagnostic & Administrative Stationery",
+//     description: "Tongue Depressors, Urine Cups, Stool Containers, Adult ID Bands, Pediatric ID Bands, Urine Dipsticks, Plain Blood Tubes, EDTA Tubes, Vacutainer Holders, Disposable Tourniquets, Pregnancy Strips, Glucose Strips, Lancets, ECG Electrodes, Ultrasound Gel, Referral Pads, Prescription Pads, File Folders, Appointment Cards, Medical Booklets"
+//   }
+// ];
 export const transNzoiaUniforms = [
   {
     category_name: "St. Anthony’s Boys High School (Kitale)",
@@ -304,7 +232,7 @@ export const wholesaleInventory = [
   }
 ];
 
- export const bookInventory = [
+export const bookInventory = [
   {
     category_name: "Oxford University Press",
     sub_category: "Grade 1",
@@ -340,4 +268,94 @@ export const wholesaleInventory = [
     sub_category: "Secondary Form 1",
     description: "Peak English Student's Book, Peak Mathematics, Peak Biology, Peak Chemistry, Peak Physics, Peak History and Government, Peak Geography, Peak Business Studies"
   }
+];
+
+export const clinicalInventory = [
+  {
+    category_name: "Personal Protective Equipment (PPE)",
+    sub_categories: [
+      {
+        sub_category_name: "Hand Protection",
+        description: "Nitrile Gloves (S/M/L), Latex Gloves, Vinyl Gloves, Sterile Surgical Gloves, Finger Cots"
+      },
+      {
+        sub_category_name: "Respiratory & Face",
+        description: "3-Ply Surgical Masks, N95 Respirators, KN95 Masks, Face Shields, Safety Goggles, Over-glasses"
+      },
+      {
+        sub_category_name: "Body Coverings",
+        description: "Disposable Isolation Gowns, Fluid-Resistant Aprons, Bouffant Hair Caps, Shoe Covers, Thumb-loop Gowns, Surgical Caps"
+      }
+    ]
+  },
+  {
+    category_name: "Sanitation & Infection Control",
+    sub_categories: [
+      {
+        sub_category_name: "Disinfectants",
+        description: "70% Isopropyl Alcohol, Alcohol Prep Pads, Surface Spray, Chlorine Tablets, Disinfecting Wipes"
+      },
+      {
+        sub_category_name: "Hand Hygiene",
+        description: "Hand Sanitizer Gel, Antibacterial Soap, Antiseptic Wash, Chlorhexidine Solution"
+      },
+      {
+        sub_category_name: "Sterilization Supplies",
+        description: "Autoclave Tape, Sterilization Pouches, Distilled Water, Instrument Lubricant, Glutaraldehyde"
+      }
+    ]
+  },
+  {
+    category_name: "Wound Care & Dressings",
+    sub_categories: [
+      {
+        sub_category_name: "Gauze & Cotton",
+        description: "Non-sterile Gauze, Sterile Gauze, Cotton Wool Rolls, Cotton Buds, Cotton Tipped Applicators"
+      },
+      {
+        sub_category_name: "Adhesives & Tapes",
+        description: "Micropore Tape, Zinc Oxide Tape, Adhesive Plasters, Butterfly Strips, Transparent Film Dressings"
+      },
+      {
+        sub_category_name: "Bandages",
+        description: "Crepe Bandages (various sizes), Tubular Gauze, Elastic Wraps, Cohesive Bandages"
+      }
+    ]
+  },
+  {
+    category_name: "Waste Management",
+    sub_categories: [
+      {
+        sub_category_name: "Biohazard Disposal",
+        description: "Yellow Biohazard Bags, Red Biohazard Bags, Infectious Waste Seals, Autoclave Bags"
+      },
+      {
+        sub_category_name: "Sharps Handling",
+        description: "1L Sharps Bins, 5L Sharps Bins, Cardboard Safety Boxes, Puncture-resistant Containers"
+      },
+      {
+        sub_category_name: "Cleaning & Spills",
+        description: "Body Fluid Spill Kits, Absorbent Granules, Cytotoxic Bags, Odour Filters"
+      },
+
+    ]
+  },
+  {
+    category_name: "Diagnostic & Lab Consumables",
+    sub_categories: [
+      {
+        sub_category_name: "Specimen Collection",
+        description: "Urine Cups, Stool Containers, Plain Blood Tubes, EDTA Tubes, Vacutainer Holders, Path-bags"
+      },
+      {
+        sub_category_name: "Rapid Tests & Tools",
+        description: "Urine Dipsticks, Pregnancy Strips, Glucose Strips, Lancets, ECG Electrodes, Ultrasound Gel"
+      },
+      {
+        sub_category_name: "Patient ID & Stationery",
+        description: "Adult ID Bands, Pediatric ID Bands, Referral Pads, Prescription Pads, Appointment Cards"
+      }
+    ]
+  }
+
 ];

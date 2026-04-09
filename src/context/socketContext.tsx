@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { AppState } from "react-native";
 
-const SOCKET_URL = "https://a899-102-205-188-82.ngrok-free.app";
+const SOCKET_URL = "https://0220-41-139-236-221.ngrok-free.app";
 
 type SocketContextType = {
   socket: Socket | null;

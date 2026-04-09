@@ -5,7 +5,7 @@ export const handleSTK = async (phone: string, amount: number, business: Busines
 
     const requestId = `STK-${Date.now()}`;
     try {
-        const response = await fetch(`https://a899-102-205-188-82.ngrok-free.app/v1/payments/stk`, {
+        const response = await fetch(`https://0220-41-139-236-221.ngrok-free.app/v1/payments/stk`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -27,7 +27,7 @@ export const handleSTK = async (phone: string, amount: number, business: Busines
         let status = "pending";
         for (let i = 0; i < 15; i++) {
             await new Promise(res => setTimeout(res, 5000));
-            const statusCheck = await fetch(`https://a899-102-205-188-82.ngrok-free.app/callbacks/stk/status/${requestId}`, {
+            const statusCheck = await fetch(`https://0220-41-139-236-221.ngrok-free.app/callbacks/stk/status/${requestId}`, {
                 headers: { "x-api-key": `${business?.api_key}` }
             });
             const statusData = await statusCheck.json();

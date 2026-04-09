@@ -31,6 +31,10 @@ export type NotificationsStackParamList = {
 
 export type CategoriesStackParamList = {
   categories_Dashboard: undefined;
+  categories_Details: { category: String };
+};
+export type SubCategoriesStackParamList = {
+  sub_categories_Dashboard: undefined;
 };
 export type UsersStackParamList = {
   Users_Dashboard: undefined;
@@ -39,7 +43,14 @@ export type UsersStackParamList = {
 };
 export type SalesStackParamList = {
   Sales_Dashboard: undefined;
-  Sales_Details: { category: String };
+
+  Sales_Details: {
+    category_id?: string;
+    sub_category_id?: string;
+    name?: string;
+    productId?: string;
+    filterType?: "category" | "sub_category" | "product";
+  };
 };
 export type ReportStackParamList = {
   salesReport: undefined;

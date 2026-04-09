@@ -7,7 +7,8 @@ import {
     StyleSheet,
     ScrollView,
     KeyboardAvoidingView,
-    Platform
+    Platform,
+    Keyboard
 } from 'react-native';
 import Ionicons from "react-native-vector-icons/Ionicons";
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -17,14 +18,16 @@ import { InputContainer, TextArea } from '../../../components/Input';
 import Toast from '../../../components/Toast';
 import Button from '../../../components/Button';
 import { useTheme } from '../../../context/themeContext';
+import { FlatList } from 'react-native';
+import { TextInput } from 'react-native';
 
 const AddProductModal = ({
     modalVisible,
     msg,
     setMsg,
-    item,           
-    setItem,        
-    PostLocally,    
+    item,
+    setItem,
+    PostLocally,
     loading,
     categories,
     setModalVisible,
@@ -38,13 +41,22 @@ const AddProductModal = ({
     const selling = parseFloat(item?.price) || 0;
     const profit = selling - buying;
     const margin = buying > 0 ? ((profit / buying) * 100).toFixed(1) : 0;
+    const [showDropdown, setShowDropdown] = useState(false);
+    // const [categories, setCategories] = useState([]); // Your data from before
 
+    // Filter the categories based on the input text
+    const filteredCategories = categories.filter((cat: any) =>
+        cat.sub_category_name
+            .toLowerCase()
+            .includes((item?.sub_category_name || "").toLowerCase())
+    );
     const handleChange = (key: string, value: any) => {
         if (msg?.msg) setMsg({ msg: "", state: "" });
         setItem((prev: any) => ({ ...prev, [key]: value }));
     };
 
     const validateAndSubmit = () => {
+        
         if (!item?.product_name || !item?.price || !item?.category_id) {
             setMsg({ msg: "Missing Name, Price, or Category", state: "error" });
             return;
@@ -69,10 +81,10 @@ const AddProductModal = ({
             onRequestClose={onClose}
         >
             <View style={styles.overlay}>
-                <TouchableOpacity 
-                    style={{ flex: 1 }} 
-                    activeOpacity={1} 
-                    onPress={onClose} 
+                <TouchableOpacity
+                    style={{ flex: 1 }}
+                    activeOpacity={1}
+                    onPress={onClose}
                 />
 
                 <KeyboardAvoidingView
@@ -81,8 +93,8 @@ const AddProductModal = ({
                 >
                     <View style={[styles.handle, { backgroundColor: isDarkMode ? '#334155' : '#e2e8f0' }]} />
 
-                    <ScrollView 
-                        showsVerticalScrollIndicator={false} 
+                    <ScrollView
+                        showsVerticalScrollIndicator={false}
                         contentContainerStyle={styles.scrollContent}
                     >
                         <View style={styles.headerRow}>
@@ -123,18 +135,35 @@ const AddProductModal = ({
                                 <Text style={[styles.label, { color: colors.primary }]}>Category</Text>
                                 <View style={[styles.pickerContainer, { backgroundColor: isDarkMode ? '#1e293b' : '#f8fafc', borderColor: colors.border }]}>
                                     <Picker
-                                        selectedValue={item?.category_id}
-                                        onValueChange={(val) => handleChange("category_id", val)}
-                                        dropdownIconColor={colors.text}
-                                        style={{ color: colors.text }}
+                                        selectedValue={item?.category_id} // Track the sub-category ID in state
+                                        onValueChange={(itemValue) => {
+                                            // 1. Find the full object that matches the selected sub_category_id
+                                            const selectedItem = categories.find(cat => cat.sub_category_id === itemValue);
+
+                                            if (selectedItem) {
+                                                // 2. Set both IDs in your state
+                                                setItem((prev: any) => ({
+                                                    ...prev,
+                                                    sub_category_name: selectedItem.sub_category_name,
+                                                    category_id: selectedItem.category_id,
+                                                    sub_category_id: selectedItem.sub_category_id,
+                                                }));
+                                                // setCategoryId(selectedItem.category_id);
+                                                // setSubCategoryId(selectedItem.sub_category_id);
+                                            }
+                                        }}
                                     >
-                                        <Picker.Item label="Select Category" value="" color={colors.subText} />
                                         {categories?.map((cat: any) => (
-                                            <Picker.Item key={cat.category_id} label={cat.category_name} value={cat.category_id} />
+                                            <Picker.Item
+                                                key={cat.sub_category_id}
+                                                label={cat.sub_category_name}
+                                                value={cat.sub_category_id}
+                                            />
                                         ))}
                                     </Picker>
                                 </View>
                             </View>
+
 
                             <View style={styles.priceRow}>
                                 <View style={{ flex: 1 }}>
@@ -229,7 +258,37 @@ const styles = StyleSheet.create({
     infoBox: { flexDirection: 'row', padding: 14, borderRadius: 12, gap: 10, alignItems: 'center' },
     infoText: { fontSize: 14, fontWeight: '700' },
     buttonRow: { flexDirection: 'row', gap: 12, marginTop: 35, alignItems: 'center' },
-    closeScanner: { position: 'absolute', bottom: 50, alignSelf: 'center' }
+    closeScanner: { position: 'absolute', bottom: 50, alignSelf: 'center' },
+
+    input: { flex: 1, height: 45, fontSize: 16 },
+    icon: { marginRight: 12 },
+    inputGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 8,
+        height: 50,
+    },
+    dropdownContainer: {
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 8,
+        marginTop: -5, // Bridges the gap with the input
+        elevation: 5, // Shadow for Android
+        shadowColor: '#000', // Shadow for iOS
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        maxHeight: 200,
+        overflow: 'hidden',
+    },
+    dropdownItem: {
+        padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+    },
 });
 
 export default AddProductModal;

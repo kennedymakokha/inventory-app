@@ -1,3 +1,4 @@
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
     View,
     Text,
@@ -5,93 +6,62 @@ import {
     TouchableOpacity,
     RefreshControl,
     LayoutAnimation,
-    Platform,
-    UIManager
+    StatusBar,
 } from "react-native";
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useSelector } from "react-redux";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+
 import { SkeletonList } from "./components/skeleton";
-import { useCallback, useEffect, useState } from "react";
 import { getDBConnection } from "../../services/db-service";
 import { useSearch } from "../../context/searchContext";
 import PageHeader from "../../components/pageHeader";
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SalesStackParamList } from "../../../models/navigationTypes";
-import { getProductsGroupedByCategory } from "../../services/product.service";
+import { getProductsGroupedByHierarchy } from "../../services/product.service";
 import { useTheme } from "../../context/themeContext";
-import { useCart } from "../../context/CartContext";
-import { useSelector } from "react-redux";
 import { RootState } from "../../../store";
 
 const LIMIT = 20;
 
-
 export default function GroupedProductsForSale() {
-
-    const navigation =
-        useNavigation<NativeStackNavigationProp<SalesStackParamList>>();
-  const { items: cart } = useSelector((state: RootState) => state.cart);
+    const navigation = useNavigation<NativeStackNavigationProp<SalesStackParamList>>();
+    const { items: cart } = useSelector((state: RootState) => state.cart);
     const { query } = useSearch();
     const { colors, isDarkMode } = useTheme();
+
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [page, setPage] = useState(0);
+    const [products, setProducts] = useState<any[]>([]);
     const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
-    const [groupedProducts, setGroupedProducts] =
-        useState<Record<string, any[]>>({});
+    const [expandedSubCategory, setExpandedSubCategory] = useState<string | null>(null);
 
-    /* ---------------- FETCH PRODUCTS ---------------- */
-
-    const loadProducts = useCallback(
-        async (pageNumber = 0, append = false) => {
-            try {
-                const db = await getDBConnection();
-
-                const offset = pageNumber * LIMIT;
-
-                const results: any = await getProductsGroupedByCategory(
-                    db,
-                    LIMIT,
-                    offset
-                );
-
-                if (append) {
-                    setGroupedProducts((prev) => {
-                        const merged = { ...prev };
-
-                        Object.keys(results).forEach((cat) => {
-                            if (!merged[cat]) merged[cat] = [];
-                            merged[cat] = [...merged[cat], ...results[cat]];
-                        });
-
-                        return merged;
-                    });
-                } else {
-                    setGroupedProducts(results);
-                }
-            } catch (error) {
-                console.log(error);
-            } finally {
-                setLoading(false);
-                setRefreshing(false);
-            }
-        },
-        []
-    );
+    /* ---------------- FETCH LOGIC (UNCHANGED) ---------------- */
+    const loadProducts = useCallback(async (pageNumber = 0, append = false) => {
+        try {
+            const db = await getDBConnection();
+            const offset = pageNumber * LIMIT;
+            const results = await getProductsGroupedByHierarchy(db, LIMIT, offset);
+            setProducts(prev => append ? [...prev, ...results] : results);
+        } catch (error) {
+            console.log(error);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    }, []);
 
     useEffect(() => {
         setLoading(true);
         loadProducts(0);
     }, []);
 
-    /* ---------------- REFRESH ---------------- */
-
-    const onRefresh = async () => {
+    const onRefresh = () => {
         setRefreshing(true);
         setPage(0);
         loadProducts(0);
     };
-
-    /* ---------------- PAGINATION ---------------- */
 
     const loadMore = () => {
         const nextPage = page + 1;
@@ -99,82 +69,148 @@ export default function GroupedProductsForSale() {
         loadProducts(nextPage, true);
     };
 
-    /* ---------------- SEARCH FILTER ---------------- */
-
-    const filteredGrouped = Object.keys(groupedProducts).reduce((acc: any, key) => {
-        const filtered = groupedProducts[key].filter((item: any) =>
-            item.product_name?.toLowerCase().includes(query.toLowerCase())
+    /* ---------------- MEMOIZED HIERARCHY ---------------- */
+    const hierarchy = useMemo(() => {
+        const filtered = products.filter(p =>
+            p.product_name?.toLowerCase().includes(query.toLowerCase())
         );
 
-        if (filtered.length) acc[key] = filtered;
+        return filtered.reduce((acc: any, product: any) => {
+            const catId = String(product.category_id || "unknown_cat");
+            const catName = product.category_name || "Uncategorized";
+            const subId = String(product.sub_category_id || "unknown_sub");
+            const subName = product.sub_category_name || "General";
 
-        return acc;
-    }, {});
+            if (!acc[catId]) acc[catId] = { name: catName, subCategories: {} };
+            if (!acc[catId].subCategories[subId]) acc[catId].subCategories[subId] = { name: subName, products: [] };
+            acc[catId].subCategories[subId].products.push(product);
+            return acc;
+        }, {});
+    }, [products, query]);
 
-    const categories = Object.keys(filteredGrouped);
+    const categories = useMemo(() => Object.keys(hierarchy), [hierarchy]);
 
-    /* ---------------- TOGGLE CATEGORY ---------------- */
-
-    const toggleCategory = (category: string) => {
+    /* ---------------- UI HELPERS ---------------- */
+    const toggleCategory = (categoryId: string) => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-
-        setExpandedCategory((prev) => (prev === category ? null : category));
+        setExpandedCategory((prev) => (prev === categoryId ? null : categoryId));
+        setExpandedSubCategory(null);
     };
 
-    /* ---------------- RENDER ---------------- */
+    const toggleSubCategory = (subId: string) => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setExpandedSubCategory((prev) => (prev === subId ? null : subId));
+    };
 
-    const renderCategory = ({ item }: any) => {
-        const products = filteredGrouped[item] || [];
-        const isOpen = expandedCategory === item;
+    /* ---------------- RENDERERS ---------------- */
+    const renderCategory = ({ item: categoryId }: { item: string }) => {
+        const category = hierarchy[categoryId];
+        const subCategories = category.subCategories;
+        const isCatOpen = expandedCategory === categoryId;
 
         return (
-            <View style={{ backgroundColor: colors.background }} className="mt-3">
-
+            <View 
+                style={{ backgroundColor: colors.card, borderColor: colors.border }} 
+                className="mb-4 overflow-hidden rounded-3xl border shadow-sm"
+            >
                 {/* CATEGORY HEADER */}
-
-                <TouchableOpacity
-                    onPress={() =>
-                        navigation.navigate("Sales_Details", { category: item })
-                    }
-                    className="bg-gray-200 px-4 py-3 rounded flex-row justify-between items-center"
-                >
-                    <Text className="font-bold text-lg text-gray-800">
-                        {item}
-                    </Text>
+                <View className="flex-row items-center ">
                     <TouchableOpacity
-                        onPress={() => toggleCategory(item)}
-                        className="bg-gray-200 px-4 py-3 rounded flex-row justify-between items-center"
+                        onPress={() => navigation.navigate("Sales_Details", {
+                            category_id: categoryId,
+                            filterType: "category",
+                            name: category.name,
+                        })}
+                        className="flex-1 p-5 flex-row items-center"
                     >
-                        <Text className="text-gray-600">
-                            {isOpen ? "▲" : "▼"}
-                        </Text>
+                        <View style={{ backgroundColor: colors.primary + '15' }} className="p-2 rounded-xl mr-3">
+                            <Ionicons name="layers-outline" size={20} color={colors.primary} />
+                        </View>
+                        <View>
+                            <Text style={{ color: colors.text }} className="font-extrabold text-base uppercase tracking-tight">
+                                {category.name}
+                            </Text>
+                            <Text style={{ color: colors.subText }} className="text-[10px] font-bold">
+                                {Object.keys(subCategories).length} SECTORS
+                            </Text>
+                        </View>
                     </TouchableOpacity>
-                </TouchableOpacity>
 
-                {/* PRODUCTS */}
+                    <TouchableOpacity
+                        onPress={() => toggleCategory(categoryId)}
+                        className="p-5"
+                    >
+                        <Ionicons 
+                            name={isCatOpen ? "chevron-up" : "chevron-down"} 
+                            size={20} 
+                            color={isCatOpen ? colors.primary : colors.subText} 
+                        />
+                    </TouchableOpacity>
+                </View>
 
-                {isOpen && (
-                    <View className="mt-2">
+                {/* SUBCATEGORIES SECTION */}
+                {isCatOpen && (
+                    <View style={{ backgroundColor: isDarkMode ? '#00000020' : '#F9FAFB' }} className="px-3 pb-3">
+                        {Object.keys(subCategories).map((subId) => {
+                            const sub = subCategories[subId];
+                            const isSubOpen = expandedSubCategory === subId;
+                            const subProducts = sub.products;
 
-                        {products.map((product: any) => (
-                            <TouchableOpacity
-                                key={product.id}
+                            return (
+                                <View key={subId} style={{ borderColor: colors.border }} className="mt-2 border bg-transparent">
+                                    <TouchableOpacity
+                                        onPress={() => toggleSubCategory(subId)}
+                                        className="flex-row justify-between items-center p-4"
+                                    >
+                                        <Text style={{ color: colors.text }} className="font-bold text-sm">
+                                            {sub.name}
+                                        </Text>
+                                        <View className="flex-row items-center gap-x-2">
+                                            <Text style={{ color: colors.subText }} className="text-xs font-bold">
+                                                {subProducts.length} items
+                                            </Text>
+                                            <Ionicons name={isSubOpen ? "remove" : "add"} size={18} color={colors.primary} />
+                                        </View>
+                                    </TouchableOpacity>
 
-                                className={`flex-row justify-between ${product.synced === 0 ? "bg-green-100" : "bg-green-50"
-                                    } p-4 rounded-lg shadow-md mt-2`}
-                            >
-                                <View>
-                                    <Text className="font-bold text-secondary-900 text-lg">
-                                        {product.product_name}
-                                    </Text>
+                                    {/* PRODUCTS LIST */}
+                                    {isSubOpen && (
+                                        <View className="px-2 pb-2">
+                                            {subProducts.map((product: any) => (
+                                                <TouchableOpacity
+                                                    key={product.id}
+                                                    onPress={() => navigation.navigate("Sales_Details", {
+                                                        productId: product.id,
+                                                        filterType: "product",
+                                                        name: product.product_name
+                                                    })}
+                                                    style={{ backgroundColor: colors.background }}
+                                                    className="flex-row justify-between items-center p-4 mb-1  "
+                                                >
+                                                    <View className="flex-1">
+                                                        <Text style={{ color: colors.text }} className="font-bold text-sm">
+                                                            {product.product_name}
+                                                        </Text>
+                                                        <Text style={{ color: colors.subText }} className="text-[10px] uppercase font-bold tracking-widest">
+                                                            SKU: {product.product_code || "N/A"}
+                                                        </Text>
+                                                    </View>
 
-                                    <Text className="text-gray-600">
-                                        Stock: {product.quantity}
-                                    </Text>
+                                                    <View className="items-end">
+                                                        <Text style={{ color: colors.primary }} className="font-black text-sm">
+                                                            KSh {product.selling_price}
+                                                        </Text>
+                                                        <Text style={{ color: product.quantity < 5 ? '#EF4444' : colors.subText }} className="text-[10px] font-bold">
+                                                            QTY: {product.quantity}
+                                                        </Text>
+                                                    </View>
+                                                </TouchableOpacity>
+                                            ))}
+                                        </View>
+                                    )}
                                 </View>
-                            </TouchableOpacity>
-                        ))}
-
+                            );
+                        })}
                     </View>
                 )}
             </View>
@@ -182,48 +218,57 @@ export default function GroupedProductsForSale() {
     };
 
     return (
-        <View style={{ backgroundColor: colors.background }} className="flex-1  px-5">
+        <View style={{ backgroundColor: colors.background }} className="flex-1">
+          
+            <PageHeader  />
 
-            <PageHeader />
-
-            <View className="flex-1">
-
+            <View className="flex-1 px-4 pt-2">
                 {loading ? (
                     <SkeletonList />
                 ) : (
-                    <>
-                        <FlatList
-                            data={categories}
-                            keyExtractor={(item) => item}
-                            renderItem={renderCategory}
-
-                            onEndReached={loadMore}
-                            onEndReachedThreshold={0.5}
-
-                            refreshControl={
-                                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                            }
-
-                            ListEmptyComponent={() => (
-                                <View className="items-center mt-10">
-                                    <Text className="text-gray-400">No products found</Text>
-                                </View>
-                            )}
-                        />
-                        {cart.length > 0 && (
-                            <TouchableOpacity
-                                onPress={() => navigation.navigate("Sales_Details", { category: expandedCategory || categories[0] })}
-                                className="absolute bottom-10 left-5 right-5 bg-green-600 p-4 rounded-2xl flex-row justify-between"
-                            >
-                                <Text className="text-white font-bold">Items in Cart: {cart.length}</Text>
-                                <Text className="text-white font-bold">View Checkout →</Text>
-                            </TouchableOpacity>
+                    <FlatList
+                        data={categories}
+                        keyExtractor={(item) => item}
+                        renderItem={renderCategory}
+                        onEndReached={loadMore}
+                        showsVerticalScrollIndicator={false}
+                        onEndReachedThreshold={0.5}
+                        contentContainerStyle={{ paddingBottom: 100 }}
+                        refreshControl={
+                            <RefreshControl 
+                                refreshing={refreshing} 
+                                onRefresh={onRefresh} 
+                                tintColor={colors.primary}
+                            />
+                        }
+                        ListEmptyComponent={() => (
+                            <View className="items-center mt-20">
+                                <Ionicons name="search-outline" size={48} color={colors.border} />
+                                <Text style={{ color: colors.subText }} className="mt-4 font-bold">No products found</Text>
+                            </View>
                         )}
-                    </>
-
+                    />
                 )}
-
             </View>
+
+            {/* FLOATING CART BUTTON */}
+            {cart.length > 0 && (
+                <TouchableOpacity
+                    onPress={() => navigation.navigate("Sales_Details" as any)}
+                    style={{ backgroundColor: colors.primary, shadowColor: colors.primary }}
+                    className="absolute bottom-8 left-6 right-6 h-16 rounded-2xl flex-row items-center justify-between px-6 shadow-xl"
+                >
+                    <View className="flex-row items-center gap-x-3">
+                        <View className="bg-white/20 p-2 rounded-lg">
+                            <Ionicons name="cart" size={20} color="#fff" />
+                        </View>
+                        <Text className="text-white font-black text-base uppercase tracking-wider">
+                            {cart.length} ITEMS
+                        </Text>
+                    </View>
+                    <Text className="text-white font-bold">CHECKOUT →</Text>
+                </TouchableOpacity>
+            )}
         </View>
     );
 }

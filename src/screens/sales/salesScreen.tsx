@@ -22,7 +22,7 @@ import { useFocusEffect } from '@react-navigation/native';
 // Services & Context
 import { getProductsByCategoryName } from '../../services/product.service';
 import { getDBConnection } from '../../services/db-service';
-import { finalizeSale } from '../../services/sales.service';
+import { finalizeSale, getProductsByFilter } from '../../services/sales.service';
 import { useSearch } from '../../context/searchContext';
 import { useTheme } from '../../context/themeContext';
 import { useSettings } from '../../context/SettingsContext';
@@ -41,7 +41,12 @@ const LIMIT = 30;
 
 const SalesScreen = ({ route, navigation }: any) => {
     const dispatch = useDispatch();
-    const { category } = route.params;
+    const {
+        category_id,
+        sub_category_id,
+        productId,
+        filterType
+    } = route.params || {};
     const { items: cart } = useSelector((state: RootState) => state.cart);
     const { user } = useSelector((state: any) => state.auth);
     const { colors } = useTheme();
@@ -62,7 +67,21 @@ const SalesScreen = ({ route, navigation }: any) => {
         try {
             const db = await getDBConnection();
             const offset = pageNumber * LIMIT;
-            const fetched = await getProductsByCategoryName(db, category, LIMIT, offset);
+
+            let filterId: string | undefined;
+
+            if (filterType === 'category') filterId = category_id;
+            else if (filterType === 'sub_category') filterId = sub_category_id;
+            else if (filterType === 'product') filterId = productId;
+
+            const fetched = await getProductsByFilter(
+                db,
+                filterId,   // pass ID, not filterValue
+                filterType,
+                LIMIT,
+                offset
+            );
+
             if (append) setProducts(prev => [...prev, ...fetched]);
             else setProducts(fetched);
         } catch (error) {
@@ -70,7 +89,18 @@ const SalesScreen = ({ route, navigation }: any) => {
         } finally {
             setLoading(false);
         }
-    }, [category]);
+    }, [category_id, sub_category_id, productId, filterType]);
+    // Update the Header title dynamically
+    useEffect(() => {
+        if (filterType === 'category') {
+            navigation.setOptions({ title: 'Category Sales' });
+        } else if (filterType === 'sub_category') {
+            navigation.setOptions({ title: 'Subcategory Sales' });
+        } else if (filterType === 'product') {
+            navigation.setOptions({ title: 'Product Details' });
+        }
+        loadData(0);
+    }, [loadData, filterType]);
 
     useEffect(() => {
         loadData(0);
@@ -137,7 +167,7 @@ const SalesScreen = ({ route, navigation }: any) => {
                 <View style={styles.cardHeader}>
                     <View style={{ flex: 1 }}>
                         <Text style={[styles.productName, { color: colors.text }]}>{item.product_name}</Text>
-                        <Text style={{ color: colors.subText, fontSize: 11 }}>{category}</Text>
+                        {/* <Text style={{ color: colors.subText, fontSize: 11 }}>{category}</Text> */}
                     </View>
                     <View style={[styles.stockBadge, { backgroundColor: stockColor + '20' }]}>
                         <Text style={{ color: stockColor, fontSize: 10, fontWeight: '800' }}>{item.quantity} IN STOCK</Text>
@@ -193,7 +223,7 @@ const SalesScreen = ({ route, navigation }: any) => {
         <View style={{ flex: 1, backgroundColor: colors.background }}>
             <PageHeader component={() => (
                 <View style={[styles.headerContent, { backgroundColor: colors.card, padding: 10, }]}>
-                   
+
                     <View style={{ flex: 1, marginRight: 10 }}>
                         <SearchBar white placeholder="Search products..." />
                     </View>
@@ -246,7 +276,7 @@ const SalesScreen = ({ route, navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
-      listPadding: { padding: 16 },
+    listPadding: { padding: 16 },
     headerContent: { flexDirection: 'row', alignItems: 'center' },
     scanBtn: { backgroundColor: 'rgba(255,255,255,0.2)', padding: 10, borderRadius: 12 },
     fabBack: {
@@ -264,7 +294,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 2,
     },
-    
+
     card: {
         padding: 16,
         borderRadius: 24,
